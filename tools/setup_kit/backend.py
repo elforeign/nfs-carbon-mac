@@ -76,7 +76,7 @@ PUBLIC_EXEC = "NFSMostWanted"  # never NFSMW: a distinct name, so this app is ne
 PUBLIC_VERSION = "4.7.0"
 # Carbon's app: its names (install.CARBON), its data, Setup state and update folder name, and its own version.
 CARBON_PRODUCT = dict(CARBON, data="Carbon")
-CARBON_VERSION = "1.0.0"
+CARBON_VERSION = "1.0.1"
 CARBON_EXE_SHA256 = "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3"  # NFSC.exe (car_sources.json pin)
 CARBON_RUNNING = re.compile(re.escape(CARBON_PRODUCT["name"]) + r"\.app/Contents/MacOS/")
 CARBON_X360_BYTES = 40_000_000  # the two Xbox archives (38.4 MB), kept whole

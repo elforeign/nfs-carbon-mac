@@ -3557,16 +3557,16 @@ class CarbonBuildTests(Fixture):
         self.assertTrue(bundle[bundle.index("--boot") + 1].endswith("recomp/out/carbon/boot_carbon"))
 
     def test_carbon_update_from_its_own_version_and_remembered_folder(self):
-        """Carbon's updater inputs: its own version 1.0.0 (Most Wanted's stays), its sources remembered at install in
+        """Carbon's updater inputs: its own version 1.0.1 (Most Wanted's stays), its sources remembered at install in
         its own Setup state, and an update staged from those alone, bound to its app and profile <data>/Carbon.
         Proof: with main 583933e9's tools/setup_kit this fails at its first check (bundle --version 4.6.0); fixed: passes."""
         from setup_kit import apply   # the checked-in launch transaction (the builds below load the build copy's)
         installed, runner = self.carbon_build()
         bundle = next(c for c in runner.commands if "runtime/bundle.sh" in " ".join(c))
-        self.assertEqual(bundle[bundle.index("--version") + 1], "1.0.0")
+        self.assertEqual(bundle[bundle.index("--version") + 1], "1.0.1")
         self.assertNotEqual(b.PUBLIC_VERSION.split(".")[0], "1")   # Most Wanted keeps its 4.x numbers
         with (Path(installed) / "Contents/Info.plist").open("rb") as f:
-            self.assertEqual(plistlib.load(f)["CFBundleShortVersionString"], "1.0.0")
+            self.assertEqual(plistlib.load(f)["CFBundleShortVersionString"], "1.0.1")
         choices = b.staging.load_choices(self.paths.state / "Carbon", required=True)
         self.assertEqual((Path(choices["pc"]), Path(choices["destination"])), (self.carbon.resolve(), Path(installed)))
         self.assertFalse((self.paths.state / "source-choices.json").exists())   # Most Wanted's choices untouched
@@ -3580,7 +3580,7 @@ class CarbonBuildTests(Fixture):
         self.assertEqual(rc, 0, self.stream.getvalue()[-2000:])
         ready = json.loads((stage / "ready.json").read_text())
         self.assertEqual((ready["version"], ready["app"], ready["profile"], ready["destination"]["path"]),
-                         ("1.0.0", "NFS Carbon Native.app", str(self.paths.data / "Carbon"), str(installed)))
+                         ("1.0.1", "NFS Carbon Native.app", str(self.paths.data / "Carbon"), str(installed)))
         record, app, data = apply.read_ready(stage / "ready.json", self.paths.data / "Carbon", Path(installed))
         self.assertTrue((Path(app) / "Contents/MacOS/NFSCarbon").is_file())
         self.assertTrue((stage / record["roots"]["pc_root"] / "NFSC.exe").is_file())

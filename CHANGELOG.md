@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.1
+
+- **Update now fixed:** Update now could stop with "The prepared update folder or its retained tools failed verification" when your game files were copied from a USB stick, network share or another computer.
+
 ## 1.0.0
 
 First release of NFS Carbon Native for Apple Silicon Macs.
