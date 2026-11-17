@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "hooks": [
+    {
+      "address": "008A4C63",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "008A4C63",
+        "length": 79,
+        "sha256": "4b43010db13d95b3f35fff5ae2825567915628ccc10f2d0ef8bcef1706acd275"
+      },
+      "provider": "carbon_posaudio_pan",
+      "job": "A6.3"
+    },
+    {
+      "address": "008A4CC8",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "008A4CC8",
+        "length": 155,
+        "sha256": "348649b3fe2268a911ab7fb7ff7989f4eebf6052df246c0b64e1c755bcd69bc3"
+      },
+      "provider": "carbon_posaudio_initialize",
+      "job": "A6.3"
+    },
+    {
+      "address": "0089E2FE",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "0089E2FE",
+        "length": 81,
+        "sha256": "78f91ec8a0a2420a0bd126af5d36fb72d61c9e7fdfc47eff7d6d4031576d2566"
+      },
+      "provider": "carbon_posaudio_stream_defaults",
+      "job": "A6.3"
+    }
+  ]
+}

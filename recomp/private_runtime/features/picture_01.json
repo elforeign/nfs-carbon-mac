@@ -1,0 +1,219 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "game_menu_policy.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "game_menu_state.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "game_menu_event.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "game_menu_replay.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "game_settings.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "game_menu_report.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "game_menu_shortcut.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "game_menu_text.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "game_menu_support.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "game_menu_title.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "game_menu_present.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "game_menu_capture.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    }
+  },
+  "staged_sources": {
+    "game_menu_policy.h": "game_menu_policy.h",
+    "game_menu_state.h": "game_menu_state.h",
+    "game_menu_event.h": "game_menu_event.h",
+    "game_menu_replay.h": "game_menu_replay.h",
+    "game_settings.h": "game_settings.h",
+    "game_menu_report.h": "game_menu_report.h",
+    "game_menu_shortcut.h": "game_menu_shortcut.h",
+    "game_menu_text.h": "game_menu_text.h",
+    "game_menu_support.c": "game_menu_support.c",
+    "game_menu_title.h": "game_menu_title.h",
+    "game_menu_present.h": "game_menu_present.h",
+    "game_menu_capture.h": "game_menu_capture.h"
+  },
+  "bindings": {
+    "game_menu_policy.h": {
+      "source": "game_menu_policy.h",
+      "sha256": "a8b17ee78407ecee6f7f24cc572b9828ee11b8186b7c0f0309b590b4f8ce7da2",
+      "functions": {}
+    },
+    "game_menu_state.h": {
+      "source": "game_menu_state.h",
+      "sha256": "7af35e9fe6838a13f369f795dbc9a1121d3310ee2581a0acb23713ade76f9a50",
+      "functions": {}
+    },
+    "game_menu_event.h": {
+      "source": "game_menu_event.h",
+      "sha256": "796f946cff3db0995115341b6c020ba3d37ecaeea770c1e3e858a4988705f0bb",
+      "functions": {}
+    },
+    "game_menu_replay.h": {
+      "source": "game_menu_replay.h",
+      "sha256": "8022b04fa8737398c17e47903dce8c71670de7825cf336368e218d5b6d3030ef",
+      "functions": {}
+    },
+    "game_settings.h": {
+      "source": "game_settings.h",
+      "sha256": "4b5872289fe03b2c90c9fa11e4758fcae23895d926d654e3a6aef63c28a15680",
+      "functions": {}
+    },
+    "game_menu_report.h": {
+      "source": "game_menu_report.h",
+      "sha256": "b471eb4da419f738fb78f8cfb8218e273b72ad391c5212ec10604945684c089f",
+      "functions": {}
+    },
+    "game_menu_shortcut.h": {
+      "source": "game_menu_shortcut.h",
+      "sha256": "532d3b655f508792e23ad68efd0a6a920c5fea0af3d0ee489b2dec7e4b399111",
+      "functions": {}
+    },
+    "game_menu_text.h": {
+      "source": "game_menu_text.h",
+      "sha256": "fe2dd438c266e7ec554868a3f974de3a5cdb9f15a0a6745010d023d1d9850477",
+      "functions": {}
+    },
+    "game_menu_support.c": {
+      "source": "game_menu_support.c",
+      "sha256": "53e0ab954106e07fb5a87ceebf2ebed86c2b7918c734914b8c88cb39390befee",
+      "functions": {}
+    },
+    "game_menu_title.h": {
+      "source": "game_menu_title.h",
+      "sha256": "14f5ffacd86cc1370fd5fad0b65327672e989dbdee70f717d9f45fef734f53d1",
+      "functions": {}
+    },
+    "game_menu_present.h": {
+      "source": "game_menu_present.h",
+      "sha256": "7d2ae6f8def65833caf8eae16e039bdc71f03c48cfed3a39bfc05f7658a91dfd",
+      "functions": {}
+    },
+    "game_menu_capture.h": {
+      "source": "game_menu_capture.h",
+      "sha256": "c31a609fdf298baecce711a6076e0bcad55ee35709f38c55c73058da67228be8",
+      "functions": {}
+    }
+  },
+  "enabled_providers": [
+    "portmenu_char",
+    "portmenu_command_key",
+    "portmenu_is_open",
+    "portmenu_key",
+    "portmenu_mouse",
+    "portmenu_pad",
+    "portmenu_status",
+    "portmenu_update",
+    "replay_controls_cancel",
+    "replay_controls_disconnect",
+    "gpuclients_cached",
+    "save_timing_enter",
+    "save_timing_leave",
+    "roam_online_active"
+  ]
+}

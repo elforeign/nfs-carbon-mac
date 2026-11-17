@@ -1,0 +1,93 @@
+{
+  "version": 1,
+  "hooks": [
+    {
+      "address": "00748B50",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "00748B50",
+        "length": 16,
+        "sha256": "caae0a630e5d3276df31898d8387828cdee39e86a7812e04200377a5dcfa52dc"
+      },
+      "provider": "carbon_daynight_world",
+      "job": "J4"
+    },
+    {
+      "address": "00748A70",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "00748A70",
+        "length": 16,
+        "sha256": "1098ca4ebd0aabb8e2bbbca1af7c4e623f5f679887b6d58e2a3f5ba13ed1193b"
+      },
+      "provider": "carbon_daynight_normalmap",
+      "job": "J4"
+    },
+    {
+      "address": "00748AE0",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "00748AE0",
+        "length": 16,
+        "sha256": "7d48447100c22cf60c4c7b7dd7c425216399e9b5ddbc9107885c0386736d0723"
+      },
+      "provider": "carbon_daynight_glass",
+      "job": "J4"
+    },
+    {
+      "address": "00749790",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "00749790",
+        "length": 16,
+        "sha256": "2aad28da3b039adda07e31b413375383bd1d7eea32ea20c0a518df30e22fe468"
+      },
+      "provider": "carbon_daynight_reflect",
+      "job": "J4"
+    },
+    {
+      "address": "007497F0",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "007497F0",
+        "length": 16,
+        "sha256": "2f5041b2dc3f885f984d30212fe43b5cc3266d65f3afc910e9eedc0c357ba326"
+      },
+      "provider": "carbon_daynight_sky",
+      "job": "J4"
+    },
+    {
+      "address": "007F1080",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "007F1080",
+        "length": 16,
+        "sha256": "2ffbcbc3db4c2a6cfe4f26f3c31d870ed4e9d9a7524718196bd6d4ee7df305ea"
+      },
+      "provider": "carbon_daynight_advance",
+      "job": "J4"
+    },
+    {
+      "address": "007F12A0",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "007F12A0",
+        "length": 16,
+        "sha256": "2636d4ad7041ebb08334831f6f075e70a881a8d7c523010e70df8743b6ee9d53"
+      },
+      "provider": "carbon_daynight_blend",
+      "job": "J4"
+    },
+    {
+      "address": "007F13D0",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "007F13D0",
+        "length": 13,
+        "sha256": "daed8331615073a9bee935e9df2efa8823c6cd2af76eaa8c350208d2cd9b3d57"
+      },
+      "provider": "carbon_daynight_set",
+      "job": "J4"
+    }
+  ]
+}

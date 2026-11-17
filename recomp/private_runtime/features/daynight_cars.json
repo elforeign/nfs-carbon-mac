@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_daynight_cars.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_layouts": {
+        "cars": "00746A00(context, rig, position, local, view matrix, view) is cdecl and returns 1. Rig slot k at +4+1C*k: kind, azimuth, elevation, RGB, intensity; 0xA0 bytes; in-game rigs A6CC20/A6CCC0/A6CD60. Kinds 2/3 are zeroed natively. Context +10..3B light colours, +50/+60/+70 light x/y/z, +130..1CF harmonics. B77F34 time-of-day +160 normalized light vector."
+      }
+    }
+  },
+  "staged_sources": {
+    "carbon_daynight_cars.c": "carbon_daynight_cars.h"
+  },
+  "bindings": {
+    "carbon_daynight_cars.c": {
+      "source": "carbon_daynight_cars.h",
+      "sha256": "5b794d72266fb7a8373e104522db3f8e3a3ab773faffa3cce7f52f74c83a0cb3",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

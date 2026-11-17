@@ -1,0 +1,135 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_pad_layout.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_pad_layout.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_pad_layout_bindings.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_accesses": {
+        "carbon_padbind_sync": {
+          "read": [
+            11110728
+          ]
+        }
+      },
+      "guest_layouts": {
+        "switch": "native property getters/setters 13A9/13A7 via copied CPU; active player zero config; 16 independent dispatch identities; native defaults call 00689550 rewrites only selected-pad slots; clear only selected-pad slots of descriptor actions 47/48 on PC switch; profile sidecar deferred",
+        "mode": "Xbox source modes 0 level / 1 press / 2 release; raw DirectInput cached inputs, separate trigger axes, native keyboard evaluator; unsupported PC turn/HUD-down/VOIP roles retained as negative IDs without borrowing another action slot"
+      }
+    },
+    "carbon_pad_layout_settings.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_pad_layout_menu.m": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_pad_layout_f10.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_padbind_x360.inc": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    }
+  },
+  "staged_sources": {
+    "carbon_pad_layout.c": "carbon_pad_layout.c",
+    "carbon_pad_layout.h": "carbon_pad_layout.h",
+    "carbon_pad_layout_bindings.h": "carbon_pad_layout_bindings.h",
+    "carbon_pad_layout_settings.h": "carbon_pad_layout_settings.h",
+    "carbon_pad_layout_menu.m": "carbon_pad_layout_menu.m",
+    "carbon_pad_layout_f10.h": "carbon_pad_layout_f10.h",
+    "carbon_padbind_x360.inc": "carbon_padbind_x360.inc"
+  },
+  "bindings": {
+    "carbon_pad_layout.c": {
+      "source": "carbon_pad_layout.c",
+      "sha256": "a887db85365353fe2c7abb5a20c105e9a8f3a8a1dd68ac6e4ad3f7d9eb088543",
+      "functions": {}
+    },
+    "carbon_pad_layout.h": {
+      "source": "carbon_pad_layout.h",
+      "sha256": "0e16a77176affea8ec8c686259af2d720efdb7ade5e9e2e07d333274dc39511f",
+      "functions": {}
+    },
+    "carbon_pad_layout_bindings.h": {
+      "source": "carbon_pad_layout_bindings.h",
+      "sha256": "8fd918576f3d8b41be42ddfaf233b3a885ad2d345da6e0aa0617dd516ff2fd33",
+      "functions": {}
+    },
+    "carbon_pad_layout_settings.h": {
+      "source": "carbon_pad_layout_settings.h",
+      "sha256": "5384ac8fe7bab1a09165308a1f65019594715253b643db16071dc10263940910",
+      "functions": {}
+    },
+    "carbon_pad_layout_menu.m": {
+      "source": "carbon_pad_layout_menu.m",
+      "sha256": "793f280157213702433e77b831ea693ef7c6f95eeb0ddf572ff99b61f890cef7",
+      "functions": {}
+    },
+    "carbon_pad_layout_f10.h": {
+      "source": "carbon_pad_layout_f10.h",
+      "sha256": "69d9247ed9c78d55de0c5edf018b744b2828fdda92daf3b192971d4c55788c08",
+      "functions": {}
+    },
+    "carbon_padbind_x360.inc": {
+      "source": "carbon_padbind_x360.inc",
+      "sha256": "64612b38f020587498a75537b6ddc3365ac1a859ab56834208907874f9aba6f8",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

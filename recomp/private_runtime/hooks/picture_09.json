@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "hooks": [
+    {
+      "address": "00761150",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "00761150",
+        "length": 16,
+        "sha256": "75f0a784fad7c02377c5c4bbd0d05ce2d554302167e14d5ed430f555a6459868"
+      },
+      "provider": "carbon_simrate_batch",
+      "job": "A3.9 stage 1a"
+    },
+    {
+      "address": "00764980",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "00764980",
+        "length": 16,
+        "sha256": "cd9e958669f786bb6cc659a395850c47d7ba41a75bdd0560934dbe7f563c19c4"
+      },
+      "provider": "carbon_simrate_construct",
+      "job": "A3.9 stage 1a"
+    },
+    {
+      "address": "0076ACE0",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "0076ACE0",
+        "length": 16,
+        "sha256": "ea56c458ea6ecf20c353e9355e37ed2477e9ee0e142afdf789965241be2765b7"
+      },
+      "provider": "carbon_simrate_advance",
+      "job": "A3.9 stage 1a"
+    },
+    {
+      "address": "00760C70",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "00760C70",
+        "length": 16,
+        "sha256": "aa6ac08d97cef41bc2cfb1727b2f2b6d8cf1fca48672b158673d56ac7f4bd9bb"
+      },
+      "provider": "carbon_simrate_task",
+      "job": "A3.9 stage 1a"
+    },
+    {
+      "address": "00769A20",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "00769A20",
+        "length": 16,
+        "sha256": "e8bfe6f0b76b6c81c932cc46d634f3c439282e54cc887a3c035e185c7fae83bb"
+      },
+      "provider": "carbon_simrate_intro",
+      "job": "A3.9 stage 1b"
+    }
+  ]
+}

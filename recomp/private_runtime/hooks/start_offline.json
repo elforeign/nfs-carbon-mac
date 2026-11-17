@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "hooks": [
+    {
+      "address": "005A7E00",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "005A7E00",
+        "length": 335,
+        "sha256": "797e72e3fd8a1cdf7fd72ddbececf290f493898c172c971b5f0d91d181cabe4a"
+      },
+      "provider": "carbon_start_offline",
+      "job": "A4.startup"
+    },
+    {
+      "address": "00578830",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "00578830",
+        "length": 71,
+        "sha256": "9141b5c0136831246d5163fca895e664780837efcd634d5b8be0f672c8205f26"
+      },
+      "provider": "carbon_start_notice_text",
+      "job": "A4.startup"
+    }
+  ]
+}

@@ -1,0 +1,108 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "game_hdr_begin.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "game_hdr_target.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "game_hdrclip_init.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "game_hdrclip_select.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "game_hdrclip_finish.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "game_hdr_promote_size.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    }
+  },
+  "staged_sources": {
+    "game_hdr_begin.h": "game_hdr_begin.h",
+    "game_hdr_target.h": "game_hdr_target.h",
+    "game_hdrclip_init.h": "game_hdrclip_init.h",
+    "game_hdrclip_select.h": "game_hdrclip_select.h",
+    "game_hdrclip_finish.h": "game_hdrclip_finish.h",
+    "game_hdr_promote_size.h": "game_hdr_promote_size.h"
+  },
+  "bindings": {
+    "game_hdr_begin.h": {
+      "source": "game_hdr_begin.h",
+      "sha256": "dbae1c70f7eb933dceafa04f43e5a00c9ea4bd1f0db15ea071e36e8f5459d3c8",
+      "functions": {}
+    },
+    "game_hdr_target.h": {
+      "source": "game_hdr_target.h",
+      "sha256": "5187f8c3df3a5801b933a7fa255abad363b13cf4e992290f22e3d546eec72908",
+      "functions": {}
+    },
+    "game_hdrclip_init.h": {
+      "source": "game_hdrclip_init.h",
+      "sha256": "de56c3631271059a63f005afc9b6498d1a929871c84ea05f4e6a9f9e6d0e9948",
+      "functions": {}
+    },
+    "game_hdrclip_select.h": {
+      "source": "game_hdrclip_select.h",
+      "sha256": "f956035f7bfeddab95439f71d66e87f91e3d2d4560ad6191dd884d6ff17ab569",
+      "functions": {}
+    },
+    "game_hdrclip_finish.h": {
+      "source": "game_hdrclip_finish.h",
+      "sha256": "eb1fb0c24fef81740eaf06a49318904f6b795c591d9e5daf00b727ea7c97273b",
+      "functions": {}
+    },
+    "game_hdr_promote_size.h": {
+      "source": "game_hdr_promote_size.h",
+      "sha256": "e78f926f39db5dc89c6e210671d6edaaef355f0f77f21766949fd80fc5e77e1c",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_traffic.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_layouts": {
+        "native": "0042CE70 ChoosePattern; original first, ECX manager retained across original. 00422C30 sets trafficpattern this+100; 004613E0 reads collection+10 key. 0042C950 SpawnTraffic AL==1 after placement. 00445080 walks manager+5C array/count +64; includes inactive reusable cars (00422A10/0042CB70). Vtable+9C=006D80C0 reads vehicle+A8 active. Unknown getter/malformed pool reports alive=na. BOOT_DIAG only, zero guest writes/calls beyond original."
+      }
+    }
+  },
+  "staged_sources": {
+    "carbon_traffic.c": "carbon_traffic.h"
+  },
+  "bindings": {
+    "carbon_traffic.c": {
+      "source": "carbon_traffic.h",
+      "sha256": "b3c16db050115e3afbe0cc84ce54ddd5ac60fd31571b92a9505ae34d0cefc0ee",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

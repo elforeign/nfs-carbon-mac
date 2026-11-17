@@ -1,0 +1,88 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_padfx.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_padfx.h": {
+      "class": "shared",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_padfx_backend.h": {
+      "class": "shared",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_padfx_output.h": {
+      "class": "shared",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    }
+  },
+  "staged_sources": {
+    "carbon_padfx.c": "carbon_padfx.c",
+    "carbon_padfx.h": "carbon_padfx.h",
+    "carbon_padfx_backend.h": "carbon_padfx_backend.h",
+    "carbon_padfx_output.h": "carbon_padfx_output.h"
+  },
+  "bindings": {
+    "carbon_padfx.c": {
+      "source": "carbon_padfx.c",
+      "sha256": "0165388400a902a835ef11edc25fd52525cd5f786f687691966f52c6b2da0ee7",
+      "functions": {}
+    },
+    "carbon_padfx.h": {
+      "source": "carbon_padfx.h",
+      "sha256": "1d9f6f15b11aad12ce2dca0c8fdcc8bda2429ce3e7556d6e30dcbe61f4514b53",
+      "functions": {}
+    },
+    "carbon_padfx_backend.h": {
+      "source": "carbon_padfx_backend.h",
+      "sha256": "483543330fa1148520308f0ba68d3d3da6637e5f0aba48a3cee9e73dec07f872",
+      "functions": {}
+    },
+    "carbon_padfx_output.h": {
+      "source": "carbon_padfx_output.h",
+      "sha256": "f6317fb1c3b512f54c5483c151096b5f7b5ae09701bb48e25e07a0d44a961790",
+      "functions": {}
+    }
+  },
+  "enabled_providers": [
+    "padfx_close",
+    "padfx_connect",
+    "padfx_disconnect",
+    "padfx_player_update",
+    "padfx_stop",
+    "padfx_update",
+    "padlink_battery",
+    "padlink_detach",
+    "padlink_select",
+    "rumble_close",
+    "rumble_update"
+  ]
+}

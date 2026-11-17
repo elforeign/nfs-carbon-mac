@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_start_offline.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_layouts": {
+        "startup": "005A7E00 optional type +08=0; native options-off completion 005A7E84: +B4=+AC, +18=3, then 0059B1B0. 00578830 cdecl hash lookup is diagnostic only."
+      }
+    }
+  },
+  "staged_sources": {
+    "carbon_start_offline.c": "carbon_start_offline.h"
+  },
+  "bindings": {
+    "carbon_start_offline.c": {
+      "source": "carbon_start_offline.h",
+      "sha256": "4062b67d29bb375593048463cee48914b367b8210925e061027a77a0b755ecec",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

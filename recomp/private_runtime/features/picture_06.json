@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "game_pipeline_loading.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "game_pipeline_recipes.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "game_pipeline_prewarm.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    }
+  },
+  "staged_sources": {
+    "game_pipeline_loading.h": "game_pipeline_loading.h",
+    "game_pipeline_recipes.h": "game_pipeline_recipes.h",
+    "game_pipeline_prewarm.h": "game_pipeline_prewarm.h"
+  },
+  "bindings": {
+    "game_pipeline_loading.h": {
+      "source": "game_pipeline_loading.h",
+      "sha256": "b59cd70cbbbf5bcd34b33b7e199cb905965067d59bee2a397ca508216fa4bb59",
+      "functions": {}
+    },
+    "game_pipeline_recipes.h": {
+      "source": "game_pipeline_recipes.h",
+      "sha256": "11fa5da39d083b9542c8669cb95d0dcee8c526e51ebbe3a2d8b2c211c0cc6555",
+      "functions": {}
+    },
+    "game_pipeline_prewarm.h": {
+      "source": "game_pipeline_prewarm.h",
+      "sha256": "9c715126e8933116a8acfe94104e8c44b16e5c369640430612cbeec9f7cb93c1",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

@@ -1,0 +1,128 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_padprompts.m": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_layouts": {
+        "render": "005B0920 ECX renderer, one stack FEObject, ret 4; FEObject type +18, flags +1C, image hash +24, cache +58, group count/head +60/+64; 005912A0 PackageWasLoaded argument package with name +C and root +4C; 00583D70 visitor ret 4",
+        "text": "005864E0 cdecl glyph ID, 26 native names at 00A5E958; 00586840 cdecl configuration/slot/controller, original PC returns zero; captions via 005A0830 package-name/object-hash/language-hash; 00A98700 action-name and 00A98704 binding pointer, 8-byte descriptor stride and 12-byte bindings, slots 2+2*pad/3+2*pad; controller count 00A98948",
+        "diagrams": "005E7A00 constructor hides group 3248E720 with HIDE (0016A259); render refresh uses 005A02C0 package/group/SHOW (001CA7C0)/1 for active console loading. 00560080 cdecl hash array/count/callback/user/7/-1, native DYNTEX streaming; 004A0490 thiscall manager 00A8AD30, property 13A7 selects PS3 C1/C2 steering geometry; C2 main callout uses POV left and four auxiliary callouts use left-stick halves, image F29E7840 becomes owned LEFT_ANALOG; picture 922A39C4 in both decoded FNGs; 005E4480 cdecl loading type, viewer state *(00A97A7C)+8==1 preserved; Xbox v8 TPK glyphs and streamed EC3C0443/44 are decoded from the extra-texture root and uploaded through the Carbon ABI; LT/RT use 5/7 axis 2, LB/RB use buttons 4/5; family-specific hashes invalidate outgoing text/image caches live"
+      }
+    },
+    "carbon_padprompts_glyphs.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_texture_abi.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_layouts": {
+        "texture": "92-byte TextureInfo, 24-byte platform; hash +C, total/top bytes +1C/+24, dimensions +28/+2A, log sizes +2C/+2D, depth +2E, mips +32, alpha usage +39=2, blend +3A=1 (0073B9E0 low material bits 658), pack +4C, pixels +50, palette +54; platform format +C and D3D texture +10; 00725C80 thiscall ECX TextureInfo, ret; device 00AB0ABC, suspended 00AB09EC; native reset 00725FC0 releases linked platforms and zeros +10"
+      }
+    },
+    "carbon_padprompts_xbox.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_layouts": {
+        "asset": "Xenon v8 TextureInfo variable stride align4(89+name length), hash +C, offset +14, top bytes +24, width/height +28/+2A, name length +58/name +59; 32-byte platform format +14; tiled 8888 endian8-in-32; 55441122 stream envelopes with non-overlapping 32 KiB destinations and JDLZ blocks; trailing 124+32 byte records"
+      }
+    },
+    "carbon_padprompts_xboxart.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    }
+  },
+  "staged_sources": {
+    "carbon_padprompts.m": "carbon_padprompts.m",
+    "carbon_padprompts_glyphs.h": "carbon_padprompts_glyphs.h",
+    "carbon_texture_abi.h": "carbon_texture_abi.h",
+    "carbon_padprompts_xbox.h": "carbon_padprompts_xbox.h",
+    "carbon_padprompts_xboxart.h": "carbon_padprompts_xboxart.h"
+  },
+  "bindings": {
+    "carbon_padprompts.m": {
+      "source": "carbon_padprompts.m",
+      "sha256": "457806c85d7112d894b515030744163b435231dbef3bfa090e90bca1b9b71e71",
+      "functions": {
+        "carbon_padprompts_loading": {
+          "read": [],
+          "write": [
+            10881452
+          ]
+        },
+        "diagram_diagnostics": {
+          "read": [
+            5623760
+          ],
+          "write": []
+        },
+        "diagram_glyph": {
+          "read": [
+            10873176
+          ],
+          "write": []
+        }
+      }
+    },
+    "carbon_padprompts_glyphs.h": {
+      "source": "carbon_padprompts_glyphs.h",
+      "sha256": "9a21164f36a065f3f769dce0444adaf5fc69714dfa1cc74065f5b7698810a01e",
+      "functions": {}
+    },
+    "carbon_texture_abi.h": {
+      "source": "carbon_texture_abi.h",
+      "sha256": "69e87aae86af37be2ace2445a1823f1b55927e294cf483b355f92a0436680a17",
+      "functions": {}
+    },
+    "carbon_padprompts_xbox.h": {
+      "source": "carbon_padprompts_xbox.h",
+      "sha256": "57376126896798a17e2215e877cd732e1853da832275f37cd1e87e46ad28ba78",
+      "functions": {}
+    },
+    "carbon_padprompts_xboxart.h": {
+      "source": "carbon_padprompts_xboxart.h",
+      "sha256": "c36900974e16b98ceb73f33e6c6b1ed3f8e898a82a0d46afd43a74c7044ea5f4",
+      "functions": {}
+    }
+  },
+  "enabled_providers": [
+    "prompts_input",
+    "prompts_mouse_moved",
+    "prompts_pad_seen",
+    "prompts_pointer_visible",
+    "osk_pad"
+  ]
+}

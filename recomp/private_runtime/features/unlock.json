@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_unlock_settings.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_layouts": {
+        "native": "A9E6C0 native unlock developer bool; A8AD00 unlock-manager singleton. Paint 004B0FC0 and rim-paint 004B10D0 use ECX=manager, one integer argument, AL bool. Queries run only once under diagnostics."
+      },
+      "guest_accesses": {
+        "carbon_unlock_apply": {
+          "write": [
+            11134656
+          ]
+        },
+        "carbon_unlock_frame": {
+          "read": [
+            11054336,
+            11134656
+          ]
+        }
+      }
+    }
+  },
+  "staged_sources": {
+    "carbon_unlock_settings.h": "carbon_unlock_settings.h"
+  },
+  "bindings": {
+    "carbon_unlock_settings.h": {
+      "source": "carbon_unlock_settings.h",
+      "sha256": "8eaf20c92a21dfea803a16c25030c0e0043c8aba13cc51477adf05c8c7b8c5e1",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

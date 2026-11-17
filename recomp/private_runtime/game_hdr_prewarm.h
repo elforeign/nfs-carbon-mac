@@ -1,0 +1,1 @@
+/* No supplemental HDR recipes are required by the current policy. */

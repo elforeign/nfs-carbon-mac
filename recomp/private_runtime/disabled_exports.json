@@ -1,0 +1,1370 @@
+[
+  {
+    "name": "alpha_to_coverage_draw",
+    "source": "alpha_to_coverage.c",
+    "kind": "function",
+    "type": "int (const uint32_t *, unsigned int, int)"
+  },
+  {
+    "name": "auxlights_enabled",
+    "source": "auxlights.c",
+    "kind": "function",
+    "type": "int (void)"
+  },
+  {
+    "name": "brightness_init",
+    "source": "fe_console.c",
+    "kind": "function",
+    "type": "void (void)"
+  },
+  {
+    "name": "car_audio_code_region",
+    "source": "car_audio.c",
+    "kind": "function",
+    "type": "int (uint32_t)"
+  },
+  {
+    "name": "car_audio_dispatch",
+    "source": "car_audio.c",
+    "kind": "function",
+    "type": "int (Cpu *, uint32_t)"
+  },
+  {
+    "name": "car_grip_init",
+    "source": "car_grip_bridge.c",
+    "kind": "function",
+    "type": "void (void)"
+  },
+  {
+    "name": "carpaint_ab_shot",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "int (char *, size_t)"
+  },
+  {
+    "name": "clearcoat_enabled",
+    "source": "clearcoat.c",
+    "kind": "function",
+    "type": "int (void)"
+  },
+  {
+    "name": "clearcoat_shader_hash",
+    "source": "clearcoat.c",
+    "kind": "function",
+    "type": "int (uint64_t)"
+  },
+  {
+    "name": "cliprec_action",
+    "source": "cliprec.mm",
+    "kind": "function",
+    "type": "void (int)"
+  },
+  {
+    "name": "cliprec_present",
+    "source": "cliprec.mm",
+    "kind": "function",
+    "type": "void (__unsafe_unretained id<MTLCommandBuffer>, __unsafe_unretained id<MTLTexture>, __unsafe_unretained id<CAMetalDrawable>, float)"
+  },
+  {
+    "name": "cliprec_status",
+    "source": "cliprec.mm",
+    "kind": "function",
+    "type": "void (char *, int)"
+  },
+  {
+    "name": "decal_depth_ground",
+    "source": "decal_depth.m",
+    "kind": "function",
+    "type": "int (uint32_t)"
+  },
+  {
+    "name": "decal_depth_offset",
+    "source": "decal_depth.m",
+    "kind": "function",
+    "type": "void (float *, float *)"
+  },
+  {
+    "name": "decal_depth_tagged",
+    "source": "decal_depth.m",
+    "kind": "function",
+    "type": "int (uint32_t)"
+  },
+  {
+    "name": "detail_ab_shot",
+    "source": "detail.c",
+    "kind": "function",
+    "type": "int (char *, size_t)"
+  },
+  {
+    "name": "feedback_poll_pause",
+    "source": "feedback.c",
+    "kind": "function",
+    "type": "void (void)"
+  },
+  {
+    "name": "feedback_suppress",
+    "source": "feedback.c",
+    "kind": "function",
+    "type": "void (unsigned int, int)"
+  },
+  {
+    "name": "gpuclients_cached",
+    "source": "gpuclients.m",
+    "kind": "function",
+    "type": "void (GPUClientsSample *)"
+  },
+  {
+    "name": "headlights_bind",
+    "source": "headlights.m",
+    "kind": "function",
+    "type": "void (__strong id<MTLRenderCommandEncoder>, const HLConstants *, int)"
+  },
+  {
+    "name": "headlights_casting",
+    "source": "headlights.m",
+    "kind": "function",
+    "type": "int (void)"
+  },
+  {
+    "name": "headlights_colour",
+    "source": "headlights.m",
+    "kind": "function",
+    "type": "id<MTLTexture> (void)"
+  },
+  {
+    "name": "headlights_depth",
+    "source": "headlights.m",
+    "kind": "function",
+    "type": "id<MTLTexture> (void)"
+  },
+  {
+    "name": "headlights_draw",
+    "source": "headlights.m",
+    "kind": "function",
+    "type": "int (const SmResult *, uint64_t, int, HLConstants *)"
+  },
+  {
+    "name": "headlights_drawn",
+    "source": "headlights.m",
+    "kind": "function",
+    "type": "void (int)"
+  },
+  {
+    "name": "headlights_enabled",
+    "source": "headlights.m",
+    "kind": "function",
+    "type": "int (void)"
+  },
+  {
+    "name": "headlights_encoder",
+    "source": "headlights.m",
+    "kind": "function",
+    "type": "id<MTLRenderCommandEncoder> (__strong id<MTLCommandBuffer>)"
+  },
+  {
+    "name": "headlights_material",
+    "source": "headlights.m",
+    "kind": "function",
+    "type": "int (uint64_t)"
+  },
+  {
+    "name": "headlights_missed",
+    "source": "headlights.m",
+    "kind": "function",
+    "type": "void (void)"
+  },
+  {
+    "name": "headlights_shader",
+    "source": "headlights.m",
+    "kind": "function",
+    "type": "char *(const char *, const SmResult *, int, int)"
+  },
+  {
+    "name": "lighting_inv_shadow_strength",
+    "source": "lighting.c",
+    "kind": "function",
+    "type": "float (float)"
+  },
+  {
+    "name": "live_fake_go",
+    "source": "live_fake.m",
+    "kind": "function",
+    "type": "void (void)"
+  },
+  {
+    "name": "live_picture_on_reset",
+    "source": "live_picture.c",
+    "kind": "function",
+    "type": "void (struct Cpu *)"
+  },
+  {
+    "name": "live_picture_sweep_step",
+    "source": "live_picture_sweep.c",
+    "kind": "function",
+    "type": "void (const char *)"
+  },
+  {
+    "name": "mat_aux_ab_held",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "int (void)"
+  },
+  {
+    "name": "mat_aux_constants",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "int (const SmResult *, const float (*)[4], float (*)[4])"
+  },
+  {
+    "name": "mat_aux_draw",
+    "source": "materials.m",
+    "kind": "data",
+    "type": "MatAuxDraw"
+  },
+  {
+    "name": "mat_aux_emit",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "void (void)"
+  },
+  {
+    "name": "mat_aux_fallback",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "void (int)"
+  },
+  {
+    "name": "mat_aux_frame",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "void (void)"
+  },
+  {
+    "name": "mat_aux_shader",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "char *(const SmResult *, int, uint16_t, uint16_t)"
+  },
+  {
+    "name": "mat_bone_car_cube",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "void (uint32_t)"
+  },
+  {
+    "name": "mat_bone_constants",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "int (const float (*)[4], float (*)[4])"
+  },
+  {
+    "name": "mat_bone_draw",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "int (uint32_t *, int *)"
+  },
+  {
+    "name": "mat_bone_emit",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "void (void)"
+  },
+  {
+    "name": "mat_bone_failure",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "void (int)"
+  },
+  {
+    "name": "mat_bone_frame",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "void (void)"
+  },
+  {
+    "name": "mat_bone_reset",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "void (void)"
+  },
+  {
+    "name": "mat_bone_shader",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "char *(const uint32_t *, uint32_t, const SmResult *, int, uint16_t, uint16_t)"
+  },
+  {
+    "name": "mat_bone_skip",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "void (int)"
+  },
+  {
+    "name": "mat_carbon_lamp_draw",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "int (void)"
+  },
+  {
+    "name": "mat_carbon_lamp_shader",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "char *(const uint32_t *, uint32_t, const SmResult *, int *)"
+  },
+  {
+    "name": "mat_cardraw_missing",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "void (int, int, uint32_t, uint32_t)"
+  },
+  {
+    "name": "mat_cardraw_note",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "void (const uint32_t *)"
+  },
+  {
+    "name": "mat_carnm_texture",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "uint32_t (void)"
+  },
+  {
+    "name": "mat_clearcoat_shader",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "char *(const uint32_t *, uint32_t, const SmResult *, int *)"
+  },
+  {
+    "name": "mat_extra_texture",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "int (int)"
+  },
+  {
+    "name": "mat_flake_volume_ok",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "int (void)"
+  },
+  {
+    "name": "mat_glass_constants",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "int (const SmResult *, const SmResult *, const float (*)[4], const float (*)[4], float (*)[4])"
+  },
+  {
+    "name": "mat_glass_draw",
+    "source": "materials.m",
+    "kind": "data",
+    "type": "MatGlassDraw"
+  },
+  {
+    "name": "mat_glass_emit",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "void (int)"
+  },
+  {
+    "name": "mat_glass_enabled",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "int (void)"
+  },
+  {
+    "name": "mat_glass_failure",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "void (int)"
+  },
+  {
+    "name": "mat_glass_frame",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "void (void)"
+  },
+  {
+    "name": "mat_glass_shader",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "char *(const uint32_t *, uint32_t, const SmResult *, int, uint16_t, uint16_t)"
+  },
+  {
+    "name": "mat_glass_uv1",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "int (const uint8_t *, uint32_t, const float **, uint32_t *)"
+  },
+  {
+    "name": "mat_glass_uv_note",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "void (int, uint32_t, uint32_t)"
+  },
+  {
+    "name": "mat_grass_constants",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "int (const SmResult *, const SmResult *, const float (*)[4], const float (*)[4], float (*)[4])"
+  },
+  {
+    "name": "mat_grass_diag_emit",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "void (int, const float (*)[4])"
+  },
+  {
+    "name": "mat_grass_diag_frame",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "void (void)"
+  },
+  {
+    "name": "mat_grass_draw",
+    "source": "materials.m",
+    "kind": "data",
+    "type": "MatGrassDraw"
+  },
+  {
+    "name": "mat_grass_enabled",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "int (void)"
+  },
+  {
+    "name": "mat_grass_noise",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "const uint8_t *(uint32_t *, uint32_t *)"
+  },
+  {
+    "name": "mat_grass_shader",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "char *(const SmResult *, int, int, uint16_t, uint16_t)"
+  },
+  {
+    "name": "mat_grass_shadow_slot",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "int (const SmResult *)"
+  },
+  {
+    "name": "mat_grass_texture",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "uint32_t (int)"
+  },
+  {
+    "name": "mat_grass_volume",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "const uint8_t *(uint32_t *)"
+  },
+  {
+    "name": "mat_headlamp_clear_draw",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "int (void)"
+  },
+  {
+    "name": "mat_headlamp_shader",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "char *(const uint32_t *, uint32_t, const SmResult *, int *)"
+  },
+  {
+    "name": "mat_is_particle",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "int (int)"
+  },
+  {
+    "name": "mat_realworld_shader",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "char *(const uint32_t *, uint32_t, const SmResult *, int *, int)"
+  },
+  {
+    "name": "mat_replace",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "char *(const uint32_t *, uint32_t, const SmResult *, int *)"
+  },
+  {
+    "name": "mat_ripple_frame",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "const uint8_t *(int, uint32_t *, uint32_t *)"
+  },
+  {
+    "name": "mat_roadfilm_shader",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "char *(const uint32_t *, uint32_t, const SmResult *, int *)"
+  },
+  {
+    "name": "mat_soft_particle_view",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "int (void)"
+  },
+  {
+    "name": "mat_soft_smoke_late_shader",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "char *(const uint32_t *, uint32_t, const SmResult *, int *)"
+  },
+  {
+    "name": "mat_soft_smoke_resolved_shader",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "char *(const uint32_t *, uint32_t, const SmResult *, int *)"
+  },
+  {
+    "name": "mat_soft_smoke_shader",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "char *(const uint32_t *, uint32_t, const SmResult *, int *)"
+  },
+  {
+    "name": "mat_trees_constants",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "int (const SmResult *, const float (*)[4], float (*)[4])"
+  },
+  {
+    "name": "mat_trees_draw",
+    "source": "materials.m",
+    "kind": "data",
+    "type": "MatTreesDraw"
+  },
+  {
+    "name": "mat_trees_emit",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "void (int)"
+  },
+  {
+    "name": "mat_trees_enabled",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "int (void)"
+  },
+  {
+    "name": "mat_trees_failure",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "void (int)"
+  },
+  {
+    "name": "mat_trees_frame",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "void (void)"
+  },
+  {
+    "name": "mat_trees_shader",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "char *(const uint32_t *, uint32_t, const SmResult *, int, uint16_t, uint16_t)"
+  },
+  {
+    "name": "mat_water_emit",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "void (int)"
+  },
+  {
+    "name": "mat_water_failure",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "void (int)"
+  },
+  {
+    "name": "mat_water_shader",
+    "source": "materials.m",
+    "kind": "function",
+    "type": "char *(const SmResult *, int, uint16_t, uint16_t)"
+  },
+  {
+    "name": "osk_pad",
+    "source": "onscreen_keyboard.c",
+    "kind": "function",
+    "type": "int (int, uint32_t, int, int, int, int, float, float, int, int)"
+  },
+  {
+    "name": "osk_visible",
+    "source": "onscreen_keyboard.c",
+    "kind": "function",
+    "type": "int (void)"
+  },
+  {
+    "name": "padbind_sync",
+    "source": "padbind.c",
+    "kind": "function",
+    "type": "void (Cpu *)"
+  },
+  {
+    "name": "padbind_test_player_triggers",
+    "source": "padbind.c",
+    "kind": "function",
+    "type": "void (void)"
+  },
+  {
+    "name": "padbind_trigger_sample",
+    "source": "padbind.c",
+    "kind": "function",
+    "type": "void (unsigned int, float, float, uint32_t, uint32_t, int)"
+  },
+  {
+    "name": "padfx_close",
+    "source": "padfx.m",
+    "kind": "function",
+    "type": "void (void)"
+  },
+  {
+    "name": "padfx_connect",
+    "source": "padfx.m",
+    "kind": "function",
+    "type": "void (void *)"
+  },
+  {
+    "name": "padfx_disconnect",
+    "source": "padfx.m",
+    "kind": "function",
+    "type": "void (void *)"
+  },
+  {
+    "name": "padfx_player_update",
+    "source": "padfx.m",
+    "kind": "function",
+    "type": "void (int, void *)"
+  },
+  {
+    "name": "padfx_stop",
+    "source": "padfx.m",
+    "kind": "function",
+    "type": "void (void)"
+  },
+  {
+    "name": "padfx_update",
+    "source": "padfx.m",
+    "kind": "function",
+    "type": "void (void *, int, float, float)"
+  },
+  {
+    "name": "padlink_battery",
+    "source": "padlink.c",
+    "kind": "function",
+    "type": "void (void *, float, int)"
+  },
+  {
+    "name": "padlink_detach",
+    "source": "padlink.c",
+    "kind": "function",
+    "type": "void (void *)"
+  },
+  {
+    "name": "padlink_select",
+    "source": "padlink.c",
+    "kind": "function",
+    "type": "void (void *, const char *)"
+  },
+  {
+    "name": "particles_physical_enabled",
+    "source": "particles_physical.c",
+    "kind": "function",
+    "type": "int (void)"
+  },
+  {
+    "name": "portmenu_char",
+    "source": "portmenu.m",
+    "kind": "function",
+    "type": "int (uint32_t)"
+  },
+  {
+    "name": "portmenu_command_key",
+    "source": "portmenu.m",
+    "kind": "function",
+    "type": "int (uint8_t, int)"
+  },
+  {
+    "name": "portmenu_is_open",
+    "source": "portmenu.m",
+    "kind": "function",
+    "type": "int (void)"
+  },
+  {
+    "name": "portmenu_key",
+    "source": "portmenu.m",
+    "kind": "function",
+    "type": "int (uint8_t, int, int)"
+  },
+  {
+    "name": "portmenu_mouse",
+    "source": "portmenu.m",
+    "kind": "function",
+    "type": "int (int, double, double, double)"
+  },
+  {
+    "name": "portmenu_pad",
+    "source": "portmenu.m",
+    "kind": "function",
+    "type": "uint32_t (uint32_t, int, int, int, int, float, float, int, int, int, uint32_t *)"
+  },
+  {
+    "name": "portmenu_status",
+    "source": "portmenu.m",
+    "kind": "function",
+    "type": "void (const char *, ...)"
+  },
+  {
+    "name": "portmenu_update",
+    "source": "portmenu.m",
+    "kind": "function",
+    "type": "void (void)"
+  },
+  {
+    "name": "post_cuts_ao",
+    "source": "post_cuts.c",
+    "kind": "function",
+    "type": "unsigned int (int, int, int, int)"
+  },
+  {
+    "name": "post_cuts_curve",
+    "source": "post_cuts.c",
+    "kind": "function",
+    "type": "int (uint32_t, uint32_t, int)"
+  },
+  {
+    "name": "post_cuts_curve_source",
+    "source": "post_cuts.c",
+    "kind": "function",
+    "type": "const char *(void)"
+  },
+  {
+    "name": "post_cuts_enabled",
+    "source": "post_cuts.c",
+    "kind": "function",
+    "type": "int (void)"
+  },
+  {
+    "name": "post_cuts_full_target",
+    "source": "post_cuts.c",
+    "kind": "function",
+    "type": "int (int, unsigned int, unsigned int, uint32_t, uint32_t, uint32_t, uint32_t)"
+  },
+  {
+    "name": "post_cuts_quad",
+    "source": "post_cuts.c",
+    "kind": "function",
+    "type": "int (uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t)"
+  },
+  {
+    "name": "postfx_ab_shot",
+    "source": "x360_post.m",
+    "kind": "function",
+    "type": "int (char *, size_t)"
+  },
+  {
+    "name": "postfx_look_variant",
+    "source": "x360_post.m",
+    "kind": "function",
+    "type": "int (const char *)"
+  },
+  {
+    "name": "pre_treatment_register",
+    "source": "pre_treatment.m",
+    "kind": "function",
+    "type": "int (PreTreatmentGraph *, const PreTreatmentNode *)"
+  },
+  {
+    "name": "probe_applied",
+    "source": "probe.m",
+    "kind": "function",
+    "type": "void (int, int)"
+  },
+  {
+    "name": "probe_present",
+    "source": "probe.m",
+    "kind": "function",
+    "type": "void (__strong id<MTLCommandBuffer>, __strong id<MTLTexture>)"
+  },
+  {
+    "name": "probe_sig",
+    "source": "probe.m",
+    "kind": "data",
+    "type": "int"
+  },
+  {
+    "name": "probe_tint",
+    "source": "probe.m",
+    "kind": "function",
+    "type": "void (uint32_t, uint8_t *, size_t, int)"
+  },
+  {
+    "name": "prompts_input",
+    "source": "padprompts.c",
+    "kind": "function",
+    "type": "void (int)"
+  },
+  {
+    "name": "prompts_mouse_moved",
+    "source": "padprompts.c",
+    "kind": "function",
+    "type": "void (float)"
+  },
+  {
+    "name": "prompts_pad_seen",
+    "source": "padprompts.c",
+    "kind": "function",
+    "type": "void (int)"
+  },
+  {
+    "name": "prompts_pointer_visible",
+    "source": "padprompts.c",
+    "kind": "function",
+    "type": "void (void)"
+  },
+  {
+    "name": "pub_update_launch",
+    "source": "pub_update_launch.m",
+    "kind": "function",
+    "type": "void (int *, char ***, const char *)"
+  },
+  {
+    "name": "rain_cover_bind",
+    "source": "rain_cover.m",
+    "kind": "function",
+    "type": "void (__strong id<MTLRenderCommandEncoder>, const SmResult *)"
+  },
+  {
+    "name": "rain_cover_enabled",
+    "source": "rain_cover.m",
+    "kind": "data",
+    "type": "int"
+  },
+  {
+    "name": "rain_cover_on",
+    "source": "rain_cover.m",
+    "kind": "function",
+    "type": "int (void)"
+  },
+  {
+    "name": "rain_cover_ripple",
+    "source": "rain_cover.m",
+    "kind": "function",
+    "type": "int (uint64_t)"
+  },
+  {
+    "name": "rain_cover_shader",
+    "source": "rain_cover.m",
+    "kind": "function",
+    "type": "char *(const uint32_t *, uint32_t, const SmResult *, int *, int)"
+  },
+  {
+    "name": "realworld_materials_draw",
+    "source": "realworld_materials.c",
+    "kind": "function",
+    "type": "int (uint64_t, uint64_t)"
+  },
+  {
+    "name": "realworld_materials_mode",
+    "source": "realworld_materials.c",
+    "kind": "function",
+    "type": "int (void)"
+  },
+  {
+    "name": "realworld_materials_panes",
+    "source": "realworld_materials.c",
+    "kind": "function",
+    "type": "float *(const void *, uint32_t, uint32_t, uint32_t, uint32_t, const void *, uint32_t, uint32_t, uint32_t, int)"
+  },
+  {
+    "name": "realworld_materials_rim_mask",
+    "source": "realworld_materials.c",
+    "kind": "function",
+    "type": "uint32_t (void)"
+  },
+  {
+    "name": "realworld_materials_set_hold",
+    "source": "realworld_materials.c",
+    "kind": "function",
+    "type": "void (void (*)(uint32_t), void (*)(uint32_t))"
+  },
+  {
+    "name": "realworld_materials_window_mask",
+    "source": "realworld_materials.c",
+    "kind": "function",
+    "type": "int (void)"
+  },
+  {
+    "name": "replay_arm_action",
+    "source": "cliprec.mm",
+    "kind": "function",
+    "type": "void (int)"
+  },
+  {
+    "name": "replay_controls_cancel",
+    "source": "portmenu.m",
+    "kind": "function",
+    "type": "void (void)"
+  },
+  {
+    "name": "replay_controls_disconnect",
+    "source": "portmenu.m",
+    "kind": "function",
+    "type": "void (void)"
+  },
+  {
+    "name": "replay_save_action",
+    "source": "cliprec.mm",
+    "kind": "function",
+    "type": "void (int)"
+  },
+  {
+    "name": "report_init",
+    "source": "report.m",
+    "kind": "function",
+    "type": "void (void)"
+  },
+  {
+    "name": "report_note",
+    "source": "report.m",
+    "kind": "function",
+    "type": "void (const char *, ...)"
+  },
+  {
+    "name": "report_shot",
+    "source": "report.m",
+    "kind": "function",
+    "type": "int (char *, size_t)"
+  },
+  {
+    "name": "report_shot_ready",
+    "source": "report.m",
+    "kind": "function",
+    "type": "void (const char *)"
+  },
+  {
+    "name": "roadfilm_draw",
+    "source": "roadfilm.m",
+    "kind": "function",
+    "type": "int (uint64_t, float)"
+  },
+  {
+    "name": "roadfilm_enabled",
+    "source": "roadfilm.m",
+    "kind": "function",
+    "type": "int (void)"
+  },
+  {
+    "name": "roadfilm_shader_hash",
+    "source": "roadfilm.m",
+    "kind": "function",
+    "type": "int (uint64_t)"
+  },
+  {
+    "name": "roam_online_active",
+    "source": "roam_game.c",
+    "kind": "data",
+    "type": "atomic_int"
+  },
+  {
+    "name": "rumble_close",
+    "source": "rumble.m",
+    "kind": "function",
+    "type": "void (void)"
+  },
+  {
+    "name": "rumble_update",
+    "source": "rumble.m",
+    "kind": "function",
+    "type": "void (void)"
+  },
+  {
+    "name": "save_timing_enter",
+    "source": "save_timing.c",
+    "kind": "function",
+    "type": "unsigned int (const char *)"
+  },
+  {
+    "name": "save_timing_leave",
+    "source": "save_timing.c",
+    "kind": "function",
+    "type": "void (unsigned int, int64_t)"
+  },
+  {
+    "name": "server_dispatch",
+    "source": "server_loader.c",
+    "kind": "function",
+    "type": "int (Cpu *, uint32_t)"
+  },
+  {
+    "name": "server_free",
+    "source": "server_loader.c",
+    "kind": "function",
+    "type": "int (Cpu *, uint32_t)"
+  },
+  {
+    "name": "server_handle",
+    "source": "server_loader.c",
+    "kind": "function",
+    "type": "uint32_t (void)"
+  },
+  {
+    "name": "server_import",
+    "source": "server_loader.c",
+    "kind": "function",
+    "type": "const char *(uint32_t, unsigned int *)"
+  },
+  {
+    "name": "server_library_name",
+    "source": "server_loader.c",
+    "kind": "function",
+    "type": "int (const char *)"
+  },
+  {
+    "name": "server_load",
+    "source": "server_loader.c",
+    "kind": "function",
+    "type": "uint32_t (Cpu *, const char *)"
+  },
+  {
+    "name": "server_proc",
+    "source": "server_loader.c",
+    "kind": "function",
+    "type": "uint32_t (uint32_t, uint32_t)"
+  },
+  {
+    "name": "settings_game_language",
+    "source": "settings_port.c",
+    "kind": "function",
+    "type": "const char *(void)"
+  },
+  {
+    "name": "sign_diag_active",
+    "source": "sign_diag.m",
+    "kind": "function",
+    "type": "int (void)"
+  },
+  {
+    "name": "sign_diag_canonical",
+    "source": "sign_diag.m",
+    "kind": "function",
+    "type": "int (unsigned int)"
+  },
+  {
+    "name": "sign_diag_direct",
+    "source": "sign_diag.m",
+    "kind": "function",
+    "type": "id<MTLFunction> (uint64_t, const char *)"
+  },
+  {
+    "name": "sign_diag_draw",
+    "source": "sign_diag.m",
+    "kind": "function",
+    "type": "void (uint64_t, uint64_t, unsigned int, unsigned int, int, int32_t, unsigned int, const SmResult *, const SmResult *)"
+  },
+  {
+    "name": "sign_diag_finish_present",
+    "source": "sign_diag.m",
+    "kind": "function",
+    "type": "void (__strong id<MTLCommandBuffer>)"
+  },
+  {
+    "name": "sign_diag_freeze",
+    "source": "sign_diag.m",
+    "kind": "function",
+    "type": "void (const char *, void *, size_t)"
+  },
+  {
+    "name": "sign_diag_on",
+    "source": "sign_diag.m",
+    "kind": "data",
+    "type": "int"
+  },
+  {
+    "name": "sign_diag_pipeline",
+    "source": "sign_diag.m",
+    "kind": "function",
+    "type": "void (uint64_t, MTLRenderPipelineDescriptor *__strong, const char *)"
+  },
+  {
+    "name": "sign_diag_present",
+    "source": "sign_diag.m",
+    "kind": "function",
+    "type": "void (__strong id<MTLCommandBuffer>, __strong id<MTLTexture>)"
+  },
+  {
+    "name": "sign_diag_record_history",
+    "source": "sign_diag.m",
+    "kind": "function",
+    "type": "void (const char *, const void *, size_t)"
+  },
+  {
+    "name": "sign_diag_replay",
+    "source": "sign_diag.m",
+    "kind": "function",
+    "type": "void (__strong id<MTLRenderCommandEncoder>)"
+  },
+  {
+    "name": "sign_diag_scene",
+    "source": "sign_diag.m",
+    "kind": "function",
+    "type": "void (__strong id<MTLCommandBuffer>, __strong id<MTLTexture>)"
+  },
+  {
+    "name": "sign_diag_tee",
+    "source": "sign_diag.m",
+    "kind": "function",
+    "type": "id<MTLRenderCommandEncoder> (__strong id<MTLRenderCommandEncoder>, uint64_t, __strong id<MTLTexture>, __strong id<MTLTexture>, __strong id<MTLDepthStencilState>)"
+  },
+  {
+    "name": "sign_diag_texture_view",
+    "source": "sign_diag.m",
+    "kind": "function",
+    "type": "id<MTLTexture> (uint32_t, __strong id<MTLTexture>)"
+  },
+  {
+    "name": "slowlog_lum_wait",
+    "source": "slowlog.m",
+    "kind": "function",
+    "type": "void (uint64_t)"
+  },
+  {
+    "name": "soft_half_up_msl",
+    "source": "soft_smoke_half.m",
+    "kind": "data",
+    "type": "const char[762]"
+  },
+  {
+    "name": "soft_smoke_half_ab",
+    "source": "soft_smoke_half.m",
+    "kind": "function",
+    "type": "void (NSArray *__strong, __strong id<MTLTexture>, int)"
+  },
+  {
+    "name": "soft_smoke_half_ab_on",
+    "source": "soft_smoke_half.m",
+    "kind": "function",
+    "type": "int (void)"
+  },
+  {
+    "name": "soft_smoke_half_warm",
+    "source": "soft_smoke_half.m",
+    "kind": "function",
+    "type": "void (void)"
+  },
+  {
+    "name": "split_capture_receiver_texture",
+    "source": "splitcapture.c",
+    "kind": "function",
+    "type": "void (unsigned int, uint32_t)"
+  },
+  {
+    "name": "stream_key_forget",
+    "source": "stream_key.m",
+    "kind": "function",
+    "type": "void (int)"
+  },
+  {
+    "name": "stream_key_route_event",
+    "source": "stream_key.m",
+    "kind": "function",
+    "type": "int (NSEvent *__strong)"
+  },
+  {
+    "name": "temporal_draw_target",
+    "source": "temporal_render.m",
+    "kind": "data",
+    "type": "TemporalMotionTarget *"
+  },
+  {
+    "name": "temporal_draw_view",
+    "source": "temporal_render.m",
+    "kind": "data",
+    "type": "TemporalViewId"
+  },
+  {
+    "name": "temporal_pose_commit",
+    "source": "temporal_state.c",
+    "kind": "function",
+    "type": "int (TemporalViewId, uint64_t)"
+  },
+  {
+    "name": "temporal_pose_draw",
+    "source": "temporal_state.c",
+    "kind": "function",
+    "type": "const TemporalPartPose *(TemporalViewId)"
+  },
+  {
+    "name": "temporal_render_constants",
+    "source": "temporal_render.m",
+    "kind": "function",
+    "type": "int (const TemporalViewState *, const TemporalPartPose *, int, const float *, SmTemporalAux *)"
+  },
+  {
+    "name": "temporal_render_moved",
+    "source": "temporal_render.m",
+    "kind": "function",
+    "type": "int (const TemporalViewState *, const TemporalPartPose *, const uint32_t *)"
+  },
+  {
+    "name": "temporal_render_pipeline",
+    "source": "temporal_render.m",
+    "kind": "function",
+    "type": "int (__strong id<MTLDevice>, MTLRenderPipelineDescriptor *__strong, NSString *__strong, NSString *__strong, int)"
+  },
+  {
+    "name": "temporal_render_record",
+    "source": "temporal_render.m",
+    "kind": "function",
+    "type": "id<MTLRenderCommandEncoder> (__strong id<MTLRenderCommandEncoder>, TemporalMotionTarget *, TemporalViewId, __strong id<MTLRenderPipelineState>, const SmTemporalAux *)"
+  },
+  {
+    "name": "temporal_render_resolve",
+    "source": "temporal_render.m",
+    "kind": "function",
+    "type": "id<MTLTexture> (__strong id<MTLDevice>, __strong id<MTLCommandBuffer>, TemporalMotionTarget *, __strong id<MTLTexture>, TemporalViewId)"
+  },
+  {
+    "name": "temporal_render_scene",
+    "source": "temporal_render.m",
+    "kind": "function",
+    "type": "int (__strong id<MTLTexture>, __strong id<MTLTexture>, uint64_t, const uint32_t *, int)"
+  },
+  {
+    "name": "temporal_state_requested",
+    "source": "temporal_state.c",
+    "kind": "data",
+    "type": "int"
+  },
+  {
+    "name": "temporal_view_state",
+    "source": "temporal_state.c",
+    "kind": "function",
+    "type": "const TemporalViewState *(TemporalViewId)"
+  },
+  {
+    "name": "traffic_detail_ab_shot",
+    "source": "traffic_detail.c",
+    "kind": "function",
+    "type": "int (char *, size_t)"
+  },
+  {
+    "name": "underglow_render_mesh_observe",
+    "source": "underglow_render.m",
+    "kind": "function",
+    "type": "void (const UGMeshView *)"
+  },
+  {
+    "name": "underglow_render_observing",
+    "source": "underglow_render.m",
+    "kind": "function",
+    "type": "int (void)"
+  },
+  {
+    "name": "underglow_ui_step",
+    "source": "underglow_ui.c",
+    "kind": "function",
+    "type": "int (const char *, uint64_t, const char *, const char **)"
+  },
+  {
+    "name": "widescreen_drop_offset",
+    "source": "widescreen.c",
+    "kind": "function",
+    "type": "void (Cpu *, uint32_t)"
+  },
+  {
+    "name": "widescreen_drop_quad",
+    "source": "widescreen.c",
+    "kind": "function",
+    "type": "void (Cpu *, uint32_t, uint32_t)"
+  },
+  {
+    "name": "widescreen_mode",
+    "source": "widescreen.c",
+    "kind": "function",
+    "type": "void (int, uint32_t *, uint32_t *)"
+  },
+  {
+    "name": "widescreen_projection",
+    "source": "widescreen.c",
+    "kind": "function",
+    "type": "void (Cpu *, uint32_t)"
+  },
+  {
+    "name": "x360_arrest_draws",
+    "source": "x360_textures.m",
+    "kind": "data",
+    "type": "uint32_t"
+  },
+  {
+    "name": "x360_hd_creating",
+    "source": "x360_textures.m",
+    "kind": "data",
+    "type": "int"
+  },
+  {
+    "name": "x360_post_ssao_enabled",
+    "source": "x360_post.m",
+    "kind": "function",
+    "type": "int (void)"
+  },
+  {
+    "name": "x360_reflection_size",
+    "source": "x360.m",
+    "kind": "function",
+    "type": "void (uint32_t *, uint32_t *)"
+  },
+  {
+    "name": "x360_reflection_target",
+    "source": "x360.m",
+    "kind": "function",
+    "type": "int (uint32_t, uint32_t, uint32_t)"
+  },
+  {
+    "name": "x360_shadow_border",
+    "source": "x360.m",
+    "kind": "function",
+    "type": "int (void)"
+  },
+  {
+    "name": "x360_shadow_camera",
+    "source": "x360.m",
+    "kind": "function",
+    "type": "void (Cpu *, uint32_t, uint32_t)"
+  },
+  {
+    "name": "x360_shadow_edge",
+    "source": "x360.m",
+    "kind": "function",
+    "type": "int (void)"
+  },
+  {
+    "name": "x360_shadow_texture_size",
+    "source": "x360.m",
+    "kind": "function",
+    "type": "void (uint32_t *, uint32_t *)"
+  },
+  {
+    "name": "x360_ui_diag_hash",
+    "source": "x360_textures.m",
+    "kind": "function",
+    "type": "uint32_t (uint32_t)"
+  },
+  {
+    "name": "x360music_read",
+    "source": "x360audio.c",
+    "kind": "function",
+    "type": "size_t (X360MusicHandle *, void *, size_t)"
+  },
+  {
+    "name": "x360music_seek",
+    "source": "x360audio.c",
+    "kind": "function",
+    "type": "int64_t (X360MusicHandle *, int64_t, unsigned int)"
+  }
+]

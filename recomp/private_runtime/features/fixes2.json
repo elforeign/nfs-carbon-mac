@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_fix_movie.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_layouts": {
+        "movie": "ECX player: +1CC state, +180 audio stream, +8C connected counter. Stream +C buffered bytes; diagnostics only."
+      }
+    },
+    "carbon_fix_checks.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_layouts": {
+        "culler": "ECX culler: eleven byte visibility results +18+i*20; read after original only in race flow 6. Audio poll observes native 00888912 return only."
+      },
+      "guest_accesses": {
+        "carbon_fix_cull_check": {
+          "read": [
+            11115452
+          ]
+        }
+      }
+    }
+  },
+  "staged_sources": {
+    "carbon_fix_movie.c": "carbon_fix_movie.c",
+    "carbon_fix_checks.h": "carbon_fix_checks.h"
+  },
+  "bindings": {
+    "carbon_fix_movie.c": {
+      "source": "carbon_fix_movie.c",
+      "sha256": "95eb6cac262aa1cb257bb38cc2f48c41162470e075b00a725f5074e5854d1e17",
+      "functions": {}
+    },
+    "carbon_fix_checks.h": {
+      "source": "carbon_fix_checks.h",
+      "sha256": "c7f2221cee3f242b61aea4e4655d6339c1fc001f679a924b346813828235a815",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

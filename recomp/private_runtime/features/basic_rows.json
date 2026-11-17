@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "game_basic_rows.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    }
+  },
+  "staged_sources": {
+    "game_basic_rows.h": "game_basic_rows.h"
+  },
+  "bindings": {
+    "game_basic_rows.h": {
+      "source": "game_basic_rows.h",
+      "sha256": "b3add494f76758d447e2b113d34d896a60fcc15dfecf1d86203ca6fb0bd56dcd",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

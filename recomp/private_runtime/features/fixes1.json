@@ -1,0 +1,102 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_fix_save.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_accesses": {
+        "carbon_fix_save_records": {
+          "read": [
+            11134596,
+            11107648
+          ]
+        }
+      },
+      "guest_layouts": {
+        "save": "ECX+7C header, +84 body, +1C version; header +4 length,+8 format,+C version; body records at +30: id,+4 size,+10 payload. Write only unmatched record id.",
+        "handlers": "A97D40 circular next pointers, sentinel=A97D3C; handler=node-4: vtable,+4 next,+10 id. Known vtables supply sizes; unknown/ambiguous lists unchanged."
+      }
+    },
+    "carbon_fix_clock.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_accesses": {
+        "carbon_fix_clock_tick": {
+          "read": [
+            11849688
+          ],
+          "write": [
+            11849688
+          ]
+        }
+      },
+      "guest_layouts": {
+        "time": "B4CFD8 float: native resets resynchronize the host double; positive x87 return from 0076ADA0 is the applied callback timestep. No writes to counters, dt or callbacks."
+      }
+    },
+    "carbon_fix_model.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_accesses": {
+        "carbon_fix_model_probe": {
+          "read": [
+            12012748
+          ]
+        },
+        "carbon_fix_model_load": {
+          "read": [
+            12012748
+          ]
+        }
+      },
+      "guest_layouts": {
+        "ride": "stack arg0 points to ride; read/write its type word only, restore after original.",
+        "types": "B74CCC points to 95 inline directory names at stride D0; replacement=stock Viper only if present.",
+        "probe": "006B2360(path) via copied CPU; 128 temporary guest stack bytes saved/restored for the same CARS/name/TEXTURES.BIN path."
+      }
+    }
+  },
+  "staged_sources": {
+    "carbon_fix_save.c": "carbon_fix_save.c",
+    "carbon_fix_clock.c": "carbon_fix_clock.c",
+    "carbon_fix_model.c": "carbon_fix_model.c"
+  },
+  "bindings": {
+    "carbon_fix_save.c": {
+      "source": "carbon_fix_save.c",
+      "sha256": "b6c4cd480b2dc4d68654dd1a535b86b268c15b259a30988a1e06ccc7223e24c6",
+      "functions": {}
+    },
+    "carbon_fix_clock.c": {
+      "source": "carbon_fix_clock.c",
+      "sha256": "bb0e73f3bac96989de2d556114a60fd52241177af32f872ab18596c8279fb28c",
+      "functions": {}
+    },
+    "carbon_fix_model.c": {
+      "source": "carbon_fix_model.c",
+      "sha256": "d31a4247c9e69b5ad06d9ce2f5fbedbb5d9b647439280d0876e7cf94523f228a",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

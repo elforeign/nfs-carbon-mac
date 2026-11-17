@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_addons_gameplay.c": {
+      "kind": "unit",
+      "class": "mixed",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_addons_gameplay_language.c": {
+      "kind": "unit",
+      "class": "mixed",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_addons_gameplay_cards.c": {
+      "kind": "unit",
+      "class": "mixed",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_accesses": {
+        "carbon_addons_cards_notification": {
+          "read": [
+            5796832
+          ]
+        },
+        "carbon_addons_cards_select": {
+          "write": [
+            5796832
+          ]
+        }
+      },
+      "guest_layouts": {
+        "scroller": "005873E0 returns array-scroller item pointers (+C screen object, +10 selected texture pointer); consumed by notification and selection."
+      }
+    }
+  },
+  "staged_sources": {
+    "carbon_addons_gameplay.c": "carbon_addons_gameplay.c",
+    "carbon_addons_gameplay_language.c": "carbon_addons_gameplay_language.c",
+    "carbon_addons_gameplay_cards.c": "carbon_addons_gameplay_cards.c"
+  },
+  "bindings": {
+    "carbon_addons_gameplay.c": {
+      "source": "carbon_addons_gameplay.c",
+      "sha256": "0962e49ad409c82fef14555f5658480d59827be770a15f0fc3ad00781503ba5b",
+      "functions": {}
+    },
+    "carbon_addons_gameplay_language.c": {
+      "source": "carbon_addons_gameplay_language.c",
+      "sha256": "89403ff9c8b1b75665d3d92c74efeddd29e5d323365ba97c0fc96d25cb1afe03",
+      "functions": {}
+    },
+    "carbon_addons_gameplay_cards.c": {
+      "source": "carbon_addons_gameplay_cards.c",
+      "sha256": "927e96fdf8624ccc1e45cebebac306cae9a5d867b625fb52766a762fb451a88b",
+      "functions": {
+        "carbon_addons_cards_notification": {
+          "read": [
+            5796832
+          ]
+        },
+        "carbon_addons_cards_select": {
+          "write": [
+            5796832
+          ]
+        }
+      }
+    }
+  },
+  "enabled_providers": []
+}

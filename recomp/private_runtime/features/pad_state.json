@@ -1,0 +1,124 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_pad_delivery.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_pad_guard.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_pad_poll.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_pad_remap.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_pad_script.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_pad_state.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_pad_state_impl.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    }
+  },
+  "staged_sources": {
+    "carbon_pad_delivery.h": "carbon_pad_delivery.h",
+    "carbon_pad_guard.h": "carbon_pad_guard.h",
+    "carbon_pad_poll.h": "carbon_pad_poll.h",
+    "carbon_pad_remap.h": "carbon_pad_remap.h",
+    "carbon_pad_script.h": "carbon_pad_script.h",
+    "carbon_pad_state.h": "carbon_pad_state.h",
+    "carbon_pad_state_impl.h": "carbon_pad_state_impl.h"
+  },
+  "bindings": {
+    "carbon_pad_delivery.h": {
+      "source": "carbon_pad_delivery.h",
+      "sha256": "97dceeb88c98ca8debae9c37a2542f4e70d5a880ee6de97db0cb4a53c608d67e",
+      "functions": {}
+    },
+    "carbon_pad_guard.h": {
+      "source": "carbon_pad_guard.h",
+      "sha256": "da2e4815713a7da6ea0d13845dba42b4ba2536957d37a23c703d3611415e9636",
+      "functions": {}
+    },
+    "carbon_pad_poll.h": {
+      "source": "carbon_pad_poll.h",
+      "sha256": "210dea9c556f3ab7b41dca9796248922181b9af2cb82271b27729f24dd4f1570",
+      "functions": {}
+    },
+    "carbon_pad_remap.h": {
+      "source": "carbon_pad_remap.h",
+      "sha256": "544ccd2470a7422b87f7455983fad5d337674463b50a3a5f85e6aa4e737b77e2",
+      "functions": {}
+    },
+    "carbon_pad_script.h": {
+      "source": "carbon_pad_script.h",
+      "sha256": "04b691980a1f06dd3f5e936219d733c0191e81ebb4d5e6bad03609c92177c26e",
+      "functions": {}
+    },
+    "carbon_pad_state.h": {
+      "source": "carbon_pad_state.h",
+      "sha256": "5c51be33d0b560551d6a1cb2957978ff5ec808ea09297b233a1c8270a41ef299",
+      "functions": {}
+    },
+    "carbon_pad_state_impl.h": {
+      "source": "carbon_pad_state_impl.h",
+      "sha256": "968c9dec33d12be169c6084da6b05795ed47a55b0801716011d42214945d6df4",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

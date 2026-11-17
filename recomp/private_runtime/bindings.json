@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "private_carbon_skipfe.h": {
+      "source": "carbon_skipfe.h",
+      "sha256": "2f797da4da0fec551ed07a5ef0a82fc47b1d3730141e02b2f6b845e14ab9a860",
+      "functions": {
+        "private_carbon_skipfe_setup": {
+          "read": [
+            10891580,
+            10891588
+          ],
+          "write": [
+            10891580,
+            10891584,
+            10891588
+          ]
+        }
+      },
+      "event_accesses": {
+        "read": [
+          11134516
+        ],
+        "write": [
+          10891584,
+          11134512,
+          11134536
+        ]
+      }
+    },
+    "private_carbon_audio.h": {
+      "source": "carbon_audio.h",
+      "sha256": "f2f90900f51b3613fcb741628ed053b00fe4f4acfa9092c40e0eb463823e4996",
+      "functions": {
+        "private_carbon_audio_setup": {
+          "read": [],
+          "write": [
+            10894960
+          ]
+        }
+      }
+    },
+    "private_carbon_audio_limiter.h": {
+      "source": "carbon_audio_limiter.h",
+      "sha256": "bf8240f6fb40a8e5f443f1d1c18bf73ad731ab6851ddbb7577e4f4105aad3d09",
+      "functions": {}
+    },
+    "game_diagnostics.h": {
+      "source": "game_diagnostics.h",
+      "sha256": "508b898da1c53334fad2b02869e1fe80a6aa38036601945eb32dde6cc7e30ad6",
+      "functions": {
+        "diag_warp_pass": {
+          "read": [
+            4209968,
+            6343504
+          ]
+        }
+      }
+    }
+  }
+}

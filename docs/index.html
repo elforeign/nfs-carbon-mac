@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NFS Carbon Native for Mac</title>
+<meta name="description" content="Need for Speed: Carbon (2006), rebuilt for Apple Silicon Macs by static recompilation. For people who own the PC game.">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#051217">
+<!-- One static page: inline CSS, no scripts, no analytics. The only external request is the web fonts. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=IBM+Plex+Sans:wght@400;600&family=Martian+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Night palette: blue-green dark with sodium-lamp amber. */
+  --night: #051217;
+  --night-2: #0a1d23;
+  --panel: #0d242b;
+  --line: #1b3a42;
+  --text: #dbe7e6;
+  --muted: #8ea8a9;
+  --amber: #ffab2e;
+  --amber-ink: #1c1100;
+  --siren-red: #ff2b3d;
+  --siren-blue: #2f7dff;
+  --gutter: 16px;
+  --display: "Big Shoulders Display", "Arial Narrow", Impact, sans-serif;
+  --body: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+  --mono: "Martian Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+* { box-sizing: border-box; }
+html {
+  /* 16px on a phone, about 26px on a 4K TV-sized monitor. */
+  font-size: clamp(16px, 0.42vw + 11px, 26px);
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  margin: 0;
+  background: var(--night);
+  color: var(--text);
+  font-family: var(--body);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+a { color: var(--amber); text-underline-offset: 0.18em; }
+a:hover { color: #ffc56b; }
+img { max-width: 100%; height: auto; display: block; }
+h1, h2, h3 { font-family: var(--display); font-weight: 900; text-transform: uppercase; letter-spacing: 0.01em; line-height: 0.95; margin: 0 0 0.5em; }
+h2 { font-size: clamp(2.2rem, 4vw, 3.2rem); }
+h3 { font-family: var(--body); text-transform: none; font-weight: 600; font-size: 1.05rem; line-height: 1.3; letter-spacing: 0; margin-bottom: 0.25em; }
+p { margin: 0 0 1em; }
+code { font-family: var(--mono); font-size: 0.82em; background: var(--night-2); padding: 0.1em 0.35em; border-radius: 2px; }
+.wrap { width: 100%; max-width: 72rem; margin: 0 auto; padding: 0 var(--gutter); }
+.stamp { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+section { padding: 4rem 0; }
+
+/* Hero: the real game on the right, cut on a diagonal. */
+.hero { position: relative; background: var(--night); overflow: hidden; }
+.hero-shot { position: relative; }
+.hero-shot img { width: 100%; aspect-ratio: 1600 / 1004; object-fit: cover; clip-path: polygon(0 0, 100% 0, 100% 88%, 0 100%); }
+.hero-shot .stamp { position: absolute; right: var(--gutter); bottom: 14%; background: rgba(5,18,23,0.75); padding: 0.3em 0.6em; color: var(--text); }
+.hero-copy { padding: 1.5rem 0 2.5rem; }
+.hero h1 { font-size: clamp(3rem, 9vw, 6.2rem); margin-bottom: 0.35em; }
+.hero h1 span { color: var(--amber); display: block; }
+.lede { font-size: 1.1rem; max-width: 36rem; }
+.kicker { font-family: var(--display); font-weight: 700; font-size: 1.6rem; text-transform: uppercase; letter-spacing: 0.02em; margin: 0 0 1rem; }
+@media (min-width: 60rem) {
+  .hero { min-height: 40rem; }
+  .hero-shot { position: absolute; inset: 0 0 0 38%; }
+  .hero-shot img { height: 100%; aspect-ratio: auto; clip-path: polygon(18% 0, 100% 0, 100% 100%, 0 100%); }
+  .hero-shot::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, var(--night) 0%, rgba(5,18,23,0) 30%); pointer-events: none; }
+  .hero-shot .stamp { bottom: 1.25rem; }
+  .hero-copy { position: relative; z-index: 1; max-width: 34rem; padding: 4.5rem 0 4rem; }
+}
+.buttons { display: flex; flex-wrap: wrap; gap: 0.6rem; margin: 1.5rem 0 0; }
+.btn {
+  display: inline-block; padding: 0.75em 1.2em; text-decoration: none;
+  font-weight: 600; color: var(--text); border: 1px solid var(--line); background: var(--night-2);
+  border-radius: 2px;
+}
+.btn:hover { color: var(--text); border-color: var(--muted); }
+.btn.go { background: var(--amber); color: var(--amber-ink); border-color: var(--amber); }
+.btn.go:hover { background: #ffc56b; color: var(--amber-ink); }
+
+/* Skewed band: motion line under the hero. */
+.band { position: relative; z-index: 2; background: var(--amber); color: var(--amber-ink); transform: skewY(-2deg); margin: 0 0 1rem; padding: 1rem 0; }
+.band .wrap { transform: skewY(2deg); display: flex; flex-wrap: wrap; gap: 0.3rem 1.6rem; }
+.band span { font-family: var(--mono); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+
+/* Legal notices: plain. */
+.notices { display: grid; gap: 1rem 2.5rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr)); padding-top: 2.5rem; }
+.notice { border-left: 3px solid var(--line); padding-left: 1rem; }
+.notice.own { border-left-color: var(--amber); }
+.notice p:last-child { margin: 0; }
+
+/* Rap sheet */
+.sheet { position: relative; background: var(--night-2); border: 1px solid var(--line); padding: 2rem var(--gutter) 1.5rem; }
+@media (min-width: 40rem) { .sheet { padding: 2.25rem 2rem 2rem; } }
+.lightbar { position: absolute; left: -1px; right: -1px; top: -1px; height: 4px;
+  background: linear-gradient(90deg, var(--siren-red) 0 50%, var(--siren-blue) 50% 100%); background-size: 200% 100%; }
+@media (prefers-reduced-motion: no-preference) {
+  .lightbar { animation: sweep 1.6s steps(2, jump-none) 4; }
+  @keyframes sweep { from { background-position: 0 0; } to { background-position: 100% 0; } }
+}
+.sheet-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0.5rem 2rem; border-bottom: 1px dashed var(--line); margin-bottom: 1.5rem; padding-bottom: 1rem; }
+.sheet-head h2 { margin: 0; }
+.sheet-body { display: grid; gap: 2rem 3rem; }
+@media (min-width: 60rem) { .sheet-body { grid-template-columns: 1.25fr 1fr; } }
+.charges { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.1rem; }
+.charges li { padding-left: 1rem; border-left: 2px solid var(--amber); }
+.charges p { margin: 0; color: var(--muted); }
+dl.fields { margin: 0; display: grid; grid-template-columns: minmax(7.5rem, auto) 1fr; gap: 0.5rem 1rem; font-size: 0.95rem; }
+dl.fields dt { font-family: var(--mono); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); padding-top: 0.3em; }
+dl.fields dd { margin: 0; }
+.heat { display: flex; gap: 4px; margin: 0.35rem 0 0.25rem; }
+.heat i { display: block; width: 1.4rem; height: 0.5rem; background: var(--amber); transform: skewX(-20deg); }
+.open { margin-top: 1.75rem; padding-top: 1rem; border-top: 1px dashed var(--line); }
+.open p { margin: 0; }
+
+/* Screenshots: one big, the rest in a strip. */
+.shots { display: grid; gap: 0.6rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.shots figure { margin: 0; }
+.shots figure.big { grid-column: 1 / -1; }
+.shots img { width: 100%; aspect-ratio: 1600 / 1004; object-fit: cover; background: var(--night-2); }
+.shots figcaption { margin-top: 0.3rem; }
+@media (min-width: 60rem) {
+  .shots { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .shots figure.big { grid-column: 1 / span 3; grid-row: span 3; }
+  .shots figure.big img { height: 100%; }
+}
+
+/* Setup + requirements */
+.split { display: grid; gap: 3rem; }
+@media (min-width: 60rem) { .split { grid-template-columns: 1.3fr 1fr; } }
+ol.steps { counter-reset: step; list-style: none; margin: 0; padding: 0; display: grid; gap: 1.1rem; }
+ol.steps li { counter-increment: step; display: grid; grid-template-columns: 2.4rem 1fr; gap: 0.75rem; }
+ol.steps li::before { content: counter(step); font-family: var(--display); font-weight: 900; font-size: 2.4rem; line-height: 0.9; color: var(--amber); }
+ul.plain { margin: 0; padding: 0 0 0 1.1em; display: grid; gap: 0.5rem; }
+ul.plain li::marker { color: var(--amber); }
+.links { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1.5rem; }
+
+/* New in 4.4 and the garage list */
+.cols { display: grid; gap: 1.25rem 3rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); }
+.cols div p { margin: 0; color: var(--muted); }
+.tinted { background: var(--night-2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+
+/* Support. Ko-fi is live; the GitHub Sponsors button stays hidden (class sponsors-off on <body>) until GitHub approves the listing. */
+.sponsors-off .gh-sponsors { display: none; }
+#support .wrap { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem 3rem; }
+#support p { max-width: 38rem; margin: 0; }
+
+footer { border-top: 1px solid var(--line); padding: 2.5rem 0 3rem; color: var(--muted); font-size: 0.85rem; }
+footer p { max-width: 62rem; }
+</style>
+</head>
+<body>
+<header class="wrap" style="padding-top:3rem;padding-bottom:1rem">
+  <p class="stamp">Need for Speed: Carbon (2006) &middot; Native for Apple Silicon Macs</p>
+  <h1 style="font-size:clamp(3rem,9vw,6.2rem)">Palmont,<span style="color:var(--amber);display:block">on your Mac.</span></h1>
+  <p class="kicker">No emulator. No Wine. No Windows.</p>
+  <p class="lede">The real PC game, rebuilt for Apple Silicon. Setup translates the game's own code for your Mac and builds it with a Metal renderer, native sound and native controllers. Bring your own Carbon PC game; Setup handles the rest.</p>
+  <div class="buttons">
+    <a class="btn go" href="https://github.com/elforeign/nfs-carbon-mac/releases/latest">Download Setup (1.0.0)</a>
+    <a class="btn" href="https://github.com/elforeign/nfs-carbon-mac/blob/main/GETTING_STARTED.md">Read the setup guide</a>
+    <a class="btn" href="https://discord.gg/d6HfMwdM9v">Join the Discord</a>
+  </div>
+</header>
+<main class="wrap">
+  <section style="padding-top:1.5rem">
+    <figure style="margin:0"><div style="position:relative;aspect-ratio:16 / 9;background:var(--night-2)"><iframe src="https://www.youtube-nocookie.com/embed/Hp7fy4FyHwc" title="Carbon running on a Mac (YouTube)" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;border:0" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div><figcaption class="stamp">Carbon running on a Mac. <a href="https://www.youtube.com/watch?v=Hp7fy4FyHwc">Watch on YouTube</a></figcaption></figure>
+    <div class="notices">
+      <div class="notice own"><p><strong>You need your own copy of the game.</strong> This repository contains no game code, executables, artwork, sound, movies, tracks or textures. Setup builds the game on your Mac from your own Carbon files, and installs it alone: Carbon only. Nothing it builds is meant to be shared, and nothing is uploaded.</p></div>
+      <div class="notice"><p><strong>This project is unofficial.</strong> It is not affiliated with or endorsed by Electronic Arts, Criterion Games or Black Box. <em>Need for Speed</em> and <em>Carbon</em> are trademarks of Electronic Arts Inc.; all other names belong to their owners. Details: <a href="https://github.com/elforeign/nfs-carbon-mac/blob/main/NOTICE">NOTICE</a>.</p></div>
+    </div>
+  </section>
+  <section>
+    <h2>Better than the original.</h2>
+    <p>Press F10 (Fn+F10 on a Mac keyboard, or click the touchpad on a DualSense or DualShock 4) for the settings menu. F10 &gt; Help &gt; Guide explains the settings.</p>
+    <div class="cols">
+      <div><h3>Picture and looks</h3><p>16:9 widescreen with the HUD and menus laid out for it, up to 4K, anti-aliasing. Street lamps light the road and walls at night and show in the car paint. Lacquered paint and real-looking chrome, wheels and glass. Look presets: Port, PC retail or your own picks.</p></div>
+      <div><h3>Performance</h3><p>Native Apple Silicon code. Shaders are prepared in the background so races don't hitch. A frame limit and an optional performance overlay.</p></div>
+      <div><h3>Controllers</h3><p>DualSense, DualShock 4 and other controllers macOS supports, with PlayStation button prompts. Rumble that follows slips, collisions, shifts and nitrous; DualSense adaptive triggers.</p></div>
+      <div><h3>Sound</h3><p>Surround on by default: 5.1 when your output has it, true stereo otherwise. A peak limiter stops loud moments from clipping.</p></div>
+      <div><h3>Quality of life</h3><p>Fixed heat level, no rubber banding, skip the intro movies or the prologue, Unlock All. Clips with sound, the last 30 seconds on a button, YouTube streaming. No EA Nation prompt at start, and updates from inside the game.</p></div>
+    </div>
+  </section>
+  <section>
+    <h2>Three steps to Palmont.</h2>
+    <ol>
+      <li>Download the <strong>Setup app</strong> from the <a href="https://github.com/elforeign/nfs-carbon-mac/releases/latest">latest release</a> and open it. The first time, macOS asks you to allow it once (System Settings &gt; Privacy &amp; Security &gt; Open Anyway).</li>
+      <li>Choose your Carbon game folder (the one with <code>NFSC.exe</code> and <code>TRACKS</code>), a <code>.zip</code>/<code>.7z</code> of it, your PC disc image (<code>.iso</code> or ISO-compatible <code>.mdf</code>), or its Xbox 360 <code>.iso</code>, and click <strong>Build</strong>. From the PC disc, Setup also asks for the official Carbon update for your disc edition and your own compatible <code>NFSC.exe</code> (the one on the disc is copy-protected and cannot be used).</li>
+      <li>Play <strong>NFS Carbon Native</strong> from Applications.</li>
+    </ol>
+    <p>You need an Apple Silicon Mac (M1 or later) with macOS 14.5 or later and Apple's free Command Line Tools (Setup offers to install them).</p>
+    <div class="links">
+      <a class="btn" href="https://github.com/elforeign/nfs-carbon-mac/blob/main/GETTING_STARTED.md">Read the setup guide</a>
+      <a class="btn" href="https://github.com/elforeign/nfs-carbon-mac/blob/main/TROUBLESHOOTING.md">Troubleshooting</a>
+      <a class="btn" href="https://github.com/elforeign/nfs-carbon-mac/blob/main/CHANGELOG.md">Changelog</a>
+    </div>
+  </section>
+  <section>
+    <h2>Help and news.</h2>
+    <p>Questions, help and news on the Discord. Bugs on GitHub issues: F10 &gt; Help &gt; Save report gives you a report to attach.</p>
+    <div class="links">
+      <a class="btn go" href="https://discord.gg/d6HfMwdM9v">Join the Discord</a>
+      <a class="btn" href="https://github.com/elforeign/nfs-carbon-mac/issues">GitHub issues</a>
+    </div>
+  </section>
+  <section>
+    <h2>Also: Most Wanted</h2>
+    <p>Back to Rockport: <a href="https://elforeign.github.io/nfs-most-wanted-mac">Most Wanted for Mac</a>. Bring your own Most Wanted PC game and build its own app. <a href="https://github.com/elforeign/nfs-most-wanted-mac/releases">Most Wanted releases</a>.</p>
+  </section>
+</main>
+<footer class="wrap" style="padding-bottom:3rem">
+  <p>The project's own code is under the <a href="https://github.com/elforeign/nfs-carbon-mac/blob/main/LICENSE">MIT license</a>; it does not relicense the game. Credits and third-party licenses: <a href="https://github.com/elforeign/nfs-carbon-mac/blob/main/NOTICE">NOTICE</a>.</p>
+  <p class="stamp"><a href="https://github.com/elforeign/nfs-carbon-mac">Source on GitHub</a> &middot; <a href="https://github.com/elforeign/nfs-carbon-mac/releases/latest">Latest release</a> &middot; <a href="https://discord.gg/d6HfMwdM9v">Discord</a></p>
+</footer>
+</body>
+</html>

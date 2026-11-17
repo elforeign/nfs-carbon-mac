@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "hooks": [
+    {
+      "address": "00806180",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "00806180",
+        "length": 16,
+        "sha256": "e92cc904963bc9c32e97563674d8ec9e43de4c43f1e9a6047746444276df9987"
+      },
+      "provider": "carbon_route_construct",
+      "job": "C2.route-score"
+    },
+    {
+      "address": "007F62E0",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "007F62E0",
+        "length": 16,
+        "sha256": "52bbbe851f2824185b222e86c3c19d6d564ddbdbf974e047a3c30147bba5256e"
+      },
+      "provider": "carbon_route_insert",
+      "job": "C2.route-score"
+    },
+    {
+      "address": "007EA900",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "007EA900",
+        "length": 16,
+        "sha256": "feff0dc14856b3d812bfc678fa2990ee9e93374a0f31a1ef15001585df998670"
+      },
+      "provider": "carbon_route_set",
+      "job": "C2.route-score"
+    }
+  ]
+}

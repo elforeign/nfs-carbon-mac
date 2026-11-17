@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_mapcursor.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_accesses": {
+        "carbon_mapcursor_input": {
+          "read": [
+            11115100
+          ],
+          "write": [
+            11115100
+          ]
+        }
+      },
+      "guest_layouts": {
+        "worldmap": "005C8C70 entry ECX map: +28 cursor group (FE object F156F6C5, null allowed). Object +1C flags: bit 0 hidden, 02400000 redraw as the native show branch 005C8DCC sets them. +94 mode: the native step decides by pointer in modes 0 and 1 (005C8D0B); mode 2's entry 005CDBF0 hides the cursor. Written only in modes 0 and 1 when the controller is the last input and the cursor is hidden.",
+        "map_input": "0058F770 entry ECX map: +2C input ring, +30/+34 cursor displacement, +94 mode. Ring +0 count, +8 read index, +C capacity; +10 array of 12-byte {event, device, float magnitude}. Events 41/42 update Y and 43/44 X in browsing modes 0/1. Temporarily evaluate the native step at 1/60 second, restore the frame-time bits, then scale only updated axes by actual elapsed frames; absent axes, empty queues and other modes retain native values."
+      }
+    }
+  },
+  "staged_sources": {
+    "carbon_mapcursor.c": "carbon_mapcursor.c"
+  },
+  "bindings": {
+    "carbon_mapcursor.c": {
+      "source": "carbon_mapcursor.c",
+      "sha256": "2ad5b25ca11a1558228fc6cda5617f9605e4f4666f48341ef90e6799d2877c30",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

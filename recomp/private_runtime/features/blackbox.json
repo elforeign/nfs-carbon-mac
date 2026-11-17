@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_blackbox.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    }
+  },
+  "staged_sources": {
+    "carbon_blackbox.c": "carbon_blackbox.c"
+  },
+  "bindings": {
+    "carbon_blackbox.c": {
+      "source": "carbon_blackbox.c",
+      "sha256": "10e8dbd8ab4a18b7aca0e714cda2618f60f4bc53b08dfe893965f60ad05e88d7",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

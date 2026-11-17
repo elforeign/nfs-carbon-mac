@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_pursuit.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_layouts": {
+        "native": "006B7930 normal main-loop step, called once per iteration at 006B8F93; original first. 006B7890 is only the loading/wait step and does not observe ready free roam. A9FF5C/A9FF64 local-player list, witnessed 0076E810 -> player-8 simable. A99BBC flow 6; B4CFE0+24 state 3; B4D964 cinematic; A98284+6A14/+6A18 free roam 0/3. C=A9E874, B=C-4C: B+140 sentinel list next+0 payload+8 count B+148; target M32(P+D0)+1C (00435943/49). P+4C/+54 vehicle array/count, vt+9C=006D80C0 reads vehicle+A8 active. B+90 onroad, B+C4 pool. 0065C550/0060CB50 resolve sim+4 map {begin,end}, sorted 8-byte handle/interface 004061D0 to E; E+1C heat. A83A50 disabled; C+5C nonew. Observer never writes guest memory; copied-Cpu script calls 006513E0,0065C550,00651430 only for the request. Diagnostic-only end reads: P+298 status 3/4; 00572B90 U=M32(M32(M32(A97A7C)+D4)); U+29514 busts, U+29510 evades (004AC910), U+24330 career cash (004A0940). Sample after readiness loss; pointer disappearance alone is not an ending."
+      }
+    }
+  },
+  "staged_sources": {
+    "carbon_pursuit.c": "carbon_pursuit.h"
+  },
+  "bindings": {
+    "carbon_pursuit.c": {
+      "source": "carbon_pursuit.h",
+      "sha256": "5ee71f80af24884a4d17b02581b5edefa81576723bd12d96b4d9891536a461ea",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

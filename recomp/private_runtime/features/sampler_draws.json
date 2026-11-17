@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "private_sampler_draws.inc": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    }
+  },
+  "staged_sources": {
+    "private_sampler_draws.inc": "sampler_draws.h"
+  },
+  "bindings": {
+    "private_sampler_draws.inc": {
+      "source": "sampler_draws.h",
+      "sha256": "1a72a318c967a36cd3303c35411fc433fa49195aac38b4edc1c44541240ef182",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

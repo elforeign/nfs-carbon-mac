@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_lua_unwind.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_accesses": {},
+      "guest_layouts": {
+        "state": "cdecl arg0 L: +50 current error frame. Nonzero owned frame only: write status at frame+44.",
+        "protected": "0064DAF0 entry ESP S: frame=S-4C, buffer=S-48, previous at frame+0; status at frame+44. Resume 0064DB18 then 0064DB3B..4B; restore previous link and native epilogue.",
+        "jmpbuf": "private_crt _setjmp3(buf,0): +0 EBP,+4 EBX,+8 EDI,+C ESI,+10 import ESP,+14 return address,+18 FS:[0],+1C saved try level,+20 signature,+24 zero. Restore saved ESP+4 and FS:[0]; native Lua installs no SEH record."
+      }
+    }
+  },
+  "staged_sources": {
+    "carbon_lua_unwind.c": "carbon_lua_unwind.c"
+  },
+  "bindings": {
+    "carbon_lua_unwind.c": {
+      "source": "carbon_lua_unwind.c",
+      "sha256": "0854f0bac4574ca8338fdb45923e14049bb09e1321f414b61859c811726e7446",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_ao.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_ao_glow.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    }
+  },
+  "staged_sources": {
+    "carbon_ao.h": "carbon_ao.h",
+    "carbon_ao_glow.h": "carbon_ao_glow.h"
+  },
+  "bindings": {
+    "carbon_ao.h": {
+      "source": "carbon_ao.h",
+      "sha256": "97e1b45863617d8e03d8e1d76034bd94a1613b17c0d865c578bc830d3e5c25b0",
+      "functions": {}
+    },
+    "carbon_ao_glow.h": {
+      "source": "carbon_ao_glow.h",
+      "sha256": "16f8bca275714fbfab3d6dd61d095cb3f64748d24ebeed53d4a9b7c62d8cf2da",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

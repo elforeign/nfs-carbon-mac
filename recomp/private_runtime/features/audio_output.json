@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_audio_output.c": {
+      "kind": "unit",
+      "class": "mixed",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_accesses": {
+        "carbon_audio_output_request": {
+          "read": [
+            10894960
+          ]
+        },
+        "carbon_audio_output_frame": {
+          "read": [
+            10891704
+          ],
+          "write": [
+            10894960
+          ]
+        }
+      },
+      "guest_layouts": {
+        "mode": "A63E70 native option 13BF: 1 stereo, 2 surround; DAC request 008A8560 observes before stream recreation. Manager A8BA38 owns Audio Mode at +0x74; setter 0050E050 stores option at +0x5c before DAC 00504530."
+      }
+    }
+  },
+  "staged_sources": {
+    "carbon_audio_output.c": "carbon_audio_output.c"
+  },
+  "bindings": {
+    "carbon_audio_output.c": {
+      "source": "carbon_audio_output.c",
+      "sha256": "1e1cfd2d85a861ec1735827e5dfc3e1005af59d365369059173d40b7bfc27d5c",
+      "functions": {
+        "carbon_audio_output_request": {
+          "read": [
+            10894960
+          ]
+        },
+        "carbon_audio_output_frame": {
+          "read": [
+            10891704
+          ],
+          "write": [
+            10894960
+          ]
+        }
+      }
+    }
+  },
+  "enabled_providers": []
+}

@@ -1,0 +1,270 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_feedback.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_feedback_bindings.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_feedback_collision.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_feedback_counts.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_feedback_dump.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_feedback_names.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_feedback_pause.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_feedback_provider.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_feedback_startup.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_feedback_summary.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_feedback_surface.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_feedback_surfaces.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_feedback_lookup.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_feedback_transport.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_feedback_input.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    }
+  },
+  "staged_sources": {
+    "carbon_feedback.c": "carbon_feedback.c",
+    "carbon_feedback_bindings.h": "carbon_feedback_bindings.h",
+    "carbon_feedback_collision.h": "carbon_feedback_collision.h",
+    "carbon_feedback_counts.h": "carbon_feedback_counts.h",
+    "carbon_feedback_dump.h": "carbon_feedback_dump.h",
+    "carbon_feedback_names.h": "carbon_feedback_names.h",
+    "carbon_feedback_pause.h": "carbon_feedback_pause.h",
+    "carbon_feedback_provider.h": "carbon_feedback_provider.h",
+    "carbon_feedback_startup.h": "carbon_feedback_startup.h",
+    "carbon_feedback_summary.h": "carbon_feedback_summary.h",
+    "carbon_feedback_surface.h": "carbon_feedback_surface.h",
+    "carbon_feedback_surfaces.h": "carbon_feedback_surfaces.h",
+    "carbon_feedback_lookup.h": "carbon_feedback_lookup.h",
+    "carbon_feedback_transport.c": "carbon_feedback_transport.c",
+    "carbon_feedback_input.h": "carbon_feedback_input.h"
+  },
+  "bindings": {
+    "carbon_feedback.c": {
+      "source": "carbon_feedback.c",
+      "sha256": "60d6b3aa34635890b693d6934fe58f3cd0cead67d845169bc1c13e4482083b6a",
+      "functions": {}
+    },
+    "carbon_feedback_bindings.h": {
+      "source": "carbon_feedback_bindings.h",
+      "sha256": "c17a53be1f215741470af9149e6120cc63c89433b6b3aeae4b32e9a65cba062d",
+      "functions": {}
+    },
+    "carbon_feedback_collision.h": {
+      "source": "carbon_feedback_collision.h",
+      "sha256": "9265e3c12106fc2ccf4ccda739c18a6c4840679c4d9247f3aa3d69d79e91b1ad",
+      "functions": {}
+    },
+    "carbon_feedback_counts.h": {
+      "source": "carbon_feedback_counts.h",
+      "sha256": "2e7987ec94edca00aff65f3b45c74b4e50ced5e084155353cf8d9caa66e235f6",
+      "functions": {}
+    },
+    "carbon_feedback_dump.h": {
+      "source": "carbon_feedback_dump.h",
+      "sha256": "ad8c886339e2ac43b0c3b8cc67e05d509abde3c708534a97b74db10db911e959",
+      "functions": {}
+    },
+    "carbon_feedback_names.h": {
+      "source": "carbon_feedback_names.h",
+      "sha256": "643fb3d9c20b59557aac1c627a7c1b8e4d901488e7c29cb5538885910df0988d",
+      "functions": {}
+    },
+    "carbon_feedback_pause.h": {
+      "source": "carbon_feedback_pause.h",
+      "sha256": "fbdd83c96f6bbf5d0d258f3def540467972947d98748c308092582fdaef82f7f",
+      "functions": {}
+    },
+    "carbon_feedback_provider.h": {
+      "source": "carbon_feedback_provider.h",
+      "sha256": "7c8334d1386c37349c43dff298ea5cfa62cc64352105b3a0612ef62191bc3d5a",
+      "functions": {
+        "feedback_setup": {
+          "read": [
+            10363272
+          ],
+          "write": [
+            10363272
+          ]
+        }
+      }
+    },
+    "carbon_feedback_startup.h": {
+      "source": "carbon_feedback_startup.h",
+      "sha256": "cd2856fb024cb2ef011d8cf0a9a27d4fa34f338d8e695f01ce5bfe2fe3f1f9b5",
+      "functions": {}
+    },
+    "carbon_feedback_summary.h": {
+      "source": "carbon_feedback_summary.h",
+      "sha256": "58727e9072c8d58a1d31b4fd7c436c92d2ca8b69b9b64af4d9e385bfb8a7666d",
+      "functions": {}
+    },
+    "carbon_feedback_surface.h": {
+      "source": "carbon_feedback_surface.h",
+      "sha256": "53ea31bd6735857dab6771b8d6621afc647c4795ac0f8717d9dbd7270c384512",
+      "functions": {}
+    },
+    "carbon_feedback_surfaces.h": {
+      "source": "carbon_feedback_surfaces.h",
+      "sha256": "124a0967784dc04ca53dff8ffc896288c40f7569fc749869fa766d6dc06628a2",
+      "functions": {}
+    },
+    "carbon_feedback_lookup.h": {
+      "source": "carbon_feedback_lookup.h",
+      "sha256": "8b030a715b365a46028aa14578e19ed9c63839757e3ef5a79b20eac4284593c1",
+      "functions": {
+        "simable": {
+          "read": [
+            6343584
+          ]
+        }
+      }
+    },
+    "carbon_feedback_transport.c": {
+      "source": "carbon_feedback_transport.c",
+      "sha256": "7ba02c5464519397ff7774b7bb7df0add7a4a4f11f8fc9ea78717cba1b292c86",
+      "functions": {}
+    },
+    "carbon_feedback_input.h": {
+      "source": "carbon_feedback_input.h",
+      "functions": {},
+      "sha256": "a211bcaffcfefd30cfb3ff74bdc8451ca1f14c09b59bd0ebb660210c71806a64"
+    }
+  },
+  "enabled_providers": [
+    "feedback_poll_pause",
+    "feedback_suppress"
+  ]
+}

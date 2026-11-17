@@ -1,0 +1,126 @@
+{
+  "version": 1,
+  "hooks": [
+    {
+      "address": "00595210",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "00595210",
+        "length": 16,
+        "sha256": "e03db0b71c9b57a373e7cdb705152bb78822d8ea39b37a69d5c59c35df5b571a"
+      },
+      "provider": "carbon_addons_movie",
+      "job": "gameplay-addons"
+    },
+    {
+      "address": "00857630",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "00857630",
+        "length": 16,
+        "sha256": "646fa957f749b90e72ca0f62091bb4118c81eb1a7d72534bbdde91e8f2634f06"
+      },
+      "provider": "carbon_addons_title",
+      "job": "gameplay-addons"
+    },
+    {
+      "address": "0040AB70",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "0040AB70",
+        "length": 16,
+        "sha256": "4a373f1f7d63aa50f8e9850bc2aa5ca7a4d540cfb60a8bfcc55f4ffa265b92bd"
+      },
+      "provider": "carbon_addons_heat",
+      "job": "gameplay-addons"
+    },
+    {
+      "address": "00643100",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "00643100",
+        "length": 16,
+        "sha256": "6231271ed111dfc69768dfa1c6f9fd66b75f69716a73a63ddce5f87a76e14262"
+      },
+      "provider": "carbon_addons_catchup",
+      "job": "gameplay-addons"
+    },
+    {
+      "address": "0064C560",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "0064C560",
+        "length": 6,
+        "sha256": "b4b1f81772bdb0ffdb6f9b072da691328e0874e116183254eb47c8960f0ef441"
+      },
+      "provider": "carbon_addons_prologue",
+      "job": "gameplay-addons"
+    },
+    {
+      "address": "00588CA0",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "00588CA0",
+        "length": 16,
+        "sha256": "9f1a7e3f9de015f4e3f393f2baab5745bfec9d2ad0d385eca5582e5e0a91e83e"
+      },
+      "provider": "carbon_addons_language",
+      "job": "gameplay-addons"
+    },
+    {
+      "address": "0084E090",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "0084E090",
+        "length": 16,
+        "sha256": "bb0e7e986bdf53869d86cb82c1909bb744bb5af43304505afb6b0065b9452914"
+      },
+      "provider": "carbon_addons_cards_notification",
+      "job": "gameplay-addons"
+    },
+    {
+      "address": "0084E1D0",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "0084E1D0",
+        "length": 16,
+        "sha256": "8b0325c7d8b15526251963323616b7197a932f3900f04c2b0c30992bfab21841"
+      },
+      "provider": "carbon_addons_cards_navigation",
+      "job": "gameplay-addons"
+    },
+    {
+      "address": "0084E220",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "0084E220",
+        "length": 16,
+        "sha256": "be152aef6c6662438354015b974ee400e515f49d282fb3a9f0594cfdf0ab6423"
+      },
+      "provider": "carbon_addons_cards_select",
+      "job": "gameplay-addons"
+    },
+    {
+      "address": "0084DEE0",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "0084DEE0",
+        "length": 16,
+        "sha256": "5cff7d87f8d9c3a82458068360a6393f0f8fba6287372793a83e379ac7287ad7"
+      },
+      "provider": "carbon_addons_cards_complete",
+      "job": "gameplay-addons"
+    },
+    {
+      "address": "0084E600",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "0084E600",
+        "length": 16,
+        "sha256": "1a8bd8a2f1adc7c77308e18f775b364ffda8e222a111d526d834dd6c169b0af8"
+      },
+      "provider": "carbon_addons_cards_redraw",
+      "job": "gameplay-addons"
+    }
+  ]
+}

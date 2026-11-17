@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_coat.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    }
+  },
+  "staged_sources": {
+    "carbon_coat.c": "carbon_coat.h"
+  },
+  "bindings": {
+    "carbon_coat.c": {
+      "source": "carbon_coat.h",
+      "sha256": "a7a782af6cab427bab01543860feb3828515c7de4e5fa3722837eebb5a252bdb",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

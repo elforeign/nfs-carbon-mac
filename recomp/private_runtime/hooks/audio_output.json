@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "hooks": [
+    {
+      "address": "008A8560",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "008A8560",
+        "length": 284,
+        "sha256": "9b903cbb61bb1b144510e1aa0c74c5fa07ac4e8ba85d39a41a3be8f738b623f7"
+      },
+      "provider": "carbon_audio_output_request",
+      "job": "A6.1"
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_report_settings.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_report_flow.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_layouts": {
+        "native": "00A99BBC native game-flow state; the input context classifier reads the same state (6 racing).",
+        "position": "Player rigid-body pose via existing native reader; streaming manager 00A97DE0 current pack name +40 (minimap diagnostic)."
+      },
+      "guest_accesses": {
+        "private_report_flow": {
+          "read": [
+            11115452
+          ]
+        },
+        "private_report_position": {
+          "read": [
+            11107808
+          ]
+        }
+      }
+    }
+  },
+  "staged_sources": {
+    "carbon_report_settings.h": "carbon_report_settings.h",
+    "carbon_report_flow.c": "carbon_report_flow.c"
+  },
+  "bindings": {
+    "carbon_report_settings.h": {
+      "source": "carbon_report_settings.h",
+      "sha256": "7ae5307fc246b71aec823e52f98a986784fa177ee46422646027ecac1e10e2ca",
+      "functions": {}
+    },
+    "carbon_report_flow.c": {
+      "source": "carbon_report_flow.c",
+      "sha256": "74ec81a1ba9f22fdd711b399339dc3d7dac79118b4c4eaf089e3eaf432be6d51",
+      "functions": {}
+    }
+  },
+  "enabled_providers": [
+    "report_init",
+    "report_note",
+    "report_shot",
+    "report_shot_ready"
+  ]
+}

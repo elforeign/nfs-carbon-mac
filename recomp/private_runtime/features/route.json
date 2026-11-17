@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_route.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_layouts": {
+        "score": "A7AD34 positive metres/tick. 007F62E0 entry ESP+14 and 007EA900 ESP+10 supply unquantized F; wrappers observe only during isolated queries.",
+        "nav": "00806820 constructs 30C bytes; 007EC0D0 type3; 0080F180(source,direction,1,1.0); 00811740(destination,NULL,NULL), status+74 count+304 list+308, 007F7BF0 destroys. Source segment/fraction +8A/+8C; destination +2FA/+2FC.",
+        "world": "B77EC8 nodes stride32 (+C self,+10 degree,+12 u16 adjacency); B77ECC segments stride22 (+0/+2 endpoints,+4 length); B77F58 length multiplier. B77EFC manager, drain 00810F70. A99BBC flow6; AB0ABC device Present +44. Probe chains native Present then runs fresh navs on a copied CPU."
+      }
+    }
+  },
+  "staged_sources": {
+    "carbon_route.c": "carbon_route.h"
+  },
+  "bindings": {
+    "carbon_route.c": {
+      "source": "carbon_route.h",
+      "sha256": "8349168ab1cdb0ab21dd4422505c82125dde7aa3e1c86a88e18a6cbd2c40374c",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

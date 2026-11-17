@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_c1grid.c": {
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_layouts": {
+        "manager": "00B77EB8 pointer; manager +0 grid, +C tile id, +10 rectangle (five u16), +38/+3C CGrd rows/columns, +40 float cell; grid +18/+1C rows/columns, +20 non-null slot pointer array. Read only after native 00813850/00813920."
+      },
+      "class": "mixed"
+    }
+  },
+  "staged_sources": {
+    "carbon_c1grid.c": "carbon_c1grid.h"
+  },
+  "bindings": {
+    "carbon_c1grid.c": {
+      "source": "carbon_c1grid.h",
+      "sha256": "923d227092d22981fc3fe250c05a10024fda65d3ca31bb3d129b482246dfdfc2",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

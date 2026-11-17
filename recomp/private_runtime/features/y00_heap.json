@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_y00_heap.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_layouts": {
+        "allocation": "00477230 cdecl size/flags; return 0079EBFF identifies 0079EBFA Y00 request. 00476684 raw backing malloc returns at 0047668A; rounded payload+20+16+128 bytes. Engine pool headers and matching CRT free remain native."
+      }
+    }
+  },
+  "staged_sources": {
+    "carbon_y00_heap.h": "carbon_y00_heap.h"
+  },
+  "bindings": {
+    "carbon_y00_heap.h": {
+      "source": "carbon_y00_heap.h",
+      "sha256": "3f651ecf7872da1cccb3f11c27a3950592d2e43829a4d90a48b5003990de1e50",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

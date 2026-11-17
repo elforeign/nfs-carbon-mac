@@ -1,0 +1,4144 @@
+{
+  "version": 1,
+  "sources": {
+    "aa_setting.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "alpha_to_coverage.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "alpha_to_coverage.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "app.m": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "app_icon.m": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "role": "auxiliary; not linked by either game runtime"
+    },
+    "atmosphere.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "atmosphere.m": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "attrib_x360.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": "mw",
+      "required_providers": []
+    },
+    "audio_limiter.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "auxlights.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": "mw",
+      "required_providers": []
+    },
+    "auxlights.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "bmw_availability.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "boot.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "bootflow.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "breaker_diag.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "brightness.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": "mw",
+      "required_providers": [],
+      "review": "Included host helpers: no guest access in compiler-expanded target; provider closure audited."
+    },
+    "bundle_roots.h": {
+      "class": "shared",
+      "kind": "include",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "review": "Included host helpers: no guest access in compiler-expanded target; provider closure audited."
+    },
+    "cachemeta.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "car85.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": "mw",
+      "required_providers": []
+    },
+    "car85_brands_private.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "car_approvals_public.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "car_audio.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "car_audio.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "car_audio_backend.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "car_audio_backend.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "car_audio_csis.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "car_audio_csis.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "car_audio_engine_class.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "car_audio_engine_class.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "car_audio_filter.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "car_audio_filter.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "car_audio_player.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "car_audio_player.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "car_audio_runtime.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "car_audio_runtime.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "car_catalog.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "car_catalog.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "car_grip.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "car_grip.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "car_grip_assist.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "car_grip_assist.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "car_grip_bridge.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "car_grip_force.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "car_grip_force.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "car_grip_steering.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "role": "auxiliary; not linked by either game runtime"
+    },
+    "car_grip_steering.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "car_grip_wheel.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "car_grip_wheel.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "car_kit_fallback.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "car_lamp_public.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "car_physics.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "car_physics.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_lamp_private.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carsave_public.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carsave_public.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "cash_cheat.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "cash_cheat.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "chasecam.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "clearcoat.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "clearcoat.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "clip_packets.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "clip_packets.mm": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "cliprec.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "cliprec.mm": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "contact_mass.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "controlpages.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "controltype.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": "mw",
+      "required_providers": []
+    },
+    "d3d9.m": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "d3d9_internal.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "d3dx.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "d3dx_effect.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "decal_depth.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "decal_depth.m": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "daynight.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "daynight.h": {
+      "class": "shared",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "daynight_sky.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "allowed",
+      "generated_data": "mw",
+      "required_providers": []
+    },
+    "daynight_sky.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "daynight_private.inc": {
+      "class": "shared",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "detail.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "diag.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "diag_car.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "diag_threads.h": {
+      "class": "shared",
+      "kind": "include",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "review": "Included host helpers: no guest access in compiler-expanded target; provider closure audited."
+    },
+    "diag_profile.h": {
+      "class": "shared",
+      "kind": "include",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "review": "Included host sampler: no guest access; reads only the includer's frame clock, idle flag and symbol lookup."
+    },
+    "diag_car.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "dinput.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "dsound.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "durable.h": {
+      "class": "shared",
+      "kind": "include",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "review": "Included host helpers: no guest access in compiler-expanded target; provider closure audited."
+    },
+    "envcube.m": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "extratrax.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "extratrax_codec.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "extratrax_codec.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "extratrax_manifest.inc": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "extratrax_public.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "fe_console.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "feedback.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": "mw",
+      "required_providers": []
+    },
+    "framecap.h": {
+      "class": "shared",
+      "kind": "include",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "review": "Included host helpers: no guest access in compiler-expanded target; provider closure audited."
+    },
+    "framelate.h": {
+      "class": "shared",
+      "kind": "include",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "review": "Included host helpers: no guest access in compiler-expanded target; provider closure audited."
+    },
+    "game_select.h": {
+      "class": "shared",
+      "kind": "include",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "gameplay_opts.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "gpuclients.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "gpuclients.m": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "gpupass.m": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "guide.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "guide.m": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "hd_file_cache.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "hdr_output.h": {
+      "class": "shared",
+      "kind": "include",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "review": "Included host helpers: no guest access in compiler-expanded target; provider closure audited."
+    },
+    "hdrclip.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "review": "Included host helpers: no guest access in compiler-expanded target; provider closure audited."
+    },
+    "hdrclip.m": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "review": "Included host helpers: no guest access in compiler-expanded target; provider closure audited."
+    },
+    "heap.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "heap.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "host.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "huff.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "idescreen.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "role": "auxiliary; not linked by either game runtime"
+    },
+    "imports.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "inputs_root.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "interp.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "jdlz.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "lampbatch.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "lampbatch.m": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "lampglow.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "lampglow_shader.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "lampsplit_bench.m": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "role": "auxiliary; not linked by either game runtime"
+    },
+    "lampsrc_bench.m": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "role": "auxiliary; not linked by either game runtime"
+    },
+    "lan_diag.h": {
+      "class": "shared",
+      "kind": "include",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "review": "Included host helpers: no guest access in compiler-expanded target; provider closure audited."
+    },
+    "lanserver_selftest.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "later_textures_private.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "lighting.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "lighting_colour.h": {
+      "class": "shared",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "live_encode.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "live_encode.mm": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "live_fake.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "live_fake.m": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "live_picture.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "live_picture.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "live_picture_sweep.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "live_seg.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "live_seg.mm": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "livestream.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "livestream.mm": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "looppace.h": {
+      "class": "shared",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "materials.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "materials.m": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": "mw",
+      "required_providers": []
+    },
+    "maxperf_career.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "mirror.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "movies.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "music_balance.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "natmap.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "natmap.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "natpmp.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "offline_stubs.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "role": "auxiliary; not linked by either game runtime"
+    },
+    "onscreen_keyboard.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "onscreen_keyboard.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "overlay.m": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "pacewait.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "pacing.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "paint_flake.c": {
+      "class": "mw", "kind": "unit", "targets": ["mw-private", "mw-public"],
+      "constructors": "forbidden", "generated_data": null, "required_providers": []
+    },
+    "glass_port.m": {
+      "class": "mw", "kind": "unit", "targets": ["mw-private", "mw-public"],
+      "constructors": "forbidden", "generated_data": null, "required_providers": []
+    },
+    "car_normals_port.m": {
+      "class": "mw", "kind": "unit", "targets": ["mw-private", "mw-public"],
+      "constructors": "forbidden", "generated_data": "mw", "required_providers": []
+    },
+    "car_normals_port.h": {
+      "class": "mw", "kind": "include", "targets": [],
+      "constructors": "forbidden", "generated_data": null, "required_providers": []
+    },
+    "glass_port.h": {
+      "class": "mw", "kind": "include", "targets": [],
+      "constructors": "forbidden", "generated_data": null, "required_providers": []
+    },
+    "paint_flake.h": {
+      "class": "mw", "kind": "include", "targets": [],
+      "constructors": "forbidden", "generated_data": null, "required_providers": []
+    },
+    "padbind.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "padfx.m": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "padguest.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "padlink.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "padprompts.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": "mw",
+      "required_providers": []
+    },
+    "particles_physical.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "particles_physical.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "pcp.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "pedals.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "pipeline_cache.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "pipeline_cache.m": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "pipeline_history.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "portmenu.m": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "posaudio.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "posaudio.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "post_cuts.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "post_cuts.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "pre_treatment.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "pre_treatment.m": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "private_cars.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "private_cars.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "private_cars_public.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "probe.m": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "pub_discord.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "pub_discord.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "pub_settings.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "pub_update.m": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "mw-public",
+        "private"
+      ],
+      "constructors": "allowed",
+      "constructor_symbols": [
+        "pub_update_register"
+      ],
+      "generated_data": null,
+      "required_providers": [],
+      "review": "Carbon's public build registers the same update rows; a private build registers none (NFS_PUBLIC only, as build.sh)."
+    },
+    "pub_update_core.h": {
+      "class": "shared",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "pub_update_helper.m": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "role": "auxiliary; not linked by either game runtime"
+    },
+    "pub_update_launch.m": {
+      "class": "shared",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "pub_update_rehearsal.h": {
+      "class": "shared",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "pub_update_write.h": {
+      "class": "shared",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "qrsplit.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "rain_cover.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "rain_cover.m": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "realworld_materials.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "realworld_materials.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "render.m": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": "mw",
+      "required_providers": []
+    },
+    "render_internal.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "render_post.m": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": "mw",
+      "required_providers": []
+    },
+    "render_present.m": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "render_query.m": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "render_target.m": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "render_thread.m": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "replay.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "replay.mm": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "replay_bindings.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "replay_export.mm": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "replay_input.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "replay_input.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "report.m": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "report_position.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "report_github.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "report_github.m": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "report_privacy.h": {
+      "class": "shared",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "report_submit.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "report_submit.m": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "reverbfade.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "roadfilm.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "roadfilm.m": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "roam_admission.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "roam_auth.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "roam_auth.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "roam_code.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "roam_core.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "roam_core.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "roam_game.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "roam_hud.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "roam_load.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "role": "auxiliary; not linked by either game runtime"
+    },
+    "roam_loopback_fixture.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "role": "auxiliary; not linked by either game runtime"
+    },
+    "roam_moderation.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "roam_moderation.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "roam_online.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "roam_online.h": {
+      "class": "shared",
+      "kind": "include",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "review": "Included host helpers: no guest access in compiler-expanded target; provider closure audited."
+    },
+    "roam_relay.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "roam_relay_main.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "role": "auxiliary; not linked by either game runtime"
+    },
+    "roam_server.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "roam_shared_endpoint.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "roots.h": {
+      "class": "shared",
+      "kind": "include",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": "mw",
+      "required_providers": [],
+      "review": "Included host helpers: no guest access in compiler-expanded target; provider closure audited."
+    },
+    "rt_native.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "rumble.m": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "save_timing.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "save_timing.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "server_loader.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "server_loader.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "setting_bool.h": {
+      "class": "shared",
+      "kind": "include",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "review": "Included host helpers: no guest access in compiler-expanded target; provider closure audited."
+    },
+    "settings.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "settings.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "settings_port.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": "mw",
+      "required_providers": []
+    },
+    "shared_depth.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "shared_depth.m": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "shared_depth_reference.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "sign_diag.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "sign_diag.m": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "slowclock.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "slowclock.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "slowlog.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "slowlog.m": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "slowlog_lumab.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "slowlog_lumab.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "soft_smoke_half.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "soft_smoke_half.m": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "splitcapture.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "splitworld.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "steerresp.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "stream_key.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "stream_key.m": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "streaming.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "temporal_camera_control.inc": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "temporal_motion_control.inc": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "temporal_render.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "temporal_render.m": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "temporal_state.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "temporal_state.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "temporal_state_fixture.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "text_fit.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "text_fit.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "threads.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "traffic_detail.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "traffic_detail.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "traffic_pilot.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "traffic_pilot.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "trees.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": "mw",
+      "required_providers": []
+    },
+    "trees.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "trigopt.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "trigopt_controls_fixture.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "trigopt_render_fixture.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "tunnelhold.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "underglow.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "underglow.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "underglow_light.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "underglow_light.m": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "underglow_menu.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "underglow_photometry.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "underglow_photometry.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "underglow_pool.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "underglow_render.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "underglow_render.m": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "underglow_store.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "underglow_store.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "underglow_ui.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "underglow_ui.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "upnp.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "user32.m": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "allowed",
+      "generated_data": null,
+      "required_providers": [],
+      "constructor_symbols": [
+        "pad_clock"
+      ]
+    },
+    "vinyls.m": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "water_port.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "water_port.m": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": "mw",
+      "required_providers": []
+    },
+    "widescreen.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "ws2_32.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "ws2_lan_transport.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "x360.m": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": "mw",
+      "required_providers": []
+    },
+    "x360_internal.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "x360_post.m": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": "mw",
+      "required_providers": []
+    },
+    "x360_shadow_fit.cpp": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": "mw",
+      "required_providers": []
+    },
+    "x360_textures.m": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "x360abk.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "x360abk.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "x360audio.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": "mw",
+      "required_providers": []
+    },
+    "x360audio.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "x360copspeech.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "x360copspeech.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "review": "Included host helpers: no guest access in compiler-expanded target; provider closure audited."
+    },
+    "x360nisaudio.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "game_bindings.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "daynight_clock.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "allowed",
+      "generated_data": null,
+      "required_providers": [],
+      "review": "Private expansion contains only the pure clock step; settings, registration and diagnostics remain image-specific."
+    },
+    "daynight_clock.h": {
+      "class": "shared",
+      "kind": "include",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "review": "Private expansion contains only the pure clock step; settings, registration and diagnostics remain image-specific."
+    },
+    "daynight_stream.m": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "daynight_stream.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "daynight_carlamps.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "car_locallight.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "allowed",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "car_locallight.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "flare_streaks.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "daynight_lamps.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": "mw",
+      "required_providers": []
+    },
+    "daynight_lamps.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "headlights.m": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "headlight_profile.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "headlights.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "headlight_profile.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "lens_drops.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "lens_drops.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "blackbox.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "blackbox.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "blackbox_mw.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    }
+  },
+  "targets": {
+    "private": {
+      "units": [
+        "boot.c",
+        "app.m",
+        "heap.c",
+        "d3dx.c",
+        "d3dx_effect.c",
+        "threads.c",
+        "user32.m",
+        "d3d9.m",
+        "render.m",
+        "pipeline_cache.m",
+        "render_target.m",
+        "render_query.m",
+        "render_present.m",
+        "render_post.m",
+        "render_thread.m",
+        "gpupass.m",
+        "dsound.c",
+        "audio_limiter.c",
+        "dinput.c",
+        "ws2_32.c",
+        "interp.c",
+        "diag.c",
+        "movies.c",
+        "settings.c",
+        "portmenu.m",
+        "settings_port.c",
+        "overlay.m",
+        "daynight.c",
+        "daynight_clock.c",
+        "padlink.c",
+        "rumble.m",
+        "pub_update.m",
+        "pub_update_launch.m",
+        "report.m",
+        "blackbox.c"
+      ],
+      "extra_units": [
+        "guide.m",
+        "cliprec.mm",
+        "clip_packets.mm",
+        "replay.mm",
+        "replay_export.mm",
+        "replay_input.c",
+        "live_encode.mm",
+        "live_seg.mm",
+        "livestream.mm",
+        "stream_key.m",
+        "live_fake.m",
+        "onscreen_keyboard.c",
+        "private_crt.c",
+        "private_win32.c",
+        "imports.c"
+      ],
+      "frameworks": [
+        "AudioToolbox",
+        "CoreAudio",
+        "CoreFoundation",
+        "AVFoundation",
+        "VideoToolbox",
+        "CoreVideo",
+        "CoreMedia",
+        "Cocoa",
+        "QuartzCore",
+        "Metal",
+        "ImageIO",
+        "CoreGraphics",
+        "CoreText",
+        "CoreServices",
+        "GameController",
+        "IOKit",
+        "Security",
+        "SystemConfiguration"
+      ],
+      "required_providers": [
+        "renderer",
+        "win32",
+        "audio",
+        "input",
+        "files"
+      ],
+      "disabled_provider": "disabled_providers.m",
+      "extra_sources": {
+        "attributes.h": {"class": "shared", "kind": "include", "targets": ["private"], "constructors": "forbidden", "generated_data": null, "required_providers": []},
+        "avconfig.h": {"class": "shared", "kind": "include", "targets": ["private"], "constructors": "forbidden", "generated_data": null, "required_providers": []},
+        "avformat.h": {"class": "shared", "kind": "include", "targets": ["private"], "constructors": "forbidden", "generated_data": null, "required_providers": []},
+        "avio.h": {"class": "shared", "kind": "include", "targets": ["private"], "constructors": "forbidden", "generated_data": null, "required_providers": []},
+        "avutil.h": {"class": "shared", "kind": "include", "targets": ["private"], "constructors": "forbidden", "generated_data": null, "required_providers": []},
+        "buffer.h": {"class": "shared", "kind": "include", "targets": ["private"], "constructors": "forbidden", "generated_data": null, "required_providers": []},
+        "channel_layout.h": {"class": "shared", "kind": "include", "targets": ["private"], "constructors": "forbidden", "generated_data": null, "required_providers": []},
+        "codec.h": {"class": "shared", "kind": "include", "targets": ["private"], "constructors": "forbidden", "generated_data": null, "required_providers": []},
+        "codec_id.h": {"class": "shared", "kind": "include", "targets": ["private"], "constructors": "forbidden", "generated_data": null, "required_providers": []},
+        "codec_par.h": {"class": "shared", "kind": "include", "targets": ["private"], "constructors": "forbidden", "generated_data": null, "required_providers": []},
+        "common.h": {"class": "shared", "kind": "include", "targets": ["private"], "constructors": "forbidden", "generated_data": null, "required_providers": []},
+        "defs.h": {"class": "shared", "kind": "include", "targets": ["private"], "constructors": "forbidden", "generated_data": null, "required_providers": []},
+        "dict.h": {"class": "shared", "kind": "include", "targets": ["private"], "constructors": "forbidden", "generated_data": null, "required_providers": []},
+        "error.h": {"class": "shared", "kind": "include", "targets": ["private"], "constructors": "forbidden", "generated_data": null, "required_providers": []},
+        "frame.h": {"class": "shared", "kind": "include", "targets": ["private"], "constructors": "forbidden", "generated_data": null, "required_providers": []},
+        "hwcontext.h": {"class": "shared", "kind": "include", "targets": ["private"], "constructors": "forbidden", "generated_data": null, "required_providers": []},
+        "intfloat.h": {"class": "shared", "kind": "include", "targets": ["private"], "constructors": "forbidden", "generated_data": null, "required_providers": []},
+        "log.h": {"class": "shared", "kind": "include", "targets": ["private"], "constructors": "forbidden", "generated_data": null, "required_providers": []},
+        "macros.h": {"class": "shared", "kind": "include", "targets": ["private"], "constructors": "forbidden", "generated_data": null, "required_providers": []},
+        "mathematics.h": {"class": "shared", "kind": "include", "targets": ["private"], "constructors": "forbidden", "generated_data": null, "required_providers": []},
+        "mem.h": {"class": "shared", "kind": "include", "targets": ["private"], "constructors": "forbidden", "generated_data": null, "required_providers": []},
+        "opt.h": {"class": "shared", "kind": "include", "targets": ["private"], "constructors": "forbidden", "generated_data": null, "required_providers": []},
+        "packet.h": {"class": "shared", "kind": "include", "targets": ["private"], "constructors": "forbidden", "generated_data": null, "required_providers": []},
+        "pixfmt.h": {"class": "shared", "kind": "include", "targets": ["private"], "constructors": "forbidden", "generated_data": null, "required_providers": []},
+        "rational.h": {"class": "shared", "kind": "include", "targets": ["private"], "constructors": "forbidden", "generated_data": null, "required_providers": []},
+        "samplefmt.h": {"class": "shared", "kind": "include", "targets": ["private"], "constructors": "forbidden", "generated_data": null, "required_providers": []},
+        "version.h": {"class": "shared", "kind": "include", "targets": ["private"], "constructors": "forbidden", "generated_data": null, "required_providers": []},
+        "version_major.h": {"class": "shared", "kind": "include", "targets": ["private"], "constructors": "forbidden", "generated_data": null, "required_providers": []},
+        "guide.m": {
+          "class": "shared",
+          "kind": "unit",
+          "targets": [
+            "private"
+          ],
+          "constructors": "allowed",
+          "generated_data": null,
+          "required_providers": [],
+          "constructor_symbols": [
+            "register_guide"
+          ]
+        },
+        "cliprec.mm": {
+          "class": "shared",
+          "kind": "unit",
+          "targets": [
+            "private"
+          ],
+          "constructors": "allowed",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "clip_packets.mm": {
+          "class": "shared",
+          "kind": "unit",
+          "targets": [
+            "private"
+          ],
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "replay.mm": {
+          "class": "shared",
+          "kind": "unit",
+          "targets": [
+            "private"
+          ],
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "replay_export.mm": {
+          "class": "shared",
+          "kind": "unit",
+          "targets": [
+            "private"
+          ],
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "replay_input.c": {
+          "class": "shared",
+          "kind": "unit",
+          "targets": [
+            "private"
+          ],
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "live_encode.mm": {
+          "class": "shared",
+          "kind": "unit",
+          "targets": [
+            "private"
+          ],
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "live_seg.mm": {
+          "class": "shared",
+          "kind": "unit",
+          "targets": [
+            "private"
+          ],
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "livestream.mm": {
+          "class": "shared",
+          "kind": "unit",
+          "targets": [
+            "private"
+          ],
+          "constructors": "allowed",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "stream_key.m": {
+          "class": "shared",
+          "kind": "unit",
+          "targets": [
+            "private"
+          ],
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "live_fake.m": {
+          "class": "shared",
+          "kind": "unit",
+          "targets": [
+            "private"
+          ],
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "onscreen_keyboard.c": {
+          "class": "shared",
+          "kind": "unit",
+          "targets": [
+            "private"
+          ],
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "guide.h": {
+          "class": "shared",
+          "kind": "include",
+          "targets": [
+            "private"
+          ],
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "cliprec.h": {
+          "class": "shared",
+          "kind": "include",
+          "targets": [
+            "private"
+          ],
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "clip_packets.h": {
+          "class": "shared",
+          "kind": "include",
+          "targets": [
+            "private"
+          ],
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "replay.h": {
+          "class": "shared",
+          "kind": "include",
+          "targets": [
+            "private"
+          ],
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "replay_input.h": {
+          "class": "shared",
+          "kind": "include",
+          "targets": [
+            "private"
+          ],
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "live_encode.h": {
+          "class": "shared",
+          "kind": "include",
+          "targets": [
+            "private"
+          ],
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "live_seg.h": {
+          "class": "shared",
+          "kind": "include",
+          "targets": [
+            "private"
+          ],
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "livestream.h": {
+          "class": "shared",
+          "kind": "include",
+          "targets": [
+            "private"
+          ],
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "stream_key.h": {
+          "class": "shared",
+          "kind": "include",
+          "targets": [
+            "private"
+          ],
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "live_fake.h": {
+          "class": "shared",
+          "kind": "include",
+          "targets": [
+            "private"
+          ],
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "onscreen_keyboard.h": {
+          "class": "shared",
+          "kind": "include",
+          "targets": [
+            "private"
+          ],
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "private_crt.c": {
+          "class": "mixed",
+          "kind": "unit",
+          "targets": [
+            "private"
+          ],
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "private_win32.c": {
+          "class": "mixed",
+          "kind": "unit",
+          "targets": [
+            "private"
+          ],
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "imports.c": {
+          "class": "shared",
+          "kind": "unit",
+          "targets": [
+            "private"
+          ],
+          "constructors": "forbidden",
+          "generated_data": "private",
+          "required_providers": []
+        },
+        "mw_bridge.h": {
+          "class": "shared",
+          "kind": "include",
+          "targets": [
+            "private"
+          ],
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "private_world_config.h": {
+          "class": "mixed",
+          "kind": "include",
+          "targets": [
+            "private"
+          ],
+          "constructors": "forbidden",
+          "generated_data": "private",
+          "required_providers": []
+        },
+        "private_frame_shots.h": {
+          "class": "mixed",
+          "kind": "include",
+          "targets": [
+            "private"
+          ],
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "private_mix_stats.h": {
+          "class": "mixed",
+          "kind": "include",
+          "targets": [
+            "private"
+          ],
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "private_carbon_skipfe.h": {
+          "class": "mixed",
+          "kind": "include",
+          "targets": [
+            "private"
+          ],
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "private_carbon_resolution.h": {
+          "class": "mixed",
+          "kind": "include",
+          "targets": [
+            "private"
+          ],
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "security.h": {
+          "class": "mixed",
+          "kind": "include",
+          "targets": [
+            "private"
+          ],
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "disabled_providers.m": {
+          "class": "shared",
+          "kind": "unit",
+          "targets": [
+            "private"
+          ],
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "game_image.h": {
+          "class": "mixed",
+          "kind": "include",
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "game_files.h": {
+          "class": "mixed",
+          "kind": "include",
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "game_world.inc": {
+          "class": "mixed",
+          "kind": "include",
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "game_thread.h": {
+          "class": "mixed",
+          "kind": "include",
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "game_d3dx.h": {
+          "class": "mixed",
+          "kind": "include",
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "game_surface.h": {
+          "class": "mixed",
+          "kind": "include",
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "game_script.h": {
+          "class": "mixed",
+          "kind": "include",
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "game_diagnostics.h": {
+          "class": "mixed",
+          "kind": "include",
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "game_pad.h": {
+          "class": "mixed",
+          "kind": "include",
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "game_startup.h": {
+          "class": "mixed",
+          "kind": "include",
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "game_sound.h": {
+          "class": "mixed",
+          "kind": "include",
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "game_save.h": {
+          "class": "mixed",
+          "kind": "include",
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "game_ws2.h": {
+          "class": "mixed",
+          "kind": "include",
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "game_audio_policy.h": {
+          "class": "mixed",
+          "kind": "include",
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "game_compat_present_device.h": {
+          "class": "mixed",
+          "kind": "include",
+          "targets": [
+            "private"
+          ],
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "game_compat_present.h": {
+          "class": "mixed",
+          "kind": "include",
+          "targets": [
+            "private"
+          ],
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "game_compat_shader_submit.h": {
+          "class": "mixed",
+          "kind": "include",
+          "targets": [
+            "private"
+          ],
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "game_compat_render_draw.h": {
+          "class": "mixed",
+          "kind": "include",
+          "targets": [
+            "private"
+          ],
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "game_effect_evidence.h": {
+          "class": "mixed",
+          "kind": "include",
+          "targets": [
+            "private"
+          ],
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "private_carbon_audio.h": {
+          "class": "mixed",
+          "kind": "include",
+          "targets": [
+            "private"
+          ],
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        },
+        "private_carbon_audio_limiter.h": {
+          "class": "mixed",
+          "kind": "include",
+          "targets": [
+            "private"
+          ],
+          "constructors": "forbidden",
+          "generated_data": null,
+          "required_providers": []
+        }
+      },
+      "staged_sources": {
+        "game_files.h": "file_overlay.h",
+        "game_world.inc": "world_probe.inc",
+        "private_frame_shots.h": "frame_shots.h",
+        "private_mix_stats.h": "mix_stats.h",
+        "private_carbon_skipfe.h": "carbon_skipfe.h",
+        "private_carbon_resolution.h": "carbon_resolution.h",
+        "game_thread.h": "thread_ideal.h",
+        "game_d3dx.h": "d3dx_textures.h",
+        "game_surface.h": "surface_readback.h",
+        "private_crt.c": "crt.c",
+        "private_win32.c": "win32.c",
+        "security.h": "security.h",
+        "game_diagnostics.h": "game_diagnostics.h",
+        "game_pad.h": "game_pad.h",
+        "game_save.h": "game_save.h",
+        "game_script.h": "game_script.h",
+        "game_sound.h": "game_sound.h",
+        "game_startup.h": "game_startup.h",
+        "game_ws2.h": "game_ws2.h",
+        "game_audio_policy.h": "game_audio_policy.h",
+        "game_compat_present_device.h": "game_compat_present_device.h",
+        "game_compat_present.h": "game_compat_present.h",
+        "game_compat_shader_submit.h": "game_compat_shader_submit.h",
+        "game_compat_render_draw.h": "game_compat_render_draw.h",
+        "disabled_providers.m": "disabled_providers.m",
+        "game_effect_evidence.h": "game_effect_evidence.h",
+        "private_carbon_audio.h": "carbon_audio.h",
+        "private_carbon_audio_limiter.h": "carbon_audio_limiter.h"
+      }
+    }
+  },
+  "generated_includes": {
+    "../recomp/out/daynight_sky_private.inc": {
+      "class": "mw",
+      "owner": "mw",
+      "constructors": "forbidden"
+    },
+    "gen/*.inc": {
+      "class": "mw",
+      "owner": "mw",
+      "constructors": "forbidden"
+    },
+    "../recomp/out/breaker_diag.inc": {
+      "class": "mw",
+      "owner": "mw",
+      "constructors": "forbidden"
+    },
+    "../recomp/out/daynight_lamps_private.inc": {
+      "class": "mw",
+      "owner": "mw",
+      "constructors": "forbidden"
+    }
+  },
+  "constructor_policy_target": "private",
+  "external_includes": {
+    "media/media.h": {
+      "class": "shared",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "host/audio/dsound_host.h": {
+      "class": "shared",
+      "kind": "include",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "host/shaders/sm_translate.h": {
+      "class": "shared",
+      "kind": "include",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "media/movie_api.h": {
+      "class": "shared",
+      "kind": "include",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    }
+  }
+}

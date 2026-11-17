@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_fe_control.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_soak.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    }
+  },
+  "staged_sources": {
+    "carbon_fe_control.h": "carbon_fe_control.h",
+    "carbon_soak.h": "carbon_soak.h"
+  },
+  "bindings": {
+    "carbon_fe_control.h": {
+      "source": "carbon_fe_control.h",
+      "sha256": "6a784f562bb79105424ac41a1aa8acd2e5c6d517d882165d5185794e28c73fa7",
+      "functions": {}
+    },
+    "carbon_soak.h": {
+      "source": "carbon_soak.h",
+      "sha256": "ede1ed8f91e73a12f725f753013d4c50cb963b027d73e1228f989fc08561cd63",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

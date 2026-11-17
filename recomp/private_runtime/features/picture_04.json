@@ -1,0 +1,96 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "game_menu_hold.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "game_pacing_settings.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "game_picture_present.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_picture_clock.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    }
+  },
+  "staged_sources": {
+    "game_menu_hold.h": "game_menu_hold.h",
+    "game_pacing_settings.h": "game_pacing_settings.h",
+    "game_picture_present.h": "game_picture_present.h",
+    "carbon_picture_clock.c": "carbon_picture_clock.c"
+  },
+  "bindings": {
+    "game_menu_hold.h": {
+      "source": "game_menu_hold.h",
+      "sha256": "dd3dd047a5a9d4991540f40230cab964e89dfe013b985a84b95d2649e7032a28",
+      "functions": {}
+    },
+    "game_pacing_settings.h": {
+      "source": "game_pacing_settings.h",
+      "sha256": "c4dabdb55655c43a7a50c9051f8e981cb41729752c66f58e56b7a223dd9b733c",
+      "functions": {}
+    },
+    "game_picture_present.h": {
+      "source": "game_picture_present.h",
+      "sha256": "05e457e8a0d4f26400fa99e9b14a981f4cbee5b1684fb305beb892fa9f281c08",
+      "functions": {}
+    },
+    "carbon_picture_clock.c": {
+      "source": "carbon_picture_clock.c",
+      "functions": {
+        "carbon_advance_real_time": {
+          "read": [
+            10890984
+          ],
+          "write": [
+            10890984,
+            10890988,
+            10890992
+          ]
+        },
+        "carbon_prepare_real_timestep": {
+          "read": [
+            10890984,
+            10890992
+          ]
+        }
+      },
+      "sha256": "fd088c642bf598fcd10d0170bc5a3986d2052282146671f1269ac915e05e53db"
+    }
+  },
+  "enabled_providers": [
+    "postfx_ab_shot",
+    "postfx_look_variant"
+  ]
+}

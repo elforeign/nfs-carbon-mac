@@ -1,0 +1,93 @@
+{
+  "version": 1,
+  "hooks": [
+    {
+      "address": "005D1F80",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "005D1F80",
+        "length": 16,
+        "sha256": "af79ee2e8beb613cca39715c2a8fa9a16b8eaa0ffea6a0c0e9ba1fe42493b05d"
+      },
+      "provider": "carbon_minimap_icons",
+      "job": "B3.C2.HUD"
+    },
+    {
+      "address": "005D23E0",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "005D23E0",
+        "length": 16,
+        "sha256": "0460e67879b9d51b3a706b41e841c205ed6530526cc2fb46c929d1db93871ff2"
+      },
+      "provider": "carbon_minimap_roads",
+      "job": "B3.C2.HUD"
+    },
+    {
+      "address": "005E15B0",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "005E15B0",
+        "length": 16,
+        "sha256": "86301ce6c64bb1d866d20ccbec69b012c2b09af1a5b9fc3cb02026ecda42d2b3"
+      },
+      "provider": "carbon_minimap_tiles",
+      "job": "B3.C2.HUD"
+    },
+    {
+      "address": "005E50F0",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "005E50F0",
+        "length": 16,
+        "sha256": "1abeca62bc78d47adffdfae89f72f9a38be198311403699c80d8be1a521c7e10"
+      },
+      "provider": "carbon_minimap_centre",
+      "job": "B3.C2.HUD"
+    },
+    {
+      "address": "0056ECA0",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "0056ECA0",
+        "length": 16,
+        "sha256": "5f34197a87c145a61db20905a79191e1960d0a03a46457b573152ca041a0c158"
+      },
+      "provider": "carbon_worldmap_input_a",
+      "job": "B3.C2.MAP"
+    },
+    {
+      "address": "005B7940",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "005B7940",
+        "length": 16,
+        "sha256": "33a3649f4346bda4f2580bb5e6269b8798b79a037cdf5773f0b5c0a8f094efe4"
+      },
+      "provider": "carbon_worldmap_input_b",
+      "job": "B3.C2.MAP"
+    },
+    {
+      "address": "005B7CE0",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "005B7CE0",
+        "length": 16,
+        "sha256": "11ec3714ae802559e7d434a218023f217ab4edf5e45ce9801bb19479513932cc"
+      },
+      "provider": "carbon_worldmap_input_c",
+      "job": "B3.C2.MAP"
+    },
+    {
+      "address": "005825A0",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "005825A0",
+        "length": 16,
+        "sha256": "ecf1c93d6f51b4add8d9000e85d4e7bfe90a7bb8f72227264d496777c02fba4c"
+      },
+      "provider": "carbon_worldmap_streamer",
+      "job": "B3.C2.MAP"
+    }
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_addons_host_settings.h": {
+      "class": "shared",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_addons_host_replay.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_addons_host_text.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_layouts": {
+        "keyboard": "00570230 returns the static A604B8 object; 005C51B0 creates its +27C field. 00570340 validates characters; 005C5260 routes native editing; 005A00B0 / 005A0030 accept / cancel."
+      }
+    }
+  },
+  "staged_sources": {
+    "carbon_addons_host_settings.h": "carbon_addons_host_settings.h",
+    "carbon_addons_host_replay.c": "carbon_addons_host_replay.c",
+    "carbon_addons_host_text.c": "carbon_addons_host_text.c"
+  },
+  "bindings": {
+    "carbon_addons_host_settings.h": {
+      "source": "carbon_addons_host_settings.h",
+      "sha256": "d8a5053e881d29c618bc539748ac7d1e12dc0b05bc998fbe93e5e3db61e607de",
+      "functions": {}
+    },
+    "carbon_addons_host_replay.c": {
+      "source": "carbon_addons_host_replay.c",
+      "sha256": "c85c3f2ed44e7cbe84d00a9de07e160683cee7ba1af0551249927ba71bdf0ed5",
+      "functions": {}
+    },
+    "carbon_addons_host_text.c": {
+      "source": "carbon_addons_host_text.c",
+      "sha256": "b1315e82c53cea418518dc67ec836eb0406b2dc64245b76ab07a69fbb419be9c",
+      "functions": {
+        "carbon_addons_host_text_snapshot": {
+          "read": [
+            10880184
+          ]
+        },
+        "carbon_addons_host_text_event": {
+          "read": [
+            10880184
+          ]
+        }
+      }
+    }
+  },
+  "enabled_providers": [
+    "cliprec_action",
+    "cliprec_present",
+    "cliprec_status",
+    "replay_arm_action",
+    "replay_save_action",
+    "stream_key_forget",
+    "stream_key_route_event",
+    "live_fake_go",
+    "osk_visible"
+  ]
+}

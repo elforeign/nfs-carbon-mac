@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_port_settings.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_devrows.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_accesses": {
+        "carbon_devrows_frame": {
+          "read": [
+            10850856,
+            10850860
+          ],
+          "write": [
+            10850856
+          ]
+        }
+      },
+      "guest_layouts": {
+        "cheats": "0040CAF0 queries ECX=A59218; 004AAE60 and 004B7C00 read manager +10 table, +14 count, 52-byte entries: +24 id, +30 active, +32 enabled. The image digest binds the manager and eight enabled retail entries. Off clears only entry +30 through the table pointer at A59228, matching 004AAEA0; the write provenance is the table global, not the pointer itself."
+      }
+    }
+  },
+  "staged_sources": {
+    "carbon_port_settings.h": "carbon_port_settings.h",
+    "carbon_devrows.c": "carbon_devrows.c"
+  },
+  "bindings": {
+    "carbon_port_settings.h": {
+      "source": "carbon_port_settings.h",
+      "sha256": "0f7b248d7f7d45745c533ef5fa5dc1e8b6a915f9726ef73a700b073ba7d55430",
+      "functions": {}
+    },
+    "carbon_devrows.c": {
+      "source": "carbon_devrows.c",
+      "sha256": "955adcdf46816a68ebb0645f0a8ffb195fb0d920d515dc0765d573acec63ddc6",
+      "functions": {
+        "carbon_devrows_frame": {
+          "read": [
+            10850856,
+            10850860
+          ],
+          "write": [
+            10850856
+          ]
+        }
+      }
+    }
+  },
+  "enabled_providers": []
+}

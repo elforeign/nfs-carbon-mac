@@ -1,0 +1,235 @@
+"""M4 F6: a PC-only install (roots.txt without X360 files) must not list X360 traces in F10: the "Road reflection"
+row (X360 half screen) and the "Xbox 360 sound" heading whose rows are all hidden. With X360 files, or with no
+roots.txt (the owner's layout), the list is unchanged. Compiles runtime/settings.c with a small driver (no game).
+On main 20c0254 the PC-only case listed both (fails); run with the project's Python -I.
+Shader/engine menu retention: 72/72 row states pass; pinned original gate fails 1/1 test.
+Retail checks: 6/6 pass; treating world files as grade availability fails the missing-attributes assertion (1 failure).
+"""
+from pathlib import Path
+import hashlib
+import runpy
+import os
+import subprocess
+import tempfile
+import unittest
+
+ROOT = Path(__file__).resolve().parents[2]
+DRIVER = r'''
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "settings.h"
+int diag_on = 0;
+const char *game_dir;
+const char *app_pref(const char *key) { (void)key; return NULL; }
+void app_pref_set(const char *key, const char *value) { (void)key; (void)value; }
+void app_pref_batch_begin(void) {}
+void app_pref_batch_end(void) {}
+void report_note(const char *fmt, ...) { (void)fmt; }
+void diag_event(const char *fmt, ...) { (void)fmt; }
+static const char *const kXP[] = {"X360", "PC"}, *const kXPV[] = {"x360", "pc"};
+static const char *const kPX[] = {"PC", "X360"}, *const kOO[] = {"off", "on"};
+static Setting h_out = {.id = "audio.h_output", .category = SET_AUDIO, .order = 5, .label = "Sound", .type = SET_HEADING};
+static Setting vol = {.id = "audio.limiter", .category = SET_AUDIO, .order = 10, .label = "Limiter", .type = SET_TOGGLE};
+static Setting h_x = {.id = "audio.h_x360", .category = SET_AUDIO, .order = 50, .label = "Xbox 360 sound", .type = SET_HEADING};
+static Setting mix = {.id = "audio.x360_mix", .category = SET_AUDIO, .order = 60, .label = "Sound mix", .type = SET_TOGGLE,
+    .choices = kPX, .values = kOO, .nchoices = 2, .def = 1};
+static Setting music = {.id = "audio.x360_music", .category = SET_AUDIO, .order = 70, .label = "Music", .type = SET_TOGGLE,
+    .choices = kPX, .values = kOO, .nchoices = 2, .def = 1};
+static Setting h_w = {.id = "world.h_surfaces", .category = SET_WORLD, .order = 48, .label = "Surfaces", .type = SET_HEADING};
+static Setting refl = {.id = "graphics.road_reflection", .category = SET_WORLD, .order = 90, .label = "Road reflection",
+    .type = SET_CHOICE, .choices = (const char *const[]){"X360 (half screen)", "PC (320x240)"}, .values = kXPV, .nchoices = 2,
+    .env = "NFS_ROAD_REFLECTION"};
+static Setting light = {.id = "graphics.world_lighting", .category = SET_WORLD, .order = 10, .label = "World lighting",
+    .type = SET_CHOICE, .choices = (const char *const[]){"Neutral", "Original"},
+    .values = (const char *const[]){"neutral", "original"}, .nchoices = 2};
+static Setting grade = {.id = "graphics.look_data", .type = SET_CHOICE, .hidden = 1, .restart = 1,
+    .choices = kPX, .values = (const char *const[]){"pc", "x360"}, .nchoices = 2};
+static Setting filter = {.id = "graphics.colour_filter", .category = SET_PICTURE, .type = SET_SLIDER,
+    .min = 0, .max = 100, .step = 10};
+static Setting device = {.id = "display.window", .category = SET_DISPLAY, .type = SET_TOGGLE, .def = 1};
+static Setting control = {.id = "controls.rumble", .category = SET_CONTROLS, .type = SET_TOGGLE, .def = 1};
+static Setting gameplay = {.id = "gameplay.heat", .category = SET_GAMEPLAY, .type = SET_TOGGLE, .def = 1};
+int main(void) {
+    Setting *rows[] = {&h_out, &vol, &h_x, &mix, &music, &h_w, &refl, &light, &grade, &filter, &device, &control, &gameplay};
+    for (unsigned i = 0; i < sizeof rows / sizeof *rows; ++i) settings_add(rows[i]);
+    settings_init();
+    Setting *r[32];
+    int cats[] = {SET_WORLD, SET_AUDIO};
+    for (int c = 0; c < 2; ++c) {
+        int n = settings_rows(cats[c], r, 32);
+        for (int i = 0; i < n; ++i) printf("%s%s", i ? " " : "", r[i]->id);
+        printf("\n");
+    }
+    const char *e = getenv("NFS_ROAD_REFLECTION");
+    printf("NFS_ROAD_REFLECTION=%s\n", e ? e : "");
+    settings_look_apply(PRESET_X360);
+    printf("look=%d partial=%d filter=%d grade=%d untouched=%d/%d/%d/%d/%d\n", settings_look_state(),
+        settings_look_partial(), settings_get("graphics.colour_filter"), settings_get("graphics.look_data"),
+        mix.value, music.value, device.value, control.value, gameplay.value);
+    settings_look_apply(PRESET_PC);
+    printf("pc=%d partial=%d filter=%d grade=%d\n", settings_look_state(), settings_look_partial(), filter.value, grade.value);
+    return 0;
+}
+'''
+ALL_WORLD = "graphics.world_lighting world.h_surfaces graphics.road_reflection"
+ALL_AUDIO = "audio.h_output audio.limiter audio.h_x360 audio.x360_mix audio.x360_music"
+
+
+class MenuX360Traces(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.tmp = tempfile.TemporaryDirectory()
+        d = Path(cls.tmp.name)
+        (d / "driver.c").write_text(DRIVER)
+        cls.exe = d / "driver"
+        subprocess.run(["clang", "-std=c11", "-w", "-I", ROOT / "recomp", "-I", ROOT / "runtime", d / "driver.c",
+                        ROOT / "runtime/settings.c", "-o", cls.exe], check=True)
+        cls.public_exe = d / "driver-public"
+        subprocess.run(["clang", "-DNFS_PUBLIC=1", "-std=c11", "-w", "-I", ROOT / "recomp", "-I", ROOT / "runtime", d / "driver.c",
+                        ROOT / "runtime/settings.c", "-o", cls.public_exe], check=True)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.tmp.cleanup()
+
+    def run_with(self, manifest, public=False):
+        env = {"PATH": "/usr/bin:/bin", "HOME": self.tmp.name + "/nohome"}
+        if manifest is not None:
+            env["NFS_ROOTS"] = str(manifest)
+        out = subprocess.run([self.public_exe if public else self.exe], env=env, capture_output=True, text=True, check=True).stdout.splitlines()
+        return out
+
+    def manifest(self, name, x360):
+        d = Path(self.tmp.name) / name
+        pc = d / "pc"
+        pc.mkdir(parents=True)
+        text = f"pc_root={pc}\n"
+        if x360:
+            x = d / "x360"
+            for rel in ("GLOBAL/GLOBALB.BUN", "GLOBAL/ATTRIBUTES.BIN", "GLOBAL/INGAMEMEMORYFILE.BIN", "SOUND/PFDATA/MW_MUSIC.MPF"):
+                (x / rel).parent.mkdir(parents=True, exist_ok=True)
+                (x / rel).write_bytes(b"x")
+            text += f"x360_root={x}\n"
+        (d / "roots.txt").write_text(text)
+        return d / "roots.txt"
+
+    def test_retained_shader_and_engine_rows_remain_available(self):
+        """Original gate fails 1/1 test; retained gate passes, including missing inputs."""
+        # Independent registry expectations: shader-only, engine-only and both.
+        shader_only = "graphics.trees graphics.scenery_lights graphics.water graphics.grass graphics.parallax".split()
+        both = "graphics.rain_ripples graphics.x360_arrest".split()
+        engine_only = []
+        # The post chain, lens drops, car materials, generated flake and the shadow fit have port-authored fallback values.
+        neither = "graphics.shadow_fit graphics.postfx graphics.tone_curve graphics.speed_blur graphics.curve_glow graphics.raindrops graphics.car_paint graphics.car_normals graphics.car_glass graphics.car_flake".split()
+        # Port building glass reads only the PC solids; X360 without the files falls back to Port in its own gate.
+        neither += ["graphics.building_glass"]
+        # Authored ripple provider is opt-in and needs no console inputs.
+        both.remove("graphics.rain_ripples")
+        neither += ["graphics.rain_ripples"]
+        # Authored water provider is opt-in and needs no console inputs.
+        shader_only.remove("graphics.water")
+        neither += ["graphics.water"]
+        # Wall and kerb depth runs on port-authored values (default X360, owner 11-15) without console shaders.
+        shader_only.remove("graphics.parallax")
+        neither += ["graphics.parallax"]
+        names = shader_only + both + engine_only + neither
+        d = Path(self.tmp.name) / "retained-menu"
+        (d / "gen").mkdir(parents=True)
+        for file, flag in (("x360_shader_lits.inc", "X360_SHADER_LITS"), ("x360_engine.inc", "X360_ENGINE_CONSTS")):
+            (d / "gen" / file).write_text("#define %s 1\n" % flag)
+        header = (ROOT / "runtime/roots.h").read_text()
+        if os.environ.get("NFS_TEST_LEGACY_SHADER_GATE") == "1":
+            original = runpy.run_path(str(ROOT / "runtime/roots_x360_test.py"))
+            fragment = original["ORIGINAL_PRESENCE"]
+            self.assertEqual(hashlib.sha256(fragment.encode()).hexdigest(), original["ORIGINAL_PRESENCE_SHA"])
+            start = header.index('        if (!shaders) return')
+            end = header.index('\n    }', start)
+            header = header[:start] + fragment + header[end:]
+        (d / "roots.h").write_text(header)
+        for file in ("settings.c", "bundle_roots.h"):
+            (d / file).write_bytes((ROOT / "runtime" / file).read_bytes())
+        code = DRIVER[:DRIVER.index("int main(void)")] + "int main(void) {\n"
+        for i, name in enumerate(names):
+            code += ('Setting row%d = {.id="%s", .type=SET_CHOICE, .choices=kXP, .values=kXPV, .nchoices=2}; '
+                     'settings_add(&row%d);\n' % (i, name, i))
+        code += 'settings_init();\n'
+        for i, name in enumerate(names):
+            code += 'printf("%s=%%d/%%d\\n", row%d.hidden, row%d.locked);\n' % (name, i, i)
+        code += 'return 0; }\n'
+        (d / "driver.c").write_text(code)
+        binary = d / "driver"
+        subprocess.run(["clang", "-DNFS_PUBLIC=1", "-w", "-I", d, "-I", ROOT / "runtime", "-I", ROOT / "recomp",
+                        d / "driver.c", d / "settings.c", "-o", binary], check=True)
+        manifest = self.manifest("retained_rows", True)
+        raw = manifest.parent / "x360"
+        assets = manifest.parent / "assets"
+        (assets / "nis_arrest").mkdir(parents=True)
+        manifest.write_text(manifest.read_text() + "assets_root=%s\n" % assets)
+        (raw / "NFS").mkdir()
+        slice_path, xex = raw / "NFS/zzdata0_09bb7000.bin", raw / "default.xex"
+        for shader_size, has_engine in ((413696, True), (None, True), (413695, True), (413696, False)):
+            if shader_size is None:
+                slice_path.unlink(missing_ok=True)
+            else:
+                slice_path.write_bytes(bytes(shader_size))
+            if has_engine:
+                xex.write_bytes(b"engine")
+            else:
+                xex.unlink(missing_ok=True)
+            env = dict(PATH=os.environ["PATH"], HOME=str(d / "home"), NFS_ROOTS=str(manifest))
+            output = subprocess.run([binary], env=env, capture_output=True, text=True, check=True).stdout
+            observed = dict(line.split("=") for line in output.splitlines())
+            self.assertEqual(set(observed), set(names))
+            for name in names:
+                available = name in neither or ((name in engine_only or shader_size == 413696) and
+                                                (name in shader_only or has_engine))
+                self.assertEqual(observed[name], "0/0" if available else "1/1", name)
+
+    def test_pc_only_lists_road_reflection(self):
+        world, audio, env, *_ = self.run_with(self.manifest("pc", False))
+        # Road reflection reads no console data (a render-target size): it stays listed, with its heading, in PC-only.
+        self.assertEqual(world, ALL_WORLD)
+        self.assertEqual(audio, "audio.h_output audio.limiter")
+        self.assertEqual(env, "NFS_ROAD_REFLECTION=", "listed: the player's choice is not forced to PC")
+
+    def test_x360_install_and_owner_layout_unchanged(self):
+        for label, manifest in (("x360", self.manifest("x360", True)), ("owner", None)):
+            with self.subTest(label):
+                world, audio, env, *_ = self.run_with(manifest)
+                self.assertEqual(world, ALL_WORLD)
+                self.assertEqual(audio, ALL_AUDIO)
+                self.assertEqual(env, "NFS_ROAD_REFLECTION=")
+
+    def test_retail_is_explicitly_partial_without_x360(self):
+        out = self.run_with(self.manifest("partial", False))
+        self.assertEqual(out[3], "look=1 partial=1 filter=100 grade=0 untouched=0/0/1/1/1")
+        self.assertEqual(out[4], "pc=2 partial=1 filter=100 grade=0")
+        # The message remains visible when selecting the row after a restart or
+        # after the transient change notification expires.
+        port = (ROOT / "runtime/settings_port.c").read_text()
+        menu = (ROOT / "runtime/portmenu.m").read_text()
+        for source in (port, menu):
+            self.assertIn("partial: your Xbox 360 files are not installed", source)
+            self.assertIn("closest to retail", source)
+        self.assertIn("settings_look_state() == PRESET_X360 && settings_look_partial()", menu)
+
+    def test_legacy_layout_has_full_grade_and_preserves_preferences(self):
+        out = self.run_with(None)
+        self.assertEqual(out[3], "look=1 partial=0 filter=100 grade=1 untouched=1/1/1/1/1")
+        self.assertEqual(out[4], "pc=2 partial=0 filter=100 grade=0")
+
+    def test_grade_data_must_be_installed_even_with_world_files(self):
+        manifest = self.manifest("grade_missing", True)
+        self.assertIn("look=1 partial=0 filter=100 grade=1", self.run_with(manifest)[3])
+        (manifest.parent / "x360/GLOBAL/ATTRIBUTES.BIN").unlink()
+        self.assertIn("look=1 partial=1 filter=100 grade=0", self.run_with(manifest)[3])
+
+    def test_public_build_without_x360_applies_partial_retail_look(self):
+        out = self.run_with(self.manifest("public_pc", False), public=True)
+        self.assertEqual(out[3], "look=1 partial=1 filter=100 grade=0 untouched=0/0/1/1/1")
+        self.assertEqual(out[4], "pc=2 partial=1 filter=100 grade=0")
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)

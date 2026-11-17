@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "game_overlay_diagnostics.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_accesses": {
+        "diag_frame": {
+          "read": [
+            11849684
+          ]
+        }
+      }
+    },
+    "game_overlay_settings.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    }
+  },
+  "staged_sources": {
+    "game_overlay_diagnostics.h": "game_overlay_diagnostics.h",
+    "game_overlay_settings.h": "game_overlay_settings.h"
+  },
+  "bindings": {
+    "game_overlay_diagnostics.h": {
+      "source": "game_overlay_diagnostics.h",
+      "sha256": "7f00d817f76c0a70cd56af33952fffda3f716ff59d368b4156a26886d215dc2a",
+      "functions": {}
+    },
+    "game_overlay_settings.h": {
+      "source": "game_overlay_settings.h",
+      "sha256": "a547e61030410b54f175227b1cb781d3ead31138a068559d1efd5301f026e829",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

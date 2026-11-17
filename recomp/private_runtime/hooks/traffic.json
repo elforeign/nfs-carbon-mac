@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "hooks": [
+    {
+      "address": "0042CE70",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "0042CE70",
+        "length": 16,
+        "sha256": "6f5510396c08dff3dd54f6dae6244e37f34996aac14df1b52f4e97848c8dcb62"
+      },
+      "provider": "carbon_traffic_choose",
+      "job": "B3.rockport-traffic"
+    },
+    {
+      "address": "0042C950",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "0042C950",
+        "length": 16,
+        "sha256": "20d3b2b8d36ba62cca6d4b66a57e5fd43917a0617934bdc30e8edda34aa51122"
+      },
+      "provider": "carbon_traffic_spawn",
+      "job": "B3.rockport-traffic"
+    }
+  ]
+}

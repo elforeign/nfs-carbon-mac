@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "hooks": [
+    {
+      "address": "0070DE00",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "0070DE00",
+        "length": 16,
+        "sha256": "2d78ef9b1264e627ebc7437db1afa94c2fa1bd74a55128f686a8a9391623bdcd"
+      },
+      "provider": "carbon_envcube_allocate",
+      "job": "A8 look 1"
+    }
+  ]
+}

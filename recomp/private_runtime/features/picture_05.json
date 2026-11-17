@@ -1,0 +1,92 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "game_picture_shader_submit.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "game_shader_publish.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "game_shader_catalogue.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "game_shader_cache_policy.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "game_shader_fixed_warm.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    }
+  },
+  "staged_sources": {
+    "game_picture_shader_submit.h": "game_picture_shader_submit.h",
+    "game_shader_publish.h": "game_shader_publish.h",
+    "game_shader_catalogue.h": "game_shader_catalogue.h",
+    "game_shader_cache_policy.h": "game_shader_cache_policy.h",
+    "game_shader_fixed_warm.h": "game_shader_fixed_warm.h"
+  },
+  "bindings": {
+    "game_picture_shader_submit.h": {
+      "source": "game_picture_shader_submit.h",
+      "sha256": "ddbad330f00d0fdc1be55c778a72fe4a774a6154e6da7bcb765d04335129c6b9",
+      "functions": {}
+    },
+    "game_shader_publish.h": {
+      "source": "game_shader_publish.h",
+      "sha256": "d07cd452ef026bcaae4f5f3873aeb57a331e575d39ee3d780b8f4add7c0671b4",
+      "functions": {}
+    },
+    "game_shader_catalogue.h": {
+      "source": "game_shader_catalogue.h",
+      "sha256": "0b5b142b38c2edd50f65591fa96174fc0e02d6740fb7deda3a305f9102a58848",
+      "functions": {}
+    },
+    "game_shader_cache_policy.h": {
+      "source": "game_shader_cache_policy.h",
+      "sha256": "fd46227291787be19d4c5c190c66ebaaaf7854dbbb3b0c06bc9c3f5d72e6045f",
+      "functions": {}
+    },
+    "game_shader_fixed_warm.h": {
+      "source": "game_shader_fixed_warm.h",
+      "sha256": "8dc29dbc3febf58752442536ccdb27b37a18824156ca7020fae19ccb000f2748",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

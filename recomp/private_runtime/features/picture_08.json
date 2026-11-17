@@ -1,0 +1,92 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "game_tone_settings.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "game_hdr_compose.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "game_hdr_present_end.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "game_hdr_recipes.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "game_hdr_prewarm.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    }
+  },
+  "staged_sources": {
+    "game_tone_settings.h": "game_tone_settings.h",
+    "game_hdr_compose.h": "game_hdr_compose.h",
+    "game_hdr_present_end.h": "game_hdr_present_end.h",
+    "game_hdr_recipes.h": "game_hdr_recipes.h",
+    "game_hdr_prewarm.h": "game_hdr_prewarm.h"
+  },
+  "bindings": {
+    "game_tone_settings.h": {
+      "source": "game_tone_settings.h",
+      "sha256": "ee114d2a1f93e707dfa7a55bc8e89097ab121a5cd87b119b3f8c8fb5710780af",
+      "functions": {}
+    },
+    "game_hdr_compose.h": {
+      "source": "game_hdr_compose.h",
+      "sha256": "d07cd452ef026bcaae4f5f3873aeb57a331e575d39ee3d780b8f4add7c0671b4",
+      "functions": {}
+    },
+    "game_hdr_present_end.h": {
+      "source": "game_hdr_present_end.h",
+      "sha256": "d07cd452ef026bcaae4f5f3873aeb57a331e575d39ee3d780b8f4add7c0671b4",
+      "functions": {}
+    },
+    "game_hdr_recipes.h": {
+      "source": "game_hdr_recipes.h",
+      "sha256": "d07cd452ef026bcaae4f5f3873aeb57a331e575d39ee3d780b8f4add7c0671b4",
+      "functions": {}
+    },
+    "game_hdr_prewarm.h": {
+      "source": "game_hdr_prewarm.h",
+      "sha256": "f53387e4eb8a720318bf9210fde57f6308ca9b91b60cceb42f07810fb440cc9e",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

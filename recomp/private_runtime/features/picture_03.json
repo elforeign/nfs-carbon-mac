@@ -1,0 +1,116 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "game_widescreen.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_layouts": {
+        "native_wide": "004A4770 stdcall [esp+4] out (13BE). 00731580 ECX +4/+8 current, +C/+10 previous, +14/+18 delta in 640x480 units. 005F2960 thiscall ECX *(00A97A78), 5 args; packages from *(00A97A78)+E0, next +4. Present size 00AB06FC/00AB0700."
+      }
+    },
+    "game_frontend_matrix.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "game_frontend_begin.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "game_frontend_end.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "game_frontend_clip.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "game_camera_wide.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_layouts": {
+        "camera": "0071B780 thiscall ECX platform, [esp+4] view; view +8 type, +40 camera, +50 viewport (+14/+18 size), +10 pixels per unit. Platform +40/+C0 projections. 0071B99D multiply precedes culling planes."
+      }
+    }
+  },
+  "staged_sources": {
+    "game_widescreen.h": "game_widescreen.h",
+    "game_frontend_matrix.h": "game_frontend_matrix.h",
+    "game_frontend_begin.h": "game_frontend_begin.h",
+    "game_frontend_end.h": "game_frontend_end.h",
+    "game_frontend_clip.h": "game_frontend_clip.h",
+    "game_camera_wide.c": "game_camera_wide.h"
+  },
+  "bindings": {
+    "game_widescreen.h": {
+      "source": "game_widescreen.h",
+      "sha256": "5493576eef6f0175a46737ac14d014df1bdd8fdd69a48e282069bc9cb5a123e2",
+      "functions": {}
+    },
+    "game_frontend_matrix.h": {
+      "source": "game_frontend_matrix.h",
+      "sha256": "86e737a54faca8f6755cf66ae8c09368bba2a72f2525abd2d5d03fdf6eec9cde",
+      "functions": {}
+    },
+    "game_frontend_begin.h": {
+      "source": "game_frontend_begin.h",
+      "sha256": "1eac1d8795fa0faed4ef976f7028a73407fe54cddd39bf04a6280284b5f9a929",
+      "functions": {}
+    },
+    "game_frontend_end.h": {
+      "source": "game_frontend_end.h",
+      "sha256": "1ed4fd6d42515393941a0f7205a370715851bf5684cfc2c7ca530fce27aa204b",
+      "functions": {}
+    },
+    "game_frontend_clip.h": {
+      "source": "game_frontend_clip.h",
+      "sha256": "c69987d221b4cf13cb09d40997e85b90d6bf6551bf97cbad5c2040d2c5dca1d1",
+      "functions": {}
+    },
+    "game_camera_wide.c": {
+      "source": "game_camera_wide.h",
+      "sha256": "daf208bebf8dbf44c96a0ad9bbdf4cafed33d6d24f399b2465bf44f672bc9d2c",
+      "functions": {}
+    }
+  },
+  "enabled_providers": [
+    "widescreen_projection"
+  ]
+}

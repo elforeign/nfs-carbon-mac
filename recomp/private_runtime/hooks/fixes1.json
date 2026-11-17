@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "hooks": [
+    {
+      "address": "00595F90",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "00595F90",
+        "length": 16,
+        "sha256": "e575807c7f54e1a09141f7d37cee2fbd98e0360cc7b5affb5a8013b94d22a224"
+      },
+      "provider": "carbon_fix_save_load",
+      "job": "A10.1"
+    },
+    {
+      "address": "0076ADA0",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "0076ADA0",
+        "length": 16,
+        "sha256": "42e191fa5358caa901f8c39b31b4f7fe38f32924e8e95b7b3a028f450f189537"
+      },
+      "provider": "carbon_fix_clock_tick",
+      "job": "A10.1"
+    },
+    {
+      "address": "007E4A90",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "007E4A90",
+        "length": 16,
+        "sha256": "ac54c4a8ca78cd7f27861123fc6b6e85651ad7c6cdb08365935689b0c974389c"
+      },
+      "provider": "carbon_fix_model_load",
+      "job": "A10.1"
+    }
+  ]
+}

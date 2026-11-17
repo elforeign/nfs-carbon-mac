@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "hooks": [
+    {
+      "address": "005B0920",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "005B0920",
+        "length": 16,
+        "sha256": "ea2ba557b88e38056b7791727b32aac246583ef4cbd5913603c6879ca756634b"
+      },
+      "provider": "carbon_padprompts_render",
+      "job": "A7.C"
+    },
+    {
+      "address": "00583D70",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "00583D70",
+        "length": 16,
+        "sha256": "4d93ba81be3f80926b1ec5d28d272868dc3c96f4f7931d05730ddabac1a31ae4"
+      },
+      "provider": "carbon_padprompts_visit",
+      "job": "A7.C"
+    },
+    {
+      "address": "005912A0",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "005912A0",
+        "length": 16,
+        "sha256": "3b6b483b7de60a82d1086b9c0c2ce5bb420a4d380ba0d69e42cbe4aa56a37091"
+      },
+      "provider": "carbon_padprompts_loaded",
+      "job": "A7.C"
+    },
+    {
+      "address": "0055CFD0",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "0055CFD0",
+        "length": 16,
+        "sha256": "401c56dfad2225f0d3e7328fc07c17eac3921dda97f30fec8019f67c8de587b8"
+      },
+      "provider": "carbon_padprompts_lookup",
+      "job": "A7.C"
+    },
+    {
+      "address": "005864E0",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "005864E0",
+        "length": 16,
+        "sha256": "a6286347c0ea826e787dd09cbe010f8febdbef9818f8c607a4331e254a29790f"
+      },
+      "provider": "carbon_padprompts_id",
+      "job": "A7.C"
+    },
+    {
+      "address": "00586840",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "00586840",
+        "length": 16,
+        "sha256": "b705443ffa70317d87797fd1466fbc168bfcd8c87fa7ffa1888899c147a9d28a"
+      },
+      "provider": "carbon_padprompts_label",
+      "job": "A7.C"
+    },
+    {
+      "address": "005E4480",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "005E4480",
+        "length": 16,
+        "sha256": "b2b9eda2987a168aac1b3b882afc19a230df90009c0f61937833207a30be4f80"
+      },
+      "provider": "carbon_padprompts_loading",
+      "job": "A7.C"
+    }
+  ]
+}

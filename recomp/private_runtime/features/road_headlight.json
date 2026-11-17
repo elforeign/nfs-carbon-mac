@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_road_headlight.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_layouts": {
+        "world": "0071E660 receives the per-draw row-major world matrix as its first stack argument. AB0ABC is the device; slot 94 uploads c244..247 after native SetWorld. Only the converter origin matrix (identity plus 8192 X) enables the position transform; native nonidentity props keep retail. No optional daylight dependency."
+      }
+    }
+  },
+  "staged_sources": {
+    "carbon_road_headlight.c": "carbon_road_headlight.h"
+  },
+  "bindings": {
+    "carbon_road_headlight.c": {
+      "source": "carbon_road_headlight.h",
+      "sha256": "298ba22a2d6766b7cb2b78a685dfaa5031b1f72e1e68d3c7aef1d0fc040f1d97",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

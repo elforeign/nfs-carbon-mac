@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "hooks": [
+    {
+      "address": "006AB7A0",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "006AB7A0",
+        "length": 16,
+        "sha256": "7570497d453cfe5b4c3b133f6d3d943a3196ecfb13efb5f4e5223b8ac0b623d1"
+      },
+      "provider": "carbon_advance_real_time",
+      "job": "A3.4"
+    },
+    {
+      "address": "006B4CB0",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "006B4CB0",
+        "length": 16,
+        "sha256": "77615c42bbf4031aa5ad53e7c676b8c3d9d9da2530b0479425d4f442ee693989"
+      },
+      "provider": "carbon_prepare_real_timestep",
+      "job": "A3.4"
+    }
+  ]
+}

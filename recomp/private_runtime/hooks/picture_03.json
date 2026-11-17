@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "hooks": [
+    {
+      "address": "004A4770",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "004A4770",
+        "length": 16,
+        "sha256": "423588d23639a7a774b3f365f6102968919f70b0fdca1d3dbfc88dbb9c937e16"
+      },
+      "provider": "carbon_wide_option",
+      "job": "A3.3"
+    },
+    {
+      "address": "00731580",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "00731580",
+        "length": 16,
+        "sha256": "fa2e498e3742ad3a5efd67598972dd054a9e07e2354fc6ae78a57c3a14dadd01"
+      },
+      "provider": "carbon_wide_cursor",
+      "job": "A3.3"
+    },
+    {
+      "address": "0071B780",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "0071B780",
+        "length": 16,
+        "sha256": "414832bba2222befba2bd6ca4087fe51994afc1a9d145da8bf904f780f6e7de5"
+      },
+      "provider": "carbon_camera_setup",
+      "job": "A3.3"
+    }
+  ]
+}

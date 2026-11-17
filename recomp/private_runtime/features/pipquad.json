@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_pipquad.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_accesses": {},
+      "guest_layouts": {
+        "quad": "00750B30 cdecl: [esp+4] out, four vertices of 0x18 bytes, x first, in clip units (-1..1); [esp] return address 00750DFF for the crew picture (00750D40), 00750D0B for the mirror (00750C30). Only the four x values of the crew picture's quad are rewritten, after the native builder."
+      }
+    }
+  },
+  "staged_sources": {
+    "carbon_pipquad.c": "carbon_pipquad.c"
+  },
+  "bindings": {
+    "carbon_pipquad.c": {
+      "source": "carbon_pipquad.c",
+      "sha256": "0b2032635a02b585f4295e0abafddb11b1fc7e81df2bb99aa64872044443d39f",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "hooks": [
+    {
+      "address": "005C8C70",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "005C8C70",
+        "length": 16,
+        "sha256": "9a8df13eb2e28728f079f5f367531c6a1cdc19d22706b1a88b8e6df41a1e1b83"
+      },
+      "provider": "carbon_mapcursor_mouse",
+      "job": "C10.mapcursor"
+    },
+    {
+      "address": "0058F770",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "0058F770",
+        "length": 16,
+        "sha256": "339cf0efba779f1f0966194e5ca9ac439882e4460ca349e1175730191e84b180"
+      },
+      "provider": "carbon_mapcursor_input",
+      "job": "C10.mapcursor"
+    }
+  ]
+}

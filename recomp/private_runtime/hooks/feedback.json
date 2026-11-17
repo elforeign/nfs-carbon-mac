@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "hooks": [
+    {
+      "address": "00762000",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "00762000",
+        "length": 16,
+        "sha256": "63bf8f08533a40ed721f78d11785997f766e7a6b68410be555463cc29ab2a2ea"
+      },
+      "provider": "carbon_feedback_tick",
+      "job": "A7.D"
+    }
+  ]
+}

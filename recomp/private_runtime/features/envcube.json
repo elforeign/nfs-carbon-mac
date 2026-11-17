@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_envcube.m": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_layouts": {
+        "capture": "0070DE00 retains native fallback/error handling. Its render-target CreateCubeTexture return 0070DE86 replaces edge/levels; six depth requests match. A63AE0 supplies subsequent view dimensions. AB0ABC device slots 17/25/29/37/81-84 forward originals. Only IDI_CAR_FX and IDI_CARNORMALMAP_FX sampling the exact capture handle receive scoped trilinear state.",
+        "reset": "AB0B25 requests native 007311B0/0072B370 reset; 0071B1B0 releases capture faces/depth/cube before device Reset. AB0954 is its managed fallback, overwritten by 0070DE00; reset drops that reference and device bindings, preserving CPU registers. AB0920 capture and AB093C six depths are tracked across both switch states."
+      },
+      "guest_accesses": {
+        "carbon_envcube_allocate": {
+          "write": [
+            10894048
+          ]
+        }
+      }
+    }
+  },
+  "staged_sources": {
+    "carbon_envcube.m": "carbon_envcube.h"
+  },
+  "bindings": {
+    "carbon_envcube.m": {
+      "source": "carbon_envcube.h",
+      "sha256": "63f02d4c1323272057102a4d1c284b01bbc4c9b7ebe27f5f55d10ba94e9fb699",
+      "functions": {
+        "carbon_envcube_allocate": {
+          "write": [
+            10894048
+          ]
+        }
+      }
+    }
+  },
+  "enabled_providers": [
+    "live_picture_on_reset"
+  ]
+}

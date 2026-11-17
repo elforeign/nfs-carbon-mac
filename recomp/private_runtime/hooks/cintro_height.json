@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "hooks": [
+    {
+      "address": "004809C0",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "004809C0",
+        "length": 16,
+        "sha256": "bfb06a15e67d26f5d79bc95b527b7d9cf38354b9f8fecf26fc35e3d3da79388d"
+      },
+      "provider": "carbon_cintro_height",
+      "job": "A10.cintro"
+    }
+  ]
+}

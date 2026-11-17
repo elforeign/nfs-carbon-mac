@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_lamplight.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_layouts": {
+        "packs": "007460D3 loads the aligned 135001 header as ESI; 007460B5 assigns aligned 135003 records to ESI+18; 007460FF..00746118 links ESI itself into B479D4. Live header+1c retains the record count. Records are 96 bytes: +0 hash, +4 kind, +7 enabled, +c RGB8, +10/+14/+18 XYZ, +1c outer radius, +30 inner radius, +3e bounded 34-byte name. Camera B4AF90+0 is the row-vector world-to-view transform, projection at +40. Primary world/depth handles are AB04F4/AB04F8; flow A99BBC=6."
+      }
+    }
+  },
+  "staged_sources": {
+    "carbon_lamplight.h": "carbon_lamplight.h"
+  },
+  "bindings": {
+    "carbon_lamplight.h": {
+      "source": "carbon_lamplight.h",
+      "sha256": "e6c416ca8e17aa8d421ab2d99d9bfed92666f5799a64e5bfeaf9d048c5e74a39",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

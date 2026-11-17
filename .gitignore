@@ -1,0 +1,19 @@
+# Regenerable build output
+recomp/out/
+third_party
+runtime/boot
+media/mediatest
+*.o
+/*.out
+*.a
+__pycache__/
+.metal-cache/
+.DS_Store
+*.dSYM/
+host/audio/build/
+runtime/boot.soak*
+runtime/NFSMW.app/
+runtime/NFS Carbon.app/
+runtime/gen/
+runtime/boot.pconly*
+/.runs/

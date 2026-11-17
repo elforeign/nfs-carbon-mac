@@ -1,0 +1,223 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "game_display_settings.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "game_display_modes.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "game_display_aa.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_layouts": {
+        "native_aa": "00A6537C requested quality, 00A653E4 native maximum; 00AB0B25 byte requests the native display reset. Labels use entry ECX +74 option ID and +1C FEString; 00583B10 sets plain text. 00583B10 text pointers are UTF-16."
+      }
+    },
+    "game_display_bindings.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "game_mode_provider.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_layouts": {
+        "native_modes": "00A63E28 and 00A63E40: six widths/heights, validated against adapter enumeration by retained 0072BF90; 00A65388 persistent slot. Reader stack +4/+8 output pointers; draw ECX +1C FEString."
+      }
+    },
+    "game_first_resolution.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_layouts": {
+        "startup_mode": "00732D90 supplies the selected native load/save registry key. Import slots 009C100C/009C1018/009C1010 query the saved resolution. Startup detection 0071D0A0 selects Custom (00AB0AE8=5); eleven detail DWORDs 00A65340/58/60/6C/70/78/7C/80/84/94/98 copy caps at +68, except AA=min(1,cap); shader 00A63E60=3 uses 0073E7E0. Native loader 00711810 reapplies BOOT_REG, clamp 007112F0 and save 00711BD0 persist values; reset byte 00AB0B25 recreates AA."
+      }
+    }
+  },
+  "staged_sources": {
+    "game_display_settings.h": "game_display_settings.h",
+    "game_display_modes.h": "game_display_modes.h",
+    "game_display_aa.h": "game_display_aa.h",
+    "game_display_bindings.h": "game_display_bindings.h",
+    "game_mode_provider.h": "game_mode_provider.h",
+    "game_first_resolution.h": "game_first_resolution.h"
+  },
+  "bindings": {
+    "game_display_settings.h": {
+      "source": "game_display_settings.h",
+      "sha256": "dc09d7bbe0a7854c159141ffad17511ceffbb8c9036477d9dfe4e63de76bb4a8",
+      "functions": {}
+    },
+    "game_display_modes.h": {
+      "source": "game_display_modes.h",
+      "sha256": "c088370728560689ccffd5e6da11eb29c3e1b5b437a4adc9a28ce5d706d93205",
+      "functions": {}
+    },
+    "game_display_aa.h": {
+      "source": "game_display_aa.h",
+      "sha256": "92685213dcd8fe252ea6b56b677895b5f2a4eb8917f498f6c3d719d6e1c8ed9c",
+      "functions": {
+        "aa_game_get": {
+          "read": [
+            10900348
+          ]
+        },
+        "aa_game_apply": {
+          "read": [
+            10900348
+          ],
+          "write": [
+            10900348
+          ]
+        },
+        "carbon_aa_cycle": {
+          "write": [
+            10900452
+          ]
+        },
+        "carbon_aa_present": {
+          "read": [
+            10900348
+          ],
+          "write": [
+            10900348
+          ]
+        }
+      }
+    },
+    "game_display_bindings.h": {
+      "source": "game_display_bindings.h",
+      "sha256": "b20b286a1a07b0c46ee32f4824d8868cd0051409e068e997dc17d8de02236dff",
+      "functions": {
+        "game_diag_aa_requested": {
+          "read": [
+            10900348
+          ]
+        },
+        "game_diag_aa_active": {
+          "read": [
+            10900452
+          ]
+        }
+      }
+    },
+    "game_mode_provider.h": {
+      "source": "game_mode_provider.h",
+      "sha256": "1005a5e48a8ed3dda9c64e6c3c3664c5b1f10024bb9e0a283a0b26a7e68504cc",
+      "functions": {
+        "carbon_modes_publish": {
+          "write": [
+            10894888,
+            10894912
+          ]
+        },
+        "carbon_mode_index": {
+          "read": [
+            10900360
+          ],
+          "write": [
+            10900360
+          ]
+        },
+        "carbon_mode_enumerate": {
+          "write": [
+            10900452
+          ]
+        },
+        "carbon_display_load": {
+          "read": [
+            10900364
+          ],
+          "write": [
+            10900364
+          ]
+        }
+      }
+    },
+    "game_first_resolution.h": {
+      "source": "game_first_resolution.h",
+      "sha256": "440632fc7df79116a67c6f6286cba09900b59ba3d134e359b437d55d860e88c7",
+      "functions": {
+        "carbon_first_mode": {
+          "write": [
+            10900360
+          ]
+        },
+        "carbon_first_mode_detect": {
+          "write": [
+            10894944,
+            10900288,
+            10900312,
+            10900320,
+            10900332,
+            10900336,
+            10900344,
+            10900348,
+            10900352,
+            10900356,
+            10900360,
+            10900372,
+            10900376
+          ],
+          "read": [
+            10894944,
+            10900288,
+            10900312,
+            10900320,
+            10900332,
+            10900336,
+            10900344,
+            10900348,
+            10900352,
+            10900356,
+            10900364,
+            10900372,
+            10900376
+          ]
+        }
+      }
+    }
+  },
+  "enabled_providers": [
+    "widescreen_mode"
+  ]
+}

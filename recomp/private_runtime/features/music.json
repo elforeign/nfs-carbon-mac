@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_music.c": {
+      "class": "shared",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    }
+  },
+  "staged_sources": {
+    "carbon_music.c": "carbon_music.c"
+  },
+  "bindings": {
+    "carbon_music.c": {
+      "source": "carbon_music.c",
+      "sha256": "68b254d502bb3326fb7e7e049a7a3f49b35aecdb459926c86344bff1c9884aed",
+      "functions": {}
+    }
+  },
+  "enabled_providers": [
+    "x360music_read",
+    "x360music_seek"
+  ]
+}

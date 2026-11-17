@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "hooks": [
+    {
+      "address": "00477230",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "00477230",
+        "length": 23,
+        "sha256": "97925324ecc5b2263939f9948afb7413691cc7648611ba378b42956b26c79b48"
+      },
+      "provider": "carbon_y00_allocate",
+      "job": "Y00.backing"
+    }
+  ]
+}

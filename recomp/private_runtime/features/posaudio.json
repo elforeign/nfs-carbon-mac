@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_posaudio.c": {
+      "kind": "unit",
+      "class": "mixed",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_layouts": {
+        "panner": "008A4C63 reads upper-byte native tables; optional explicit 16-bit azimuth writes six gains in C,FR,BR,BL,FL,LFE order only for five full-range speakers.",
+        "initializer": "008A4CC8: BBF448 five ordered degree positions; BBF3CC+12*channels addresses stereo/quad/six word defaults.",
+        "stream": "0089E2FE: stream+23 channel count, signed child IDs at +4; BBF3D0 child pool, stride 84, azimuth word +1C. Six source channels FL,C,FR,BL,BR,LFE."
+      }
+    }
+  },
+  "staged_sources": {
+    "carbon_posaudio.c": "carbon_posaudio.h"
+  },
+  "bindings": {
+    "carbon_posaudio.c": {
+      "source": "carbon_posaudio.h",
+      "sha256": "e5c2f619cd369506a14baa539f085720b5af9002d82a832d82964f4e318899ff",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

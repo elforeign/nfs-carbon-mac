@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_rockplaces.c": {
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_layouts": {
+        "premises": "00620BE0: +4 Attrib instance, +14 owner, +20 type, +24 physics XYZ; D5DFD829 trigger reference via 00463A80. 00617850 native SetOwner.",
+        "map": "005AD590: +0C package name, +44 origin, +4C extent, +64 intrusive list sentinel. 00A982B8 manager +70 premises tree, +74 first, +DC player. 00A97B40 FEng package manager. 005858D0 package +20 objects; 005F3760 object +18 type; 0059DD90 item +4 list node.",
+        "calls": "Compiler provenance follows call_guest results into memory expressions: 00463A80 field pointer, 005711C0 name hash, 005F3760 object, 005858D0 package, 006A1560 allocation; 009D4608 is the native CAR_LOT_%d format.",
+        "codec": "00472980 return EAX; incoming stack return addresses 006326F0 (writer 00632490) / 00648A1F (loader 006486B0) only. Manager +70 sentinel, node +10 unsigned key. Eight native keys <= BFC67884; exactly fifteen fixed-owned additions above it. Full initialization/refresh walks remain native. 0064942B/00649462 validate keyed last-spawn references; 0061E080 supplies native career_start fallback.",
+        "diagnostics": "00472980 existing successor supplies roaming samples, once per host second under BOOT_DIAG only. Premises +24 physics XYZ versus player reader render XYZ. 00A98170 circular trigger list +20 next, +4 Attrib key via 004613E0, +14 mask, +70 registration, +9C icon. 00A98294 icon manager +2F8 allocated, +2FC active, +300 pointer list, +30D AllowMenuGates / +30C AllowEngageSafehouse (0064BB30/40).",
+        "icon_recovery": "0062F883 iterator return inside 0062F840, called only by 00648090 after construction: no active icon-array iterator. 00614450 trigger lookup. All fifteen imported place keys: missing lot/shop/house icons use native 00626F90 (cap 256), type/color/art from 00635760. At count 256 remove the last flag-10 type-0D/0E icon through 0062DBF0(index), which maintains both partitions and frees through the native pool. Test constructor result before writes. Native pointer-array allocation is unchanged (006A1560/006A15A0). 0061DEA0 and its two callers have fixed 256-entry stack tables."
+      },
+      "class": "mixed"
+    }
+  },
+  "staged_sources": {
+    "carbon_rockplaces.c": "carbon_rockplaces.h"
+  },
+  "bindings": {
+    "carbon_rockplaces.c": {
+      "source": "carbon_rockplaces.h",
+      "sha256": "82d228f55e7835fb74dddfa2d58a602f7b20769ff7b7843fae0bb0bbcc350b1c",
+      "functions": {
+        "carbon_rockplaces_map": {
+          "read": [
+            5789904
+          ]
+        },
+        "carbon_rockplaces_trigger": {
+          "read": [
+            4602496
+          ]
+        },
+        "carbon_rockplaces_append": {
+          "read": [
+            5706176,
+            6240096,
+            10307080
+          ],
+          "write": [
+            6952288
+          ]
+        },
+        "carbon_rockplaces_icons": {
+          "read": [
+            6374480
+          ],
+          "write": [
+            4602496,
+            6374480,
+            6451088
+          ]
+        }
+      }
+    }
+  },
+  "enabled_providers": []
+}

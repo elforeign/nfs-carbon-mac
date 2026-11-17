@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "hooks": [
+    {
+      "address": "007507D0",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "007507D0",
+        "length": 16,
+        "sha256": "5638d7c2fb6cda39186d34f894acb9ba96d4ab3cde975f29b86dceb4e71b5eec"
+      },
+      "provider": "carbon_daynight_lamps_world",
+      "job": "J7"
+    },
+    {
+      "address": "0074D330",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "0074D330",
+        "length": 16,
+        "sha256": "e9658a7620c19277e928212d5e9fc0d23471082bbe6e26fb13f64616aabd02b7"
+      },
+      "provider": "carbon_daynight_lamps_flare",
+      "job": "J7"
+    },
+    {
+      "address": "0074A4E0",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "0074A4E0",
+        "length": 16,
+        "sha256": "e4df5ddbd86632bdac2c40ec11ad126ac8b4edbafe6729a5b70128207995e0c8"
+      },
+      "provider": "carbon_daynight_lamps_cones",
+      "job": "J7"
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "hooks": [
+    {
+      "address": "008887F3",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "008887F3",
+        "length": 16,
+        "sha256": "5a578bf3ebc87bf73cc52d7b971cf21529228c854d4657d5feb455814645d7fc"
+      },
+      "provider": "carbon_fix_movie_start",
+      "job": "A10.2"
+    },
+    {
+      "address": "008D3CA0",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "008D3CA0",
+        "length": 16,
+        "sha256": "3a60907cce756577e97dd56e812141f31c319f5cafc7acc2d9f6778b716fd8f3"
+      },
+      "provider": "carbon_fix_audio_poll",
+      "job": "A10.2"
+    },
+    {
+      "address": "007BDB60",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "007BDB60",
+        "length": 16,
+        "sha256": "a1b8a340548962f9fe74e42539e8abe00f83b6308cf94e063978548e6d383d19"
+      },
+      "provider": "carbon_fix_cull_check",
+      "job": "A10.2"
+    }
+  ]
+}

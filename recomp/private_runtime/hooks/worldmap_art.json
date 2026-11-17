@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "hooks": [
+    {
+      "address": "005B0A50",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "005B0A50",
+        "length": 16,
+        "sha256": "1c8a5367b8f9e631d9052fee2bd8bd65295718c45ae1a59a79f982ee6dce5a3f"
+      },
+      "provider": "carbon_worldmap_art_draw",
+      "job": "B3.C2.ART"
+    },
+    {
+      "address": "0058F600",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "0058F600",
+        "length": 16,
+        "sha256": "441ab618baeb03dea63a745051e06e80bc7aae6f5d27c36aaf288d1857a84056"
+      },
+      "provider": "carbon_worldmap_art_retain",
+      "job": "B3.C2.ART"
+    },
+    {
+      "address": "0056DE90",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "0056DE90",
+        "length": 16,
+        "sha256": "0d4fa0fdf7021a4287bec5ce9dd8adedc7ebe6dddd0a6c35cdd80e585258a8f9"
+      },
+      "provider": "carbon_worldmap_art_release",
+      "job": "B3.C2.ART"
+    }
+  ]
+}

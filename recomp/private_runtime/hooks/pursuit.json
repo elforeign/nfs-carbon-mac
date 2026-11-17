@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "hooks": [
+    {
+      "address": "006B7930",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "006B7930",
+        "length": 16,
+        "sha256": "1e54f128b75ec128139460ac2cadb664bd010c850d6d198eb05dfb2228e62d44"
+      },
+      "provider": "carbon_pursuit_frame",
+      "job": "A9.scripted-pursuit"
+    }
+  ]
+}

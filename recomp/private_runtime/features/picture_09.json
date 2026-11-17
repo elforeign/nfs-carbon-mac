@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_simrate.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    }
+  },
+  "staged_sources": {
+    "carbon_simrate.c": "carbon_simrate.c"
+  },
+  "bindings": {
+    "carbon_simrate.c": {
+      "source": "carbon_simrate.c",
+      "sha256": "137c9e34b506f9b2d2c1d1a59726469e2f96af5404a07a10a30b1b99be4545ee",
+      "functions": {
+        "carbon_simrate_step": {
+          "write": [
+            10402668
+          ]
+        },
+        "carbon_simrate_advance": {
+          "read": [
+            6343504,
+            7717456,
+            10232972,
+            10402664
+          ]
+        }
+      }
+    }
+  },
+  "enabled_providers": []
+}

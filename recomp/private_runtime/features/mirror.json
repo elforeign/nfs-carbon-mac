@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_mirror.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_layouts": {
+        "target": "0070DAB0 cdecl, no arguments: retail body first. Size 00A63AD0/00A63AD4 (read, rewritten when scaled, before 0071AD20 copies it to entry 4), formats 00A63AD8 colour / 00A63ADC depth, objects 00AB0914 texture, 00AB0918 its level-0 surface, 00AB091C depth (each released through vtable +8 and made again with device +0x74, +0x5C and texture +0x48, the retail calls and arguments), device 00AB0ABC, back buffer 00AB0AC8/00AB0ACC."
+      }
+    }
+  },
+  "staged_sources": {
+    "carbon_mirror.c": "carbon_mirror.c"
+  },
+  "bindings": {
+    "carbon_mirror.c": {
+      "source": "carbon_mirror.c",
+      "sha256": "319e28bc06112ff1e2d5f547e34452efa33328974031cf6d2af1024a050ff6e9",
+      "functions": {
+        "carbon_mirror_allocate": {
+          "read": [
+            10894032,
+            10894036
+          ],
+          "write": [
+            10894032,
+            10894036
+          ]
+        },
+        "carbon_mirror_create": {
+          "read": [
+            10894040,
+            10894044
+          ],
+          "write": []
+        }
+      }
+    }
+  },
+  "enabled_providers": []
+}

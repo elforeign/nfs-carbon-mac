@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_blackbox_fe.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_fe_probe.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    }
+  },
+  "staged_sources": {
+    "carbon_blackbox_fe.c": "carbon_blackbox_fe.c",
+    "carbon_fe_probe.h": "carbon_fe_probe.h"
+  },
+  "bindings": {
+    "carbon_blackbox_fe.c": {
+      "source": "carbon_blackbox_fe.c",
+      "sha256": "ba0956f450d7e1522ecbfaafc39bad7185216a805714b1e32f16354cc74fab98",
+      "functions": {}
+    },
+    "carbon_fe_probe.h": {
+      "source": "carbon_fe_probe.h",
+      "sha256": "bc13d8c7c2f6f21d911652a1cb4eafbea00882b68f0e18b8caa6014e2ca5e5cc",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

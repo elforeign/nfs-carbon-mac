@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_daynight_lamps.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_layouts": {
+        "world": "007507D0(view) submits native scene flares; view+8 ID 1 is main view. Record+2c type 13 is a street-light flare; other scene kinds remain native. Return 007CC646 is the car caller 007CBC40; record+8 is the lamp name hash (LEFT/RIGHT_HEADLIGHT 9DB90133/D09091C6, LEFT/RIGHT_BRAKELIGHT 31A66786/BF700A79, unbraked at exactly 0.5). 0074A4E0 fills cone slots B4B390/B4B410; slot+40 light object, thiscall 004822F0(matrix, 0) and +40..48 at -10000 park a slot. 0074D330 argument 4 is entry esp+10 and may be overwritten. 00749D00 increments B4CF28+10 for queued quads; diagnostic sum uses the scaled entry intensity."
+      }
+    }
+  },
+  "staged_sources": {
+    "carbon_daynight_lamps.c": "carbon_daynight_lamps.h"
+  },
+  "bindings": {
+    "carbon_daynight_lamps.c": {
+      "source": "carbon_daynight_lamps.h",
+      "sha256": "fce5def5c0b15d20c3cd9d0b3209c0ae7e6553e3db550217cf7c53e7e7dd22d9",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

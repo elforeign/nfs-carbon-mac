@@ -1,0 +1,1 @@
+/* The selected pad effects and host transport provide the output APIs. */

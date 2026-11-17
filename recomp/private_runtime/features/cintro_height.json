@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_cintro_height.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_accesses": {
+        "carbon_cintro_height": {
+          "read": [
+            11115452,
+            11053760,
+            11042288
+          ]
+        }
+      },
+      "guest_layouts": {
+        "height": "stack arg0 points to the game point (x,y,height). 004809C0 returns its height in x87 st0; race flow 6 is A99BBC, the native face-found bit is A8AAC0 bit 0, the saved origin height A87DF0. Fallback 00455110 cdecl (pos,out height,out normal) on a copied CPU with 32 temporary stack bytes saved/restored."
+      }
+    }
+  },
+  "staged_sources": {
+    "carbon_cintro_height.c": "carbon_cintro_height.c"
+  },
+  "bindings": {
+    "carbon_cintro_height.c": {
+      "source": "carbon_cintro_height.c",
+      "sha256": "01a66b5da725b4ecf4a44aa61b4adb82fbe617d1aaaaeeec12844cd140544694",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

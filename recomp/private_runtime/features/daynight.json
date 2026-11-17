@@ -1,0 +1,112 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_daynight.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_layouts": {
+        "tod": "B77F34 points to the time-of-day object; +20 diffuse, +30 ambient. A99BBC flow 6; A6C204 racing baked power/brightness. B4295C points to native fog RGB. Advance uses A99A5C real dt; +150 sun position and +160 normalized light; callbacks use AB0ABC device vtable slot 94. The shader constants c240..242 are private to these pinned programs.",
+        "sky": "B77F34 block +70 sky and +80 haze; B4295C fog RGB, +10..24 native distances/falloff. AB0ABC device slot 109 uploads pixel c14..16 after the sky callback. 0073E890 takes its fog destination as the second stack argument. B77918 is the selected global dome key; A73358 enables the sky. Only imported key 1F389568 with an overlay and a ready daytime clock enables source scattering in PS c17..19; all other draws reset its weight to zero.",
+        "clock": "A98284 race status +6A14 active race, +6A1C event identity; B4CFE0 simulation +24 state 4 paused. Career policy is neutral (not decoded); clock settings are environment-only.",
+        "facade": "0071ECB0 receives draw at stack+10, draw+1C material. Material+30 word 00050019 selects source effect 5; native loader resolves low ushort 25. Device slots 94/109 upload reserved VS c243 and PS c31 before CommitChanges. Neutral ambient RGB times W=4 and brightness=2; c243.w / c31.x carry the day weight (1 - clock night; 0 with the clock absent, unready or outside flow 6), blending over the native colour. Material+30 word 00060000 marks source trees on native effect 0: unless NFS_DAYNIGHT_TREES=0/off, VS c250/c251 carry the source tree terms around that draw only (c251.w wrap > 0) and are zeroed after it.",
+        "reflect": "Material+30 word 00010001 selects source reflective transport on native effect 1. Draw+0C/+14 retain normal/specular texture handles from material+19/+1B; device slots 65/69 bind reserved s5/s6. VS c248 light, PS c21..25 source noon terms, c31.y day weight (1 - clock night; 0 with the clock absent, unready or outside flow 6) blending over the native output. Native effect 1 resets the weight; fog and native beams remain. Native weather is active view AB08F4+4, B4AF7C+view*80 pointer, +28C rain scalar, as read by 00748B50; A650E0 is pass brightness.",
+        "grade": "0071D4E0(this, technique, effect) is called only by the final treatment 00726AF0, just before its full-screen draw; B42FE8 is the visual-treatment effect. Unless NFS_DAYNIGHT_GRADE=0/off the visualtreatment (3879B8C8D72DF0CB) and visualtreatment_enchanced (5AD9EA49CAC6D49B) programs blend their 3D grade toward saturate(input) by PS c31.z, uploaded after 0071D4E0: the day weight inside converted Rockport (overlay, A73358 sky enabled, dome B77918 = 1F389568), else 0."
+      }
+    },
+    "carbon_daynight_shader.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_daynight_sky.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_worldreflect_shader.inc": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "carbon_daynight_grade.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    }
+  },
+  "staged_sources": {
+    "carbon_daynight.c": "carbon_daynight.h",
+    "carbon_daynight_shader.h": "carbon_daynight_shader.h",
+    "carbon_daynight_sky.h": "carbon_daynight_sky.h",
+    "carbon_worldreflect_shader.inc": "carbon_worldreflect_shader.inc",
+    "carbon_daynight_grade.h": "carbon_daynight_grade.h"
+  },
+  "bindings": {
+    "carbon_daynight.c": {
+      "source": "carbon_daynight.h",
+      "sha256": "6ea5e071168d548b473453a9cce42355fb9292e33886456faf1576ec63d12e80",
+      "functions": {}
+    },
+    "carbon_daynight_shader.h": {
+      "source": "carbon_daynight_shader.h",
+      "sha256": "f9bc732da06d19fa8bb48e8d98fbb5bdcc0b72fcf0341e6f8e815f62dd679b5e",
+      "functions": {}
+    },
+    "carbon_daynight_sky.h": {
+      "source": "carbon_daynight_sky.h",
+      "sha256": "fda808d01cf4754fbf507d76a0749abf36411f7354dd6a9743488cf635156a3c",
+      "functions": {
+        "carbon_dn_sky_constants": {
+          "read": [
+            10957656
+          ]
+        }
+      }
+    },
+    "carbon_worldreflect_shader.inc": {
+      "source": "carbon_worldreflect_shader.inc",
+      "sha256": "55b2d7268bd01039b9567e11c1b1ac9eea7da12e5f623223e414505f8cdd6cf5",
+      "functions": {}
+    },
+    "carbon_daynight_grade.h": {
+      "source": "carbon_daynight_grade.h",
+      "sha256": "cd96ee0dd61757f47051d4130473ba8de0e3e18badbc5a3efab22bf76adae4ce",
+      "functions": {
+        "carbon_dn_grade_weight": {
+          "read": [
+            10957656
+          ]
+        }
+      }
+    }
+  },
+  "enabled_providers": []
+}

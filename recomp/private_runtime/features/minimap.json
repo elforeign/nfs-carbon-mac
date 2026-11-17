@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_minimap.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_layouts": {
+        "calibration": "009D5F10/08/0C: HUD bx/by/k. Manifest-derived table, scoped to four synchronous native bodies with nested bit restoration.",
+        "track": "00A7A1A8: current world track; never use SkipFE request or TrackInfo +B0.",
+        "hud": "005E50F0 entry ECX, centre +AC/+B0 after original; diagnostic only. Player reader returns render XYZ for independent projection.",
+        "icons": "00A98294 icon manager: +2F8 allocation count (cap 256), +2FC active count, +300 pointer list; icon +1 visibility flags, +10 raw vault Position.x (>7000 separates the appended region); diagnostic reads only.",
+        "worldmap": "009CEE48/3C, 009CEDC4: scoped atlas X max, Y min and streamer high limit; other three limits untouched. 005825A0 entry ECX is streamer; current +80/+AC, desired +88/+B4, extent +DC..+E8; diagnostic only."
+      }
+    }
+  },
+  "staged_sources": {
+    "carbon_minimap.c": "carbon_minimap.h"
+  },
+  "bindings": {
+    "carbon_minimap.c": {
+      "source": "carbon_minimap.h",
+      "sha256": "8c8c1bfb3d003fc19abba9d7cbd08a1cc97901fabe466cf388b9cedebda1c5c0",
+      "functions": {
+        "carbon_minimap_scope": {
+          "read": [
+            10313488,
+            10313480,
+            10313484
+          ],
+          "write": [
+            10313488,
+            10313480,
+            10313484
+          ]
+        },
+        "carbon_worldmap_scope": {
+          "read": [
+            10284616,
+            10284604,
+            10284484
+          ],
+          "write": [
+            10284616,
+            10284604,
+            10284484
+          ]
+        }
+      }
+    }
+  },
+  "enabled_providers": []
+}

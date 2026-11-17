@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_save_folder.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_layouts": {
+        "listing": "00716690 thiscall ret4: stack arg0=009E8C78 selects old-save folder; ECX+10 count; ECX vtable+2C completion(0). No other callers replaced.",
+        "diagnostic": "004A0490 property 1778 on A8AD30 through copied CPU; scratch below ESP, output word restored. Native completion alone changes cash."
+      }
+    }
+  },
+  "staged_sources": {
+    "carbon_save_folder.c": "carbon_save_folder.h"
+  },
+  "bindings": {
+    "carbon_save_folder.c": {
+      "source": "carbon_save_folder.h",
+      "sha256": "807315c46a08f18e95a7d874bc1aab03151e066b3de28cf291200a60c7e434fd",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

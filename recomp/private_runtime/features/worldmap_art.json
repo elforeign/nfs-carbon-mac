@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_worldmap_art.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_layouts": {
+        "image": "005B0A50: ECX renderer, stack image; +1C flags, +24 texture, +2C transform (54 bytes), +58 cache. Retained owner +14 image, +C pool, +EC request list.",
+        "quad": "Transform +1C/+20 centre, +38/+3C size, +44/+48 UL, +4C/+50 LR. Extra draw restores all fields and invalidates the native cache.",
+        "lifetime": "0058F600 retains and requests once; 0056DE90 drains native list before releasing the extra hash and forgetting the image."
+      }
+    }
+  },
+  "staged_sources": {
+    "carbon_worldmap_art.c": "carbon_worldmap_art.h"
+  },
+  "bindings": {
+    "carbon_worldmap_art.c": {
+      "source": "carbon_worldmap_art.h",
+      "sha256": "20c8c559f53ba13652ccc74ceb09ba26f0da4bd53e01535448f10bcb21f6b5e5",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

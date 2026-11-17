@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_autodrive.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_layouts": {
+        "native": "0076FB20 local-player constructor installs the opt-in observer at AB0ABC -> device vtable +44 (Present); native Present runs first. ForceAIControl(0) 0065C2C0 uses A9FF5C/A9FF64 and IHumanAI 004087C0. B4D964 is INIS; B4CFE0+24 state 3; A99BBC flow 6. A97A78 wraps FEngine, +E4 packages, +08 next, +20 control, +0C name. Rigid-body 006C6FF0 position +10, 006C7000 velocity +20. A98284 race status +18 racer array, stride384, +4C completed laps; AA26B4/AA26BC keyed Simable array/count resolve the player."
+      }
+    },
+    "carbon_census.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_layouts": {
+        "native": "006B6F28 ECX=00B70650; 007A4680 zones +11A/+1AA; 0079A170 slot 0 streaming position +D0/+D4/+D8. Streamer count/list +32C/+330, skipped +28, pool base/size/object +730/+734/+73C. Records number/status/size/memory +8/+C/+18/+4C, loaded states 3/4. Pool query 004750F0(7) -> 007A2520 -> 0079E2B0 reads dirty +1C, cache +18, list +28: next +0, size +C, used +10; observer reads only. 007A4850 increments slot ages +120/+1B0 for unchanged classified zones, resets to 1 on change (-1 becomes bootstrap 1000). Player ISuspension handle 00403CE0 uses Simable+4 sorted map; vtable +4C=006FC8C0 reads interface+B4 (SuspensionSimple+F8, 006FCA30 writer); 006F8A60 reads interface+9C (SuspensionRacer+E0, 006FA390 writer); other classes (Traffic 006FB690, Trailer 006FDA00, Sline 006FEA50) report -1 and the census names the getter; interface at +44, 006DEAD0 physics reader. Slot 0 velocity +E0/+E4/+E8 (0079A170 param 3), projected by 007A44B0. 007A82E0 original first; 007A8505/007A8515 write byte 00B7420C. Count nonzero post-call values between samples only with diagnostics and census enabled. 007A97B0 cdecl arg1 is physics forward output, marker+20 yaw -> (-cos,0,sin); C3 heading override writes only its 12-byte output after native placement. Vehicles line: 00440CD0 A9E868 traffic manager+40 (+5C/+64), A9E874 cop manager+4C (pool +BC/+C4, pursuit list +140/+148, payload +8, vehicles +4C/+54); IVehicle +9C 006D80C0 active v+A8, +4 006D7EE0 ISimable v-94, then the player body reads; read-only."
+      }
+    },
+    "carbon_c3drive.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_layouts": {
+        "native": "B77EC8 native road nodes stride32; position XYZ +0/+4/+8, degree +10, segment slots +12. B77ECC segments stride22: endpoints +0/+2, handles +C/+E, control directions +10/+13. Validated rigid-body 006C6FF0 position +10 / 006C7000 velocity +20 / 006C70E0 forward row +90, as the autodrive observer."
+      }
+    }
+  },
+  "staged_sources": {
+    "carbon_autodrive.c": "carbon_autodrive.h",
+    "carbon_census.h": "carbon_census.h",
+    "carbon_c3drive.h": "carbon_c3drive.h"
+  },
+  "bindings": {
+    "carbon_autodrive.c": {
+      "source": "carbon_autodrive.h",
+      "sha256": "cf967c3f02a4df310f04966c28bcb4b315694cce1a2aa5a8179546acefe73515",
+      "functions": {}
+    },
+    "carbon_census.h": {
+      "source": "carbon_census.h",
+      "sha256": "0ae981cb7f94123ce9af3f000cce3bbe3af9aa556afa4ef04140d2d66275d406",
+      "functions": {}
+    },
+    "carbon_c3drive.h": {
+      "source": "carbon_c3drive.h",
+      "sha256": "ee04d0e15d92c8a619c00b8db3357c8328b1e99467879510f954cc84d0c8b7ca",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}
