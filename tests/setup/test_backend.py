@@ -3699,7 +3699,7 @@ class CarbonBuildTests(Fixture):
 
     def test_carbon_update_from_its_own_version_and_remembered_folder(self):
         """Carbon's updater inputs: its own version 1.1.0 (Most Wanted's stays), its sources remembered at install in
-        its own Setup state, and a 1.0.1 update staged from those alone, bound to its app and profile <data>/Carbon.
+        its own Setup state, and a 1.1.1 update staged from those alone, bound to its app and profile <data>/Carbon.
         Proof: with main 583933e9's tools/setup_kit this fails at its first check (bundle --version 4.6.0); fixed: passes."""
         from setup_kit import apply   # the checked-in launch transaction (the builds below load the build copy's)
         installed, runner = self.carbon_build()
@@ -3716,13 +3716,13 @@ class CarbonBuildTests(Fixture):
         real = b.build
         with mock.patch.object(b, "build", lambda args, paths, events, runner, source_root=None:
                                real(args, paths, events, CarbonRunner(self.log, self.child_env, paths.work), self.source)), \
-             mock.patch.object(b, "CARBON_VERSION", "1.0.1"), \
+             mock.patch.object(b, "CARBON_VERSION", "1.1.1"), \
              self.pipeline_stubs(), mock.patch.object(b, "assert_not_running"), redirect_stdout(self.stream):
             rc = b.main(["--stage-only", "--game", "carbon", "--stage", str(stage), "--work", str(self.paths.work), "--events"])
         self.assertEqual(rc, 0, self.stream.getvalue()[-2000:])
         ready = json.loads((stage / "ready.json").read_text())
         self.assertEqual((ready["version"], ready["app"], ready["profile"], ready["destination"]["path"]),
-                         ("1.1.0", "NFS Carbon Native.app", str(self.paths.data / "Carbon"), str(installed)))
+                         ("1.1.1", "NFS Carbon Native.app", str(self.paths.data / "Carbon"), str(installed)))
         record, app, data = apply.read_ready(stage / "ready.json", self.paths.data / "Carbon", Path(installed))
         self.assertTrue((Path(app) / "Contents/MacOS/NFSCarbon").is_file())
         self.assertTrue((stage / record["roots"]["pc_root"] / "NFSC.exe").is_file())
