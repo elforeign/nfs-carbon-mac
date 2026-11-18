@@ -45,8 +45,10 @@ static double actionNow(void){return actionClock;}
 extern "C" void carbon_addons_test_init(void);
 extern "C" int carbon_addons_test_saved(void);
 extern "C" void carbon_addons_test_action(const char *);
+static const char *fixtureUserdata;
+extern "C" const char *userdata_dir(void){return fixtureUserdata;}
 int main(int argc,char **argv){@autoreleasepool{
- require(argc==2,"scratch output folder");outputFolder=[NSString stringWithUTF8String:argv[1]];
+ require(argc==2,"scratch output folder");fixtureUserdata=argv[1];outputFolder=[NSString stringWithUTF8String:argv[1]];
  gpu=MTLCreateSystemDefaultDevice();require(gpu!=nil,"Metal device");commands=[gpu newCommandQueue];
  require([cliprec_movies_folder() hasSuffix:@"/Movies/NFSC"],"Carbon output folder");
  setenv("NFS_GAME_SCRATCH",argv[1],1);

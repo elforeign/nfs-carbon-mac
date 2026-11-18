@@ -171,7 +171,7 @@
     },
     "game_menu_shortcut.h": {
       "source": "game_menu_shortcut.h",
-      "sha256": "532d3b655f508792e23ad68efd0a6a920c5fea0af3d0ee489b2dec7e4b399111",
+      "sha256": "4c14e927bacf14cffd125f7bdbf8dfd1218c85109829bfcbc94da8d7102f05fd",
       "functions": {}
     },
     "game_menu_text.h": {

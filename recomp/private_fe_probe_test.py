@@ -1,11 +1,13 @@
 """Carbon front-end probe (NFS_CARBON_FE_PROBE), native fixture without a game or GPU.
 
-Good: switch off 0 events over 2,702 calls; on 54 flow-3 state lines (root state 4, grand prev 8, controlling package
+Good: switch off 0 events over 2,704 calls; on 54 flow-3 state lines (root state 4, grand prev 8, controlling package
 starred, loading-mask change seen) and 600 draws lines (frame 0..599, n=260) after game-flow becomes 3.
 Forced black-screen F10 export, diagnostics OFF: tap 1/1; removed tap 0/1.
 Production reader + adapter + recorder/export; unchanged state remains visible after 40s.
+Recorder off with diagnostics on: probe draw lines fixed 600, old guard 0.
+After event-ring wrap: unchanged FE/load/package rows in the hang export fixed 4/4, old ring-only export 0/4.
 Also checks cyclic package walks, unknown-label privacy and guest memory unchanged.
-Covers carbon_blackbox_fe.c, carbon_blackbox.c, carbon_fe_probe.h, blackbox.c,
+Covers report.m, carbon_blackbox_fe.c, carbon_blackbox.c, carbon_fe_probe.h, blackbox.c,
 blackbox.h and features/blackbox_fe.json; no assets or GPU required.
 """
 from pathlib import Path
@@ -17,9 +19,12 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
 CLOCK = HERE / 'private_runtime/carbon_picture_clock.c'
 ADAPTER = HERE / 'private_runtime/carbon_blackbox.c'
+REPORT = ROOT / 'runtime/report.m'
 
 SOURCE = r'''
 #include "host.h"
+#include "game_select.h"
+#include <math.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -29,13 +34,14 @@ uint8_t *G;
 PerfFrame perf_frames[PERF_RING];
 volatile uint64_t perf_nframes;
 static unsigned diag_events;
+static unsigned recorder_clock_calls;
 static uint64_t fake_ns;
 uint64_t host_ticks(void) { return fake_ns; }
 void diag_event(const char *fmt, ...) {
     va_list ap; va_start(ap, fmt); ++diag_events; printf("EVENT "); vprintf(fmt, ap); printf("\n"); va_end(ap);
 }
 static int fixture_clock(clockid_t id, struct timespec *t) {
-    (void)id; t->tv_sec=fake_ns/1000000000ull; t->tv_nsec=fake_ns%1000000000ull; return 0;
+    (void)id; ++recorder_clock_calls; t->tv_sec=fake_ns/1000000000ull; t->tv_nsec=fake_ns%1000000000ull; return 0;
 }
 #define clock_gettime fixture_clock
 #include "blackbox.c"
@@ -58,7 +64,8 @@ static uint8_t fixture_read8(uint32_t a) {
 #define M32(a) (*(u32a *)(G+(uint32_t)(a)))
 #define M8(a) (*(u8a *)(G+(uint32_t)(a)))
 #include "adapter.inc"
-#define HOOK() do { guest_reads=0; blackbox_game_frame(perf_nframes, M32(0x00A99BBCu), NULL); \
+#include "frame.inc"
+#define HOOK() do { guest_reads=0; fixture_frame(perf_nframes, M32(0x00A99BBCu)); \
     assert(guest_reads <= 1039); if (guest_reads>max_guest_reads) max_guest_reads=guest_reads; } while (0)
 static void put32(uint32_t a, uint32_t v) { M32(a) = v; }
 static void put_str(uint32_t a, const char *s) { memcpy(G + a, s, strlen(s) + 1); }
@@ -96,6 +103,13 @@ int main(int argc, char **argv) {
     blackbox_menu_at(1, fake_ns);
     puts("REPORT_BEGIN"); blackbox_export_at(stdout, BB_F10, fake_ns); puts("REPORT_END");
     blackbox_menu_at(0, fake_ns);
+    if (!diag_on && blackbox_enabled()) {
+        /* Only the root changes. The other observations must outlive the history ring. */
+        for (unsigned i=0; i<EVENTS+1; ++i) {
+            put32(0x1000 + 4, 5+i); fake_ns+=20000000ull; ++perf_nframes; HOOK();
+        }
+        puts("HANG_BEGIN"); blackbox_export_at(stdout, BB_HANG, fake_ns+80000000000ull); puts("HANG_END");
+    }
     /* Cycle: bounded at 24; arbitrary profile-like text must not enter blackbox.txt. */
     put32(0x6300 + 8, 0x6200); put_str(0x6440, "PRIVATE_DRIVER_SECRET.fng");
     fake_ns += 20000000ull; ++perf_nframes; HOOK();
@@ -111,6 +125,7 @@ int main(int argc, char **argv) {
     fake_ns+=20000000ull; ++perf_nframes; HOOK();
     puts("INVALID_BEGIN"); blackbox_export_at(stdout,BB_STALL,fake_ns); puts("INVALID_END");
     printf("MAX_GUEST_READS %u\n", max_guest_reads);
+    printf("RECORDER_CLOCK_CALLS %u\n", recorder_clock_calls);
     printf("EVENTS %u\n", diag_events);
     return 0;
 }
@@ -121,10 +136,15 @@ def run(hook, switch, work, diag=True, recorder=True):
     src = work / 'fixture.c'
     src.write_text(SOURCE)
     adapter = ADAPTER.read_text()
-    if not hook: adapter = adapter.replace('    carbon_blackbox_fe(frame, flow, now);', '')
+    if not hook:
+        adapter = adapter.replace('    carbon_blackbox_fe(frame, flow, now);', '')
     (work / 'adapter.inc').write_text(adapter)
+    report = REPORT.read_text()
+    start = report.index('    uint64_t head =', report.index('void report_frame('))
+    end = report.index('    static uint32_t prev_causes', start)
+    (work / 'frame.inc').write_text('static void fixture_frame(uint64_t frame, uint32_t flow) {\n' + report[start:end] + '}\n')
     binary = work / ('fixture_%d' % hook)
-    subprocess.run(['clang', '-std=gnu11', '-O1', '-Wall', '-fsanitize=address,undefined', '-I', str(ROOT / 'runtime'), '-I', str(ROOT / 'recomp'),
+    subprocess.run(['clang', '-std=gnu11', '-O1', '-Wall', '-DNFS_GAME=2', '-fsanitize=address,undefined', '-I', str(ROOT / 'runtime'), '-I', str(ROOT / 'recomp'),
                     '-I', str(HERE / 'private_runtime'), str(src), '-o', str(binary)], check=True)
     env = {'NFS_CARBON_FE_PROBE': '1'} if switch else {}
     if not diag: env['DIAG_OFF'] = '1'
@@ -144,6 +164,7 @@ def main():
         quiet = run(True, False, work, diag=False)
         missing = run(False, False, work, diag=False)
         disabled = run(True, False, work, diag=False, recorder=False)
+        both_off = run(True, False, work, recorder=False)
         mirror_only = run(True, True, work, recorder=False)
     report = quiet.split('REPORT_BEGIN\n')[1].split('REPORT_END')[0]
     absent = missing.split('REPORT_BEGIN\n')[1].split('REPORT_END')[0]
@@ -159,8 +180,20 @@ def main():
     invalid = quiet.split('INVALID_BEGIN\n')[1].split('INVALID_END')[0]
     assert 'FE root valid=0' in invalid and 'LOAD valid=2 mask=FFFFFFFF' in invalid
     assert quiet.endswith('EVENTS 0\n')
-    assert 'MAX_GUEST_READS 0' in disabled and 'disabled NFS_BLACKBOX=0' in disabled
-    assert 'fe-probe: draws frame=599 n=260' in mirror_only
+    for result in (disabled, both_off):
+        assert 'MAX_GUEST_READS 0\nRECORDER_CLOCK_CALLS 0\nEVENTS 0\n' in result
+        assert 'disabled NFS_BLACKBOX=0' in result
+    mirror_draws = [l for l in mirror_only.splitlines() if 'fe-probe: draws' in l]
+    hang = quiet.split('HANG_BEGIN\n')[1].split('HANG_END')[0]
+    stable = ('FE child valid=1', 'FE grand valid=1',
+              'LOAD valid=7 mask=40 loader busy=1 want=4 have=2+1 garage_ready=0',
+              "PACKAGE control='FeBlackScreen.fng'")
+    retained = sum(hang.count(row) == 1 for row in stable)
+    assert 'trigger=hang' in hang and 'no_frame=80.000s' in hang
+    print(f'Blackbox off: probe draws={len(mirror_draws)}/600; hang after FE wrap: stable context={retained}/4')
+    assert len(mirror_draws) == 600 and retained == 4
+    assert 'frame=599 n=260' in mirror_draws[-1]
+    assert 'RECORDER_CLOCK_CALLS 0' in mirror_only
     assert report.count('FE root') == 1 and report.count('LOAD ') == 1
     output = ROOT / '.metal-cache/blackbox-fe-proof'; output.mkdir(parents=True, exist_ok=True)
     (output / 'blackbox.txt').write_text(report)

@@ -167,7 +167,8 @@ int main(int argc,char**argv){private_track_overlay_init();CHECK(argc==5||argc==
 
 def build(root,out,broken):
     dst=root/'runtime';source=selected_source(dst/'boot.c')
-    assert body(source,'main').index('private_track_overlay_init();') < body(source,'main').index('app_start(')
+    entry = body(source,'main')
+    assert entry.index('\n    settings_init();') < entry.index('\n    private_track_overlay_init();')
     if broken=='fake_fd':
         opener=body(source,'file_open')
         native='    fd = open(s ? s->temp : host, s ? fl & ~(O_CREAT | O_EXCL) : fl, 0644);'
@@ -227,12 +228,21 @@ def build(root,out,broken):
         r=subprocess.run(['clang',*flags,*extra,'-c',str(src),'-o',str(obj)],capture_output=True,text=True)
         if r.returncode:raise RuntimeError(r.stderr[-2000:])
     command=json.loads((root/'link_command.json').read_text());new=[];i=0
+    archives=[Path(arg) for arg in command if Path(arg).name=='NFSC.a']
+    assert len(archives)==1, 'private runtime guest archive entry missing or ambiguous'
+    archive=archives[0]
+    # Copied Carbon outputs keep the original checkout's absolute link paths.
+    # Use the staged objects and libraries from the checkout under test.
+    build_checkout=archive.parents[3]  # recomp/out/carbon/NFSC.a
     while i<len(command):
         arg=command[i]
+        path=Path(arg)
         if arg=='-o':new+=['-o',str(out/'test')];i+=2;continue
-        if arg.endswith('/boot.c.o'):new.append(str(out/'boot.o'))
-        elif arg.endswith('/imports.c.o'):pass
-        elif arg.endswith('.a') and Path(arg).parent==root:new.append(str(out/'fixture.o'))
+        if path==archive:new.append(str(out/'fixture.o'))
+        elif path==archive.parent/'runtime/boot.c.o':new.append(str(out/'boot.o'))
+        elif path==archive.parent/'runtime/imports.c.o':pass
+        elif path.is_absolute() and path.is_relative_to(build_checkout):
+            new.append(str(HERE.parent/path.relative_to(build_checkout)))
         else:new.append(arg)
         i+=1
     r=subprocess.run(new,capture_output=True,text=True)
@@ -442,11 +452,11 @@ def main():
         if broken=='good':
             for mode in (None,'off','rockport','other'):
                 assert run('mode-'+str(mode),folder/'overlay',enabled=31999,mode=mode).returncode==0
-            for index,region in enumerate(('L5RA','L2RA')):
+            for region in ('L5RA','L2RA'):
                 only=folder/('one-art-'+region)
                 for name in ('TRACKS/L2RA.BUN','TRACKS/STREAML2RA.BUN','TRACKS/'+region+'/TrackMaps.bin'):
                     path=only/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(replacements[name])
-                assert run('one-art-'+region,only,enabled=12 | (1 << (8+index))).returncode==0
+                assert run('one-art-'+region,only,enabled=12).returncode==0
             only=folder/'only-attributes'
             for name in ('TRACKS/L2RA.BUN','TRACKS/STREAML2RA.BUN','GLOBAL/ATTRIBUTES.BIN'):
                 path=only/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(replacements[name])

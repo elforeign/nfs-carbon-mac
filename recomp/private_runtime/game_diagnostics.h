@@ -74,78 +74,6 @@ static float timeline_race0 = -1, timeline_secs = 60;
 void diag_timeline(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 static void diag_warp_init(void);
 
-// ---------------- event ring ----------------
-#define RING 65536
-#define LINE 192
-static char ring[RING][LINE];
-// Call records (imports and COM methods, millions a second) are stored raw and formatted only when a report is written.
-static struct { uint64_t frame; const char *name; uint32_t v[8]; uint32_t tid; uint8_t nargs, raw; } rawrec[RING];
-static volatile uint32_t ring_head;
-static pthread_mutex_t file_mu = PTHREAD_MUTEX_INITIALIZER;
-
-uint32_t diag_thread_id(void);   // threads.c
-
-void diag_call_ring(const char *name, int nargs, const uint32_t *args, uint32_t ret, uint32_t ra) {
-    uint32_t i = __atomic_fetch_add(&ring_head, 1, __ATOMIC_RELAXED) % RING;
-    rawrec[i].frame = frame_now;
-    rawrec[i].tid = diag_thread_id();
-    rawrec[i].name = name;
-    rawrec[i].nargs = (uint8_t)(nargs < 6 ? nargs : 6);
-    for (int k = 0; k < rawrec[i].nargs; ++k) rawrec[i].v[k] = args[k];
-    rawrec[i].v[6] = ret; rawrec[i].v[7] = ra;
-    rawrec[i].raw = 1;
-}
-static const char *ring_line(uint32_t i, char *buf, size_t n) {
-    if (!rawrec[i].raw) return ring[i];
-    int k = snprintf(buf, n, "f%llu t%u %s(", (unsigned long long)rawrec[i].frame, rawrec[i].tid, rawrec[i].name);
-    for (int a = 0; a < rawrec[i].nargs && k < (int)n; ++a) k += snprintf(buf + k, n - (size_t)k, a ? ", %X" : "%X", rawrec[i].v[a]);
-    if (k < (int)n) snprintf(buf + k, n - (size_t)k, ") -> %X @%08X", rawrec[i].v[6], rawrec[i].v[7]);
-    return buf;
-}
-static uint32_t ring_put(const char *fmt, va_list ap) {
-    uint32_t i = __atomic_fetch_add(&ring_head, 1, __ATOMIC_RELAXED) % RING;
-    rawrec[i].raw = 0;
-    int n = snprintf(ring[i], LINE, "f%llu t%u ", (unsigned long long)frame_now, diag_thread_id());
-    vsnprintf(ring[i] + n, LINE - (size_t)n, fmt, ap);
-    return i;
-}
-void diag_event_ring(const char *fmt, ...) {
-    va_list ap;
-    va_start(ap, fmt);
-    ring_put(fmt, ap);
-    va_end(ap);
-}
-void diag_event(const char *fmt, ...) {
-    va_list ap;
-    va_start(ap, fmt);
-    va_list file_ap;
-    va_copy(file_ap, ap);
-    uint64_t frame = frame_now;
-    uint32_t tid = diag_thread_id();
-    ring_put(fmt, ap);
-    va_end(ap);
-    if (events_f) {
-        pthread_mutex_lock(&file_mu);
-        // Keep the crash ring compact, but don't truncate file events to its 192-byte slots: audiochain's byte
-        // totals grow during long runs and would otherwise lose the callback-gap/encode maxima at the end.
-        fprintf(events_f, "f%llu t%u ", (unsigned long long)frame, tid);
-        vfprintf(events_f, fmt, file_ap);
-        fputc('\n', events_f);
-        pthread_mutex_unlock(&file_mu);
-    }
-    va_end(file_ap);
-}
-void report_note(const char *fmt, ...) __attribute__((format(printf, 1, 2)));   // report.m
-void report_frame(uint64_t frame, uint32_t flow);
-void report_auto(const char *why, const char *diag_file);
-void portmenu_frame(void);
-static void dump_ring(FILE *f, int last) {
-    uint32_t head = ring_head, start = head > (uint32_t)last ? head - (uint32_t)last : 0;
-    fprintf(f, "\n==== last %u events ====\n", head - start);
-    char buf[LINE];
-    for (uint32_t k = start; k < head; ++k) fprintf(f, "%s\n", ring_line(k % RING, buf, sizeof buf));
-}
-
 // ---------------- symbols: the game's function names (decomp/functions.tsv) ----------------
 typedef struct { uint32_t addr; char *name; } Sym;
 static Sym *syms;
@@ -229,7 +157,6 @@ void diag_report(const char *file, const char *why) {
     diag_flush();
     if (!strcmp(file, "crash.txt") || !strncmp(file, "hang", 4)) report_auto(why, path);
 }
-void diag_ring_dump(FILE *f, int last) { dump_ring(f, last); }   // report.m
 
 static void crash_signal(int sig) { /* Unsupported engine diagnostic. */ }
 
@@ -432,10 +359,10 @@ static void stats_second(uint64_t frame, uint64_t now, uint32_t state) { /* Unsu
 // The main thread waiting for messages on purpose (an inactive window, user32.m wait_messages): no stall or hang
 // reports meanwhile, and frame times restart when the next frame comes.
 void diag_idle(int idle) {
-    if (!diag_on || idle == __atomic_load_n(&idle_now, __ATOMIC_ACQUIRE)) return;
-    __atomic_store_n(&idle_now, idle, __ATOMIC_RELEASE);
-    diag_event(idle ? "main thread idle: waiting for messages" : "main thread drawing again");
+    if (idle == __atomic_load_n(&idle_now, __ATOMIC_ACQUIRE)) return;
     __atomic_store_n(&last_frame_ns, host_ticks(), __ATOMIC_RELEASE);
+    __atomic_store_n(&idle_now, idle, __ATOMIC_RELEASE);
+    if (diag_on) diag_event(idle ? "main thread idle: waiting for messages" : "main thread drawing again");
 }
 uint64_t diag_last_frame_ns(void) { return __atomic_load_n(&last_frame_ns, __ATOMIC_ACQUIRE); }
 int diag_is_idle(void) {
@@ -450,6 +377,7 @@ int diag_is_idle(void) {
 // Logs each character the first time it is in the list (position, speed) and every change of the list's states.
 static void gchar_watch(void) { /* Unsupported engine diagnostic. */ }
 void diag_frame(uint64_t frame, uint64_t draws) {
+    diag_idle(0);
 #if defined(NFS_GAME) && NFS_GAME == NFS_GAME_PRIVATE
     void carbon_unlock_frame(void);
     carbon_unlock_frame();
@@ -462,7 +390,6 @@ void diag_frame(uint64_t frame, uint64_t draws) {
     __atomic_store_n(&last_frame_ns, host_ticks(), __ATOMIC_RELEASE);
     if (!diag_on) return;
     if (!have_game_thread) { game_thread = pthread_self(); have_game_thread = 1; }   // diag_profile.h samples it
-    diag_idle(0);
     private_mix_frame(frame);
 }
 uint64_t diag_current_frame(void) { return __atomic_load_n(&frame_now, __ATOMIC_ACQUIRE); }

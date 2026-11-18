@@ -16,11 +16,14 @@ static unsigned private_track_enabled;
 
 void private_track_overlay_init(void) {
     const char *root = getenv("NFS_CARBON_TRACK_OVERLAY");
+    const char *mode = getenv("NFS_CARBON_MINIMAP");
+    int atlas = mode && !strcmp(mode, "atlas");
+    const unsigned atlas_hud = (1u << 6) | (1u << 7);
+    const unsigned atlas_world = (1u << 8) | (1u << 9);
+    unsigned nonempty = 0;
     private_track_enabled = 0;
-    if (!root || !*root) return;
-    for (unsigned pair = 0; pair < 8; ++pair) {
-        const char *mode = getenv("NFS_CARBON_MINIMAP");
-        if (pair == 4 && (!mode || strcmp(mode, "atlas"))) continue;
+    for (unsigned pair = 0; root && *root && pair < 8; ++pair) {
+        if (pair == 4 && !atlas) continue;
         unsigned present = 0, mask = 0;
         for (unsigned i = pair * 2; i < pair * 2 + 2 && i < 15; ++i) {
             char *path = private_track_paths[i];
@@ -37,7 +40,12 @@ void private_track_overlay_init(void) {
                 int fd = open(path, O_RDONLY | O_NONBLOCK | O_CLOEXEC);
                 int ok = fd >= 0 && !fstat(fd, &st) && S_ISREG(st.st_mode);
                 if (fd >= 0) close(fd);
-                if (ok) { ++present; mask |= 1u << i; continue; }
+                if (ok) {
+                    if (st.st_size > 0) nonempty |= 1u << i;
+                    ++present;
+                    mask |= 1u << i;
+                    continue;
+                }
             }
             fprintf(stderr, "NFS_CARBON_TRACK_OVERLAY: readable regular pair required; invalid %s\n", path);
             exit(2);
@@ -52,11 +60,18 @@ void private_track_overlay_init(void) {
         }
         private_track_enabled |= mask;
     }
-    if (!(private_track_enabled & 15u)) {
+    if (root && *root && !(private_track_enabled & 15u)) {
         fprintf(stderr, "NFS_CARBON_TRACK_OVERLAY: readable regular pair required; no complete region pair\n");
         exit(2);
     }
-    fprintf(stderr, "NFS_CARBON_TRACK_OVERLAY: enabled %s pairs=%u\n", root, private_track_enabled);
+    /* Atlas is built for the combined L5RA world and its two HUD packs.
+     * TrackMaps replacements are optional additions to that same mode. */
+    if (atlas && (nonempty & (atlas_hud | 3u)) != (atlas_hud | 3u)) {
+        private_track_enabled &= ~(atlas_hud | atlas_world);
+        setenv("NFS_CARBON_MINIMAP", "off", 1);
+    }
+    if (root && *root)
+        fprintf(stderr, "NFS_CARBON_TRACK_OVERLAY: enabled %s pairs=%u\n", root, private_track_enabled);
 }
 
 /* resolve() handled drive/module prefixes, separators and case. Match the

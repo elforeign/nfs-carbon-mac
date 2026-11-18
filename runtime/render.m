@@ -543,7 +543,8 @@ RenderTex *gpu_tex(Obj *t) {
 }
 
 // Static vertex/index buffers (no D3DUSAGE_DYNAMIC) live in a Metal buffer, re-uploaded after a writable Lock or Unlock.
-typedef struct { id<MTLBuffer> buf; uint64_t used; } RenderBuf;
+@class GlassUV1;
+typedef struct { id<MTLBuffer> buf; uint64_t used; GlassUV1 *glass_uv1; } RenderBuf;
 static id<MTLBuffer> gpu_buf(Obj *b) {
     if (!b || (b->usage & 0x200)) return nil;
     RenderBuf *g = b->gpu;
@@ -565,11 +566,13 @@ static id<MTLBuffer> gpu_buf(Obj *b) {
 }
 
 void render_release(Obj *o) {
+    if (o->kind == K_QUERY && o->q_state == 1) render_query_issue(o, 1);
     render_panes_changed(o);
     if (o->gpu && (o->kind == K_VB || o->kind == K_IB)) {
         RenderBuf *g = o->gpu;
         if (g->buf) { --live_buf; live_buf_bytes -= (int64_t)g->buf.length; }
         g->buf = nil;
+        g->glass_uv1 = nil;
         free(g);
         o->gpu = NULL;
         return;
@@ -884,7 +887,7 @@ static unsigned float_scene_store_policy(MTLPixelFormat format,uint32_t target) 
 // Only actual pre-post screen-copy destinations are promoted, on their first
 // write from the float scene. Parent texture storage is what sampling observes.
 static void float_scene_copy(uint32_t dst,MTLPixelFormat format) {
-    Obj *o=obj(dst);if(!o || dst==dev.backbuffer)return;
+    Obj *o=obj(dst);if(!o || o->lockable_rt || dst==dev.backbuffer)return;
     Obj *t=o->parent?obj(o->parent):o;
     if(!t || (t->kind!=K_TEXTURE && t->kind!=K_SURFACE) ||
        (t->fmt!=21 && t->fmt!=22 && t->fmt!=32 && t->fmt!=33))return;
@@ -3408,13 +3411,15 @@ static WaterDraw water_prepare(Obj *vs, Obj *ps, const SmOptions *vo, const SmOp
 @end
 static struct { __unsafe_unretained id<MTLRenderPipelineState> pso; __unsafe_unretained id<MTLBuffer> uv1; NSUInteger uv1_off;
                 int blended; float k[32][4]; } glass_now;
-static Map glass_pipeline_errors, glass_uv1_cache;
+static Map glass_pipeline_errors;
 static GlassUV1 *glass_uv1_for(Obj *vb) {
-    if (!vb || !vb->size || vb->size % 36) return nil;
+    if (!vb || !vb->mem[0] || !vb->size || vb->size % 36) return nil;
+    RenderBuf *g = vb->gpu;
+    if (!g) { g = calloc(1, sizeof *g); vb->gpu = g; }
     const uint8_t *b = G + vb->mem[0];
     uint32_t edge = vb->size < 64 ? vb->size : 64;
     uint64_t check = fnv(b + vb->size - edge, edge, fnv(b, edge, vb->size));
-    GlassUV1 *u = (__bridge GlassUV1 *)map_get(&glass_uv1_cache, vb->guest);
+    GlassUV1 *u = g->glass_uv1;
     if (u && u->check == check) {
         if (diag_on) {
             // Edge hits can hide middle-only changes. A vectorized byte comparison
@@ -3436,7 +3441,7 @@ static GlassUV1 *glass_uv1_for(Obj *vb) {
     u->buf = [mtl newBufferWithLength:u->n * sizeof(float) options:MTLResourceStorageModeShared];
     float *f = u->buf.contents;
     for (uint32_t i = 0; i < u->n; ++i) f[i] = y ? y[i] : GLASS_UV1_NONE;
-    map_put(&glass_uv1_cache, vb->guest, u);
+    g->glass_uv1 = u;
     return u;
 }
 static id<MTLRenderPipelineState> host_material_pipeline(const ShaderEntry *v, const ShaderEntry *p, const DrawAttr *attr, int nattr,
@@ -4485,7 +4490,10 @@ static void draw_impl(uint32_t type, uint32_t prims, int indexed, int32_t base_v
                 if (used_streams & (1u << s)) [enc setVertexBuffer:gpu_buf(obj(dev.stream[s])) offset:dev.stream_off[s] atIndex:(NSUInteger)s];
             if (need_zero) [enc setVertexBuffer:zero_buf offset:0 atIndex:30];
 #if NFS_GAME == NFS_GAME_MW
-            daynight_stream_bind(enc, mtl, obj(dev.stream[0]), gpu_buf(obj(dev.stream[0])), dev.stream_stride[0], dev.stream_off[0], vs->tokens_hash, dev.frames);
+            if (daynight_stream_wanted(dev.frames)) {
+                Obj *vb = obj(dev.stream[0]);
+                daynight_stream_bind(enc, mtl, vb, gpu_buf(vb), dev.stream_stride[0], dev.stream_off[0], vs->tokens_hash, dev.frames);
+            }
 #endif
             if (rw_pane_active) {
                 [enc setVertexBuffer:rw_pane.tint offset:0 atIndex:20];
@@ -4538,7 +4546,9 @@ static void draw_impl(uint32_t type, uint32_t prims, int indexed, int32_t base_v
         __unsafe_unretained id<MTLBuffer> b;
         void *p = ring_alloc(bytes, &off, &b);
         if (!p) return;
-        memcpy(p, G + (uint32_t)(src + from), bytes);
+        uint32_t copy_bytes = up_vertices ? count * stride : bytes;
+        memcpy(p, G + (uint32_t)(src + from), copy_bytes);
+        if (up_vertices) memset((uint8_t *)p + copy_bytes, 0, stride);
         // the buffer is bound so that index 0 is vertex `first` (base vertex applied in the copy)
         [enc setVertexBuffer:b offset:off atIndex:(NSUInteger)s];
     }
@@ -4725,6 +4735,36 @@ void render_stretch(uint32_t src, uint32_t src_rect, uint32_t dst, uint32_t dst_
 }
 void render_readback(uint32_t src, uint32_t dst) {
     (void)src; (void)dst;   // GetRenderTargetData: not needed for the front end yet
+}
+
+int render_lock_readback(Obj *s, uint32_t mem, uint32_t pitch) {
+    // Retail screenshots lock a BGRA8 target immediately after StretchRect.
+    if (!mtl || !mem || (s->fmt != 21 && s->fmt != 22)) return 0;
+    NSUInteger level, slice;
+    id<MTLTexture> t = surface_target(s->guest, &level, &slice);
+    if (!t || !s->w || !s->h) return 0;
+    if (t.sampleCount > 1) {
+        RenderTex *r = surface_rt(s->guest);
+        msaa_resolve(r);
+        t = r->tex;
+    }
+    if (t.pixelFormat != MTLPixelFormatBGRA8Unorm) return 0;
+    NSUInteger row = ((NSUInteger)pitch + 255) & ~(NSUInteger)255;
+    id<MTLBuffer> staging = [mtl newBufferWithLength:row * s->h options:MTLResourceStorageModeShared];
+    if (!staging) return 0;
+    end_pass();
+    ensure_cmd();
+    id<MTLBlitCommandEncoder> blit = [cmd blitCommandEncoder];
+    [blit copyFromTexture:t sourceSlice:slice sourceLevel:level sourceOrigin:MTLOriginMake(0, 0, 0)
+               sourceSize:MTLSizeMake(s->w, s->h, 1) toBuffer:staging destinationOffset:0
+   destinationBytesPerRow:row destinationBytesPerImage:row * s->h];
+    [blit endEncoding];
+    [cmd commit];
+    [cmd waitUntilCompleted];
+    cmd = nil;
+    const uint8_t *pixels = staging.contents;
+    for (uint32_t y = 0; y < s->h; ++y) memcpy(G + mem + (size_t)y * pitch, pixels + y * row, pitch);
+    return 1;
 }
 
 void save_png(id<MTLTexture> t, const char *path, int keep_alpha) {

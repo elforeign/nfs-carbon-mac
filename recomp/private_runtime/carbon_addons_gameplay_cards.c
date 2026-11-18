@@ -18,6 +18,14 @@ void carbon_addons_cards_init(void) {
         .nchoices=7, .env="NFS_CARBON_CARDS"};
     settings_add(&row);
 }
+static int cadd_cards_choice;
+
+void carbon_addons_cards_open(Cpu *c, void (*original)(Cpu *)) {
+    /* The FeBonusCards constructor calls this once to populate its deck. */
+    cadd_cards_choice = settings_get("gameplay.markers");
+    original(c);
+}
+
 static unsigned cadd_cards_count(uint32_t self) {
     unsigned count = M32(self + 0xDC), selected = 0;
     if (count > 6) count = 6;
@@ -26,8 +34,7 @@ static unsigned cadd_cards_count(uint32_t self) {
     return selected;
 }
 static unsigned cadd_cards_limit(uint32_t self) {
-    int value = settings_get("gameplay.markers");
-    unsigned count = M32(self + 0xDC), limit = value > 0 ? (unsigned)value : 2;
+    unsigned count = M32(self + 0xDC), limit = (unsigned)cadd_cards_choice;
     return count < limit ? count : limit;
 }
 static uint32_t cadd_cards_call(Cpu *c, uint32_t self, uint32_t fn, int n, const uint32_t *args) {
@@ -35,7 +42,7 @@ static uint32_t cadd_cards_call(Cpu *c, uint32_t self, uint32_t fn, int n, const
     return call_guest(c,fn,n,args);
 }
 void carbon_addons_cards_redraw(Cpu *c, void (*original)(Cpu *)) {
-    if (settings_get("gameplay.markers") <= 0) { original(c); return; }
+    if (cadd_cards_choice <= 0) { original(c); return; }
     uint32_t self = c->ecx - 0x28;
     original(c);
     Cpu work = *c; work.esp -= 256;
@@ -47,13 +54,13 @@ void carbon_addons_cards_redraw(Cpu *c, void (*original)(Cpu *)) {
     cadd_cards_call(&work,0,0x005A0910u,4,args);
 }
 void carbon_addons_cards_complete(Cpu *c, void (*original)(Cpu *)) {
-    if (settings_get("gameplay.markers") <= 0) { original(c); return; }
+    if (cadd_cards_choice <= 0) { original(c); return; }
     unsigned limit = cadd_cards_limit(c->ecx);
     c->eax = limit && cadd_cards_count(c->ecx) >= limit;
     c->esp += 4;
 }
 void carbon_addons_cards_navigation(Cpu *c, void (*original)(Cpu *)) {
-    if (settings_get("gameplay.markers") <= 0) { original(c); return; }
+    if (cadd_cards_choice <= 0) { original(c); return; }
     if (cadd_cards_count(c->ecx) >= cadd_cards_limit(c->ecx)) {
         c->eax = arg(c,1) == 4 ? 4 : UINT32_MAX;
         c->esp += 12;
@@ -65,7 +72,7 @@ void carbon_addons_cards_navigation(Cpu *c, void (*original)(Cpu *)) {
     }
 }
 void carbon_addons_cards_select(Cpu *c, void (*original)(Cpu *)) {
-    if (settings_get("gameplay.markers") <= 0) { original(c); return; }
+    if (cadd_cards_choice <= 0) { original(c); return; }
     uint32_t self = c->ecx, index = arg(c,0), entry = self + 0xE0 + 12*index;
     Cpu work = *c; work.esp -= 256;
     if (index < 6 && index < M32(self + 0xDC) && !M8(entry + 8) &&
@@ -92,7 +99,7 @@ void carbon_addons_cards_select(Cpu *c, void (*original)(Cpu *)) {
     c->esp += 8;
 }
 void carbon_addons_cards_notification(Cpu *c, void (*original)(Cpu *)) {
-    if (settings_get("gameplay.markers") <= 0) { original(c); return; }
+    if (cadd_cards_choice <= 0) { original(c); return; }
     uint32_t self = c->ecx, args[4] = {arg(c,0),arg(c,1),arg(c,2),arg(c,3)};
     Cpu work = *c; work.esp -= 256;
     if (cadd_cards_count(self) < cadd_cards_limit(self)) {

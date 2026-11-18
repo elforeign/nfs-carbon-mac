@@ -128,8 +128,13 @@ static struct tm host_tm(uint32_t a) {
     t.tm_sec=v[0];t.tm_min=v[1];t.tm_hour=v[2];t.tm_mday=v[3];t.tm_mon=v[4];t.tm_year=v[5];t.tm_wday=v[6];t.tm_yday=v[7];t.tm_isdst=v[8];return t;
 }
 static int begin_cdecl(Cpu *c) { /* thread trampoline consumes the Win32 single argument */
-    uint32_t ctx=A(0), args[]={M32(ctx+4)};
-    uint32_t r=call_guest(c,M32(ctx),1,args); gfree(ctx); RET(r,1);
+    uint32_t ctx = A(0), start = M32(ctx), args[] = {M32(ctx + 4)};
+    gfree(ctx); /* The guest entry may call _endthreadex instead of returning. */
+    RET(call_guest(c, start, 1, args), 1);
+}
+static uint32_t begin_cdecl_entry;
+static void register_begin_cdecl(void) {
+    begin_cdecl_entry = host_fn(begin_cdecl, "CRT thread entry");
 }
 static uint32_t invoke_win32(Cpu *c, const char *fn, int n, const uint32_t *args) {
     uint32_t sp=c->esp;
@@ -137,6 +142,29 @@ static uint32_t invoke_win32(Cpu *c, const char *fn, int n, const uint32_t *args
     c->esp-=4;M32(c->esp)=0;
     if(!private_win32(c,fn)){c->esp=sp;return UINT32_MAX;}
     uint32_t result=c->eax;c->esp=sp;return result;
+}
+typedef struct {
+    uint32_t handle;
+    int failed;
+} CareerSave;
+static _Thread_local CareerSave *career_save;
+
+void carbon_career_save(Cpu *c, void (*original)(Cpu *)) {
+    uint32_t self = c->ecx;
+    if (M32(self + 0x70) != 0xb || !M32(self + 0x4e4)) {
+        original(c);
+        return;
+    }
+    CareerSave save = { .handle = UINT32_MAX };
+    CareerSave *previous = career_save;
+    career_save = &save;
+    original(c);
+    career_save = previous;
+    // The retail task clears its status after _close. Restore its failed-open result for state 0xc.
+    if (save.failed) {
+        M32(self + 0x4d8) = 1;
+        M32(self + 0x4dc) = 7;
+    }
 }
 static int32_t file_time32(uint32_t a) {
     uint64_t t=M64(a);return t?(int32_t)(t/10000000ull-11644473600ull):-1;
@@ -236,7 +264,15 @@ int private_crt(Cpu *c, const char *fn) {
     if (IS("strstr")) CR(str_result(strstr(P(0),P(1))));
     if (IS("strcspn")) CR(strcspn(P(0),P(1)));
     if (IS("strtok")) CR(str_result(strtok(A(0)?P(0):NULL,P(1))));
-    if (IS("strtol") || IS("strtoul")) { char *end; uint32_t v=IS("strtol")?(uint32_t)strtol(P(0),&end,A(2)):(uint32_t)strtoul(P(0),&end,A(2)); if(A(1))M32(A(1))=str_result(end); CR(v); }
+    if (IS("strtol")) {
+        char *end = P(0);
+        long v = strtol(P(0), &end, A(2));
+        if (v > INT32_MAX) { errno = ERANGE; v = INT32_MAX; }
+        if (v < INT32_MIN) { errno = ERANGE; v = INT32_MIN; }
+        if (A(1)) M32(A(1)) = str_result(end);
+        CR((uint32_t)v);
+    }
+    if (IS("strtoul")) { char *end; uint32_t v=(uint32_t)strtoul(P(0),&end,A(2)); if(A(1))M32(A(1))=str_result(end); CR(v); }
     if (IS("atoi")) CR(atoi(P(0)));
     if (IS("abs")) CR(abs((int32_t)A(0)));
     if (IS("isdigit")) CR(isdigit((unsigned char)A(0)));
@@ -290,7 +326,17 @@ int private_crt(Cpu *c, const char *fn) {
         SortContext ctx={c,A(3)};qsort_r(P(0),A(1),A(2),&ctx,sort_compare);CR(0);
     }
     if (IS("bsearch")) { uint32_t lo=0,hi=A(2);while(lo<hi){uint32_t mid=lo+(hi-lo)/2,p=A(1)+mid*A(3);int r=cmp_guest(c,A(4),A(0),p);if(!r)CR(p);if(r<0)hi=mid;else lo=mid+1;}CR(0); }
-    if (IS("_beginthreadex")) { uint32_t ctx=gmalloc(8);M32(ctx)=A(2);M32(ctx+4)=A(3);uint32_t tid=0;uint32_t h=private_thread_create(A(1),host_fn(begin_cdecl,"CRT thread entry"),ctx,A(4),&tid);if(A(5))M32(A(5))=tid;CR(h); }
+    if (IS("_beginthreadex")) {
+        static pthread_once_t once = PTHREAD_ONCE_INIT;
+        pthread_once(&once, register_begin_cdecl);
+        uint32_t ctx = gmalloc(8), tid = 0;
+        M32(ctx) = A(2);
+        M32(ctx + 4) = A(3);
+        uint32_t h = private_thread_create(A(1), begin_cdecl_entry, ctx, A(4), &tid);
+        if (!h) gfree(ctx);
+        if (A(5)) M32(A(5)) = tid;
+        CR(h);
+    }
     if (IS("_endthreadex")) return win32_threads(c,"ExitThread"); /* does not return */
     if (IS("sscanf")) {
         /* MS long is 32 bits, host long is 64; rewrite only integer lengths.
@@ -346,6 +392,31 @@ int private_crt(Cpu *c, const char *fn) {
     if (IS("fgetc")) { FILE *f=file_ptr(A(0));CR(f?fgetc(f):EOF); }
     if (IS("fputc") || IS("ungetc")) { FILE *f=file_ptr(A(1));CR(f?(IS("fputc")?fputc(A(0),f):ungetc(A(0),f)):EOF); }
     if (IS("fread") || IS("fwrite")) { FILE *f=file_ptr(A(3));CR(f?(IS("fread")?fread(P(0),A(1),A(2),f):fwrite(P(0),A(1),A(2),f)):0); }
+    // The career task uses this descriptor only for _write and _close. Share the Win32 save staging path.
+    if (IS("_open") && career_save && M32(c->esp) == 0x00895263u) {
+        uint32_t args[] = {A(0), 0x40000000u, 1, 0, 2, 0, 0}; /* GENERIC_WRITE, FILE_SHARE_READ, CREATE_ALWAYS */
+        career_save->handle = invoke_win32(c, "CreateFileA", 7, args);
+        CR(career_save->handle);
+    }
+    if (career_save && career_save->handle != UINT32_MAX) {
+        if (IS("_write") && A(0) == career_save->handle) {
+            uint32_t sp = c->esp;
+            uint32_t args[] = {A(0), A(1), A(2), sp - 4, 0};
+            c->esp -= 4; /* Reserve a guest slot for WriteFile's byte count. */
+            M32(c->esp) = 0;
+            uint32_t ok = invoke_win32(c, "WriteFile", 5, args);
+            uint32_t written = M32(c->esp);
+            c->esp = sp;
+            if (ok != 1 || written != args[2]) career_save->failed = 1;
+            CR(ok == 1 ? written : UINT32_MAX);
+        }
+        if (IS("_close") && A(0) == career_save->handle) {
+            uint32_t ok = invoke_win32(c, "CloseHandle", 1, &career_save->handle);
+            career_save->handle = UINT32_MAX;
+            if (ok != 1) career_save->failed = 1;
+            CR(ok == 1 ? 0 : UINT32_MAX);
+        }
+    }
     if (IS("_open")) { char path[4096];private_resolve(P(0),path,sizeof path);uint32_t w=A(1);int flags=(w&3)==2?O_RDWR:(w&3)==1?O_WRONLY:O_RDONLY;if(w&0x100)flags|=O_CREAT;if(w&0x200)flags|=O_TRUNC;if(w&8)flags|=O_APPEND;if(w&0x400)flags|=O_EXCL;CR(open(path,flags,0666)); }
     if (IS("_close")) CR(close(A(0)));
     if (IS("_read") || IS("_write")) CR(IS("_read")?read(A(0),P(1),A(2)):write(A(0),P(1),A(2)));

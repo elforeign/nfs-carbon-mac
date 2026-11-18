@@ -51,7 +51,11 @@ OLD_FRAME = '''void carbon_audio_output_frame(void) {
 DRIVER = r'''
 static unsigned choice_calls;
 static unsigned guest_calls;
+static uint32_t saved_mode;
 static const char *last_choice;
+void boot_reg_set_dword(const char *key,uint32_t option){
+ CHECK(!strcmp(key,"g_AudioMode"));saved_mode=option;
+}
 extern void host_choice(const char *);
 void test_output_choice(const char *s){++choice_calls;last_choice=s;host_choice(s);}
 #define ds_set_output_choice test_output_choice
@@ -93,6 +97,7 @@ unsigned fixture_request(unsigned option, int startup){
  carbon_audio_surround_set(option==2);carbon_audio_output_frame();
  M32(0xA631B8)=1;carbon_audio_output_frame();
  CHECK(M32(0xA63E70)==option);
+ CHECK(saved_mode==option && carbon_audio_surround_get()==(option==2));
  CHECK(M32(0x205C)==option);
  CHECK(request==(option==1?1.0f:3.0f));
  Cpu c={0};c.esp=0x10000;c.ecx=0x2000;M32(c.esp+4)=startup?1:option;

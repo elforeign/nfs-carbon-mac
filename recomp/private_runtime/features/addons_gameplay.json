@@ -67,7 +67,7 @@
     },
     "carbon_addons_gameplay_cards.c": {
       "source": "carbon_addons_gameplay_cards.c",
-      "sha256": "927e96fdf8624ccc1e45cebebac306cae9a5d867b625fb52766a762fb451a88b",
+      "sha256": "0339cf6bb9bff5c4d6ed270bef8a251e1bf540bf2889324d298c323748812bd6",
       "functions": {
         "carbon_addons_cards_notification": {
           "read": [

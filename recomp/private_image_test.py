@@ -9,6 +9,9 @@ unknown call before the host handler. Unregistered slots/truncated thunks stay t
 Unaligned data callback: 1 frame-prologue callback found, 1 interior pointer
 rejected; legacy aligned-only control fails the same callback-presence check.
 Broken setjmp save: exits 1 at check 81 (saved nonvolatile registers).
+Thread baseline vs fixed: 5,000 cycles in each fixture, 5,000 -> 1 dispatch
+slots, 0 -> 5,000 contexts released before entry (2,500 use _endthreadex).
+Win32 strtol baseline vs fixed: 4/9 -> 9/9 result/end-pointer/errno cases.
 """
 from pathlib import Path
 import subprocess

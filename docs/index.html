@@ -159,9 +159,9 @@ footer p { max-width: 62rem; }
   <p class="stamp">Need for Speed: Carbon (2006) &middot; Native for Apple Silicon Macs</p>
   <h1 style="font-size:clamp(3rem,9vw,6.2rem)">Palmont,<span style="color:var(--amber);display:block">on your Mac.</span></h1>
   <p class="kicker">No emulator. No Wine. No Windows.</p>
-  <p class="lede">The real PC game, rebuilt for Apple Silicon. Setup translates the game's own code for your Mac and builds it with a Metal renderer, native sound and native controllers. Bring your own Carbon PC game; Setup handles the rest.</p>
+  <p class="lede">Best of all worlds: The PC game on your Mac, with console-style controller layouts and button prompts, plus Xbox 360 art from your own console files.</p>
   <div class="buttons">
-    <a class="btn go" href="https://github.com/elforeign/nfs-carbon-mac/releases/latest">Download Setup (1.0.1)</a>
+    <a class="btn go" href="https://github.com/elforeign/nfs-carbon-mac/releases/latest">Download Setup (1.1.0)</a>
     <a class="btn" href="https://github.com/elforeign/nfs-carbon-mac/blob/main/GETTING_STARTED.md">Read the setup guide</a>
     <a class="btn" href="https://discord.gg/d6HfMwdM9v">Join the Discord</a>
   </div>
@@ -180,7 +180,7 @@ footer p { max-width: 62rem; }
     <div class="cols">
       <div><h3>Picture and looks</h3><p>16:9 widescreen with the HUD and menus laid out for it, up to 4K, anti-aliasing. Street lamps light the road and walls at night and show in the car paint. Lacquered paint and real-looking chrome, wheels and glass. Look presets: Port, PC retail or your own picks.</p></div>
       <div><h3>Performance</h3><p>Native Apple Silicon code. Shaders are prepared in the background so races don't hitch. A frame limit and an optional performance overlay.</p></div>
-      <div><h3>Controllers</h3><p>DualSense, DualShock 4 and other controllers macOS supports, with PlayStation button prompts. Rumble that follows slips, collisions, shifts and nitrous; DualSense adaptive triggers.</p></div>
+      <div><h3>Controllers</h3><p>DualSense, DualShock 4 and other controllers macOS supports. PlayStation buttons by default on PlayStation pads and Xbox buttons on other pads. F10 &gt; Controls &gt; Button layout also offers PC. Rumble that follows slips, collisions, shifts and nitrous; DualSense adaptive triggers.</p></div>
       <div><h3>Sound</h3><p>Surround on by default: 5.1 when your output has it, true stereo otherwise. A peak limiter stops loud moments from clipping.</p></div>
       <div><h3>Quality of life</h3><p>Fixed heat level, no rubber banding, skip the intro movies or the prologue, Unlock All. Clips with sound, the last 30 seconds on a button, YouTube streaming. No EA Nation prompt at start, and updates from inside the game.</p></div>
     </div>
@@ -189,9 +189,17 @@ footer p { max-width: 62rem; }
     <h2>Three steps to Palmont.</h2>
     <ol>
       <li>Download the <strong>Setup app</strong> from the <a href="https://github.com/elforeign/nfs-carbon-mac/releases/latest">latest release</a> and open it. The first time, macOS asks you to allow it once (System Settings &gt; Privacy &amp; Security &gt; Open Anyway).</li>
-      <li>Choose your Carbon game folder (the one with <code>NFSC.exe</code> and <code>TRACKS</code>), a <code>.zip</code>/<code>.7z</code> of it, your PC disc image (<code>.iso</code> or ISO-compatible <code>.mdf</code>), or its Xbox 360 <code>.iso</code>, and click <strong>Build</strong>. From the PC disc, Setup also asks for the official Carbon update for your disc edition and your own compatible <code>NFSC.exe</code> (the one on the disc is copy-protected and cannot be used).</li>
+      <li>Choose your PC game using an option below, optionally add your Xbox 360 files, and click <strong>Build</strong>.</li>
       <li>Play <strong>NFS Carbon Native</strong> from Applications.</li>
     </ol>
+    <h3>What you can use</h3>
+    <ul>
+        <li>Choose your own installed Carbon PC game folder, or pick its NFSC.exe. You need the compatible version 1.4 NFSC.exe.</li>
+        <li>Or choose a .zip or .7z of that folder, or your original PC discs as .iso images, ISO-compatible .mdf images, or mounted/inserted discs. For PC discs, Setup also asks for the official update for your disc edition and your compatible 1.4 NFSC.exe; the disc executable is copy-protected.</li>
+        <li>Optional: add your own Xbox 360 files as an .iso, extracted folder, .zip or .7z for console art. They do not replace the PC game.</li>
+        <li>Have a .rar or .bin/.cue? Unpack it to a folder first.</li>
+    </ul>
+    <p>Stuck? See <a href="https://github.com/elforeign/nfs-carbon-mac/blob/main/TROUBLESHOOTING.md">Troubleshooting</a> or ask on <a href="https://discord.gg/d6HfMwdM9v">Discord</a>.</p>
     <p>You need an Apple Silicon Mac (M1 or later) with macOS 14.5 or later and Apple's free Command Line Tools (Setup offers to install them).</p>
     <div class="links">
       <a class="btn" href="https://github.com/elforeign/nfs-carbon-mac/blob/main/GETTING_STARTED.md">Read the setup guide</a>

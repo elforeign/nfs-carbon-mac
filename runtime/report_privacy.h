@@ -105,9 +105,8 @@ static NSString *ReportPrivateRules(NSString *text) {
     NSString *cid = [NSString stringWithFormat:@"(?<![A-Za-z0-9_])cid[\\\"']?\\s*[:=]\\s*%@", value];
     text = ReportPrivacyReplace(text, cid, @"[stream key]"); // privacy:cid
     // Quoted paths can contain spaces; unquoted paths conservatively consume to a field/line delimiter.
-    // Keep the established ~/suffix preview output: its known home has already been removed.
-    NSString *root = @"(?:file:(?://|/)|/(?:Volumes|Users|home|(?:private/)?var/folders)/|[A-Za-z]:[\\\\/]+|\\\\{2,}[^\\\\/\\s\"'<>]+[\\\\/]+)";
-    NSString *path = [NSString stringWithFormat:@"(?<![A-Za-z0-9_])(?:\"%@(\\\\[\\s\\S]|[^\"\\\\])*(?:\"|$)|'%@(\\\\[\\s\\S]|[^'\\\\])*(?:'|$)|%@[^\\\"'\\r\\n,;<>}]+)", root, root, root];
+    NSString *root = @"(?:file:(?://|/)|~/|/(?:Volumes|Users|home|(?:private/)?var/folders)/|[A-Za-z]:[\\\\/]+|\\\\{2,}[^\\\\/\\s\"'<>]+[\\\\/]+)";
+    NSString *path = [NSString stringWithFormat:@"(?<![A-Za-z0-9])(?:\"%@(\\\\[\\s\\S]|[^\"\\\\])*(?:\"|$)|'%@(\\\\[\\s\\S]|[^'\\\\])*(?:'|$)|%@[^\\\"'\\r\\n,;<>}]+)", root, root, root];
     text = ReportPrivacyReplace(text, path, @"[path]"); // privacy:path
     return text;
 }

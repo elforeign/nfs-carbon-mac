@@ -520,7 +520,7 @@ func backendArguments(mode: RunMode, pc: URL, x360: URL?, dest: URL, work: URL, 
 }
 
 // Generated from the policy-validated metadata by test_car_release.py --generate-selections.
-let carSelectionsSHA256 = "31a246c189e2eb01bad5e211128be6af2df8381e0433a1556b730c2fa4e0a1bd"
+let carSelectionsSHA256 = "9580c7e7412fec75a81e721d82bfa2b0e7d132e32082c59fc7f92d77d0926ac0"
 
 struct CarChoice: Identifiable {
     let platform: String
@@ -795,26 +795,26 @@ final class Setup: ObservableObject {
     func pcRoot(_ url: URL, carbon: Bool = false) -> URL {
         var dir: ObjCBool = false
         if FileManager.default.fileExists(atPath: url.path, isDirectory: &dir), !dir.boolValue,
-           !(carbon ? ["zip", "7z", "iso", "mdf"] : ["zip"]).contains(url.pathExtension.lowercased()) { return url.deletingLastPathComponent() }
+           !(carbon ? ["zip", "7z", "iso", "mdf"] : ["zip", "7z"]).contains(url.pathExtension.lowercased()) { return url.deletingLastPathComponent() }
         return url
     }
 
     func choosePC() {
         if carbonProduct {
-            guard let url = pickFolder(message: "Choose your Carbon game folder, a .zip/.7z of it, your PC disc image (.iso or ISO-compatible .mdf), or its Xbox 360 .iso.",
+            guard let url = pickFolder(message: "Choose your Carbon PC game folder, NFSC.exe, a .zip/.7z of the folder, or an original PC disc (.iso, ISO-compatible .mdf, or a mounted or copied disc folder).",
                                        files: true, types: [.folder, .exe, .zip] + ["7z", "iso", "mdf"].compactMap { UTType(filenameExtension: $0) }) else { return }
             pc = pcRoot(url, carbon: true); features = nil; x360 = nil; x360Status = ""
             pcUpdate = nil; pcExe = nil
             runCheck(forX360: false)
             return
         }
-        // The game folder, or a .zip of it (Setup unpacks a copy; the .zip is only read).
-        guard var url = pickFolder(message: "Choose the Need for Speed: Most Wanted folder (the one with speed.exe), speed.exe itself, or a .zip of that folder.",
+        // The game folder, or an archive Setup unpacks into its own work folder.
+        guard var url = pickFolder(message: "Choose the Need for Speed: Most Wanted folder (the one with speed.exe), speed.exe itself, or a .zip/.7z of that folder.",
                                    // .folder too: with allowedContentTypes set, the panel greys out "Choose" for any
                                    // folder that is not listed (issue #19: the 3.x game folder could not be chosen).
                                    // .exe: once inside the game folder, "Choose" stays grey until a file is picked,
                                    // and players then pick speed.exe.
-                                   files: true, types: [.folder, .zip, .exe]) else { return }
+                                   files: true, types: [.folder, .zip, .exe] + [UTType(filenameExtension: "7z")].compactMap { $0 }) else { return }
         url = pcRoot(url)
         pc = url; features = nil; x360 = nil; x360Status = ""
         runCheck(forX360: false)
@@ -844,7 +844,20 @@ final class Setup: ObservableObject {
         if pc != nil { runCheck(forX360: false) }
     }
 
-    var carbonDiscSource: Bool { carbonProduct && ["iso", "mdf"].contains(pc?.pathExtension.lowercased() ?? "") }
+    func isCarbonDiscSource(_ url: URL) -> Bool {
+        var directory: ObjCBool = false
+        let files = FileManager.default
+        if !files.fileExists(atPath: url.path, isDirectory: &directory) || !directory.boolValue {
+            return ["iso", "mdf"].contains(url.pathExtension.lowercased())
+        }
+        // Show the helpers for disc-shaped folders. The backend verifies the disc's product and contents.
+        guard let entries = try? files.contentsOfDirectory(atPath: url.path) else { return false }
+        let names = entries.map { $0.lowercased() }
+        return names.contains("autorun.inf") && !names.contains("global")
+            && names.contains { $0.range(of: #"^[0-9]{1,2}compressed\.zip$"#, options: .regularExpression) != nil }
+    }
+
+    var carbonDiscSource: Bool { carbonProduct && pc.map(isCarbonDiscSource) == true }
 
     var otherDiscRows: [Int] { Array(Set(missingDiscs).union(pcDiscs.keys)).sorted() }
 
@@ -866,9 +879,17 @@ final class Setup: ObservableObject {
         if pc != nil { runCheck(forX360: false) }
     }
 
+    func x360Root(_ url: URL) -> URL {
+        if url.lastPathComponent.lowercased() == "default.xex",
+           (try? url.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true {
+            return url.deletingLastPathComponent()
+        }
+        return url
+    }
+
     func chooseX360() {
         guard let url = pickFolder(message: "Choose your Xbox 360 copy: its folder, .iso, or a .zip/.7z of it.", files: true) else { return }
-        x360 = url
+        x360 = x360Root(url)
         features = nil
         x360Status = "Copy selected. Your chosen extras will be checked when building."
     }
@@ -883,7 +904,7 @@ final class Setup: ObservableObject {
     /// Carbon's console copy: its artwork has nothing to choose, so it is checked (and prepared) at once.
     func chooseCarbonX360() {
         guard let url = pickFolder(message: "Choose your Need for Speed Carbon Xbox 360 copy: its folder, .iso, or a .zip/.7z of it.", files: true) else { return }
-        x360 = url
+        x360 = x360Root(url)
         features = nil
         runCheck(forX360: true)
     }
@@ -917,9 +938,8 @@ final class Setup: ObservableObject {
             return
         }
         extras.begin(); checking = true
-        // The preceding PC check has already unpacked a ZIP/disc into pc_src.
-        let mw = managingExtras ? nil : (pcKind == .disc || pc?.pathExtension.lowercased() == "zip"
-            ? workDir().appendingPathComponent("pc_src") : pc)
+        // Disc installs need the checked copy, which includes the PC update. Extras can read archives directly.
+        let mw = managingExtras ? nil : (pcKind == .disc ? workDir().appendingPathComponent("pc_src") : pc)
         let args = carArguments(mode: mode, carbon: carbon, selection: selection,
                                 work: workDir(), mw: requiresSource && selection != nil ? mw : nil,
                                 slots: slots, generation: generation, measure: measure, repair: repair)
@@ -966,7 +986,7 @@ final class Setup: ObservableObject {
     }
 
     func installArguments(mode: RunMode, pc: URL, x360: URL?, dest: URL, work: URL) -> [String] {
-        let disc = carbonProduct ? ["iso", "mdf"].contains(pc.pathExtension.lowercased()) : pcKind == .disc
+        let disc = carbonProduct ? isCarbonDiscSource(pc) : pcKind == .disc
         return backendArguments(mode: mode, pc: pc, x360: x360, dest: dest, work: work, carbon: carbonProduct,
                                 pcUpdate: disc ? pcUpdate : nil, pcExe: disc ? pcExe : nil,
                                 pcDiscs: disc ? pcDiscs.keys.sorted().compactMap { pcDiscs[$0] } : [], x360Extras: x360Extras)
@@ -1043,7 +1063,7 @@ final class Setup: ObservableObject {
                 if forX360 { self.x360Status = self.carbonProduct ? "Your Carbon Xbox 360 copy can be used." : "Your Xbox 360 copy can be used." }
                 else {
                     self.pcStatus = self.carbonProduct ? "Your Carbon PC source can be used." : self.pcKind == .disc ? "Your disc images can be used."
-                        : pc.pathExtension.lowercased() == "zip" ? "Your game .zip can be used." : "Your game folder can be used."
+                        : ["zip", "7z"].contains(pc.pathExtension.lowercased()) ? "Your game archive can be used." : "Your game folder can be used."
                     // Notes on the game itself, e.g. no MOVIES folder (backend movie_note).
                     for note in st.warnings where note.hasPrefix("pc: ") { self.pcStatus += "\n" + note.dropFirst(4) }
                     self.pcOK = true
@@ -1244,7 +1264,7 @@ struct ContentView: View {
         GroupBox(label: Text("Your Carbon PC game").bold()) {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    Text(s.pc?.path ?? "Your Carbon game folder, a .zip/.7z, or PC disc image (.iso or ISO-compatible .mdf).")
+                    Text(s.pc?.path ?? "Your Carbon PC game folder, NFSC.exe, a .zip/.7z, or an original PC disc image or folder.")
                         .lineLimit(2).truncationMode(.middle).foregroundStyle(s.pc == nil ? .secondary : .primary)
                     Spacer()
                     Button("Choose…") { s.choosePC() }.disabled(s.checking)
@@ -1262,12 +1282,12 @@ struct ContentView: View {
             GroupBox(label: Text("Your PC game").bold()) {
                 VStack(alignment: .leading, spacing: 8) {
                     Picker("", selection: Binding(get: { s.pcKind }, set: { s.chooseKind($0) })) {
-                        Text("Installed PC game folder or .zip").tag(PCKind.folder)
+                        Text("Installed PC game folder or .zip/.7z").tag(PCKind.folder)
                         Text("PC disc images").tag(PCKind.disc)
                     }.pickerStyle(.radioGroup).labelsHidden().disabled(s.checking)
                     if s.pcKind == .folder {
                         HStack {
-                            Text(s.pc?.path ?? "The folder with speed.exe, or a .zip of it (version 1.3).")
+                            Text(s.pc?.path ?? "The folder with speed.exe, or a .zip/.7z of it (version 1.3).")
                                 .lineLimit(2).truncationMode(.middle).foregroundStyle(s.pc == nil ? .secondary : .primary)
                             Spacer()
                             Button("Choose…") { s.choosePC() }.disabled(s.checking)
@@ -1298,7 +1318,7 @@ struct ContentView: View {
 
     var x360Page: some View {
         VStack(alignment: .leading, spacing: 12) {
-            GroupBox(label: Text(s.carbonProduct ? "Your Carbon Xbox 360 copy (optional)" : "Your Xbox 360 copy (optional)").bold()) {
+            GroupBox(label: Text(s.carbonProduct ? "Xbox 360 files (optional)" : "Your Xbox 360 copy (optional)").bold()) {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(s.carbonProduct
                          ? "If you own Need for Speed Carbon for Xbox 360, choose its folder or .iso: Setup takes its button art and its two controller diagrams, shown while you play with an Xbox controller. Skip this and Carbon draws its own Xbox buttons."
@@ -1750,6 +1770,16 @@ struct Entry {
             mw.pcKind = .disc; mw.pcUpdate = URL(fileURLWithPath: "/patch"); mw.pcDiscs = [2: URL(fileURLWithPath: "/disc2")]
             carbon.pcUpdate = URL(fileURLWithPath: "/carbon-patch")
             carbon.pcExe = URL(fileURLWithPath: "/NFSC.exe")
+            if args.count > 2 {
+                let folder = URL(fileURLWithPath: args[2])
+                carbon.pc = folder
+                print(jsonString([
+                    "helpers": carbon.carbonDiscSource,
+                    "check": carbon.installArguments(mode: .check, pc: folder, x360: nil, dest: dest, work: work),
+                    "build": carbon.installArguments(mode: .build, pc: folder, x360: nil, dest: dest, work: work)
+                ]))
+                exit(0)
+            }
             print(jsonString([
                 "discCheck": carbon.installArguments(mode: .check, pc: URL(fileURLWithPath: "/carbon.iso"), x360: nil, dest: dest, work: work),
                 "discBuild": carbon.installArguments(mode: .build, pc: URL(fileURLWithPath: "/carbon.mdf"), x360: nil, dest: dest, work: work),

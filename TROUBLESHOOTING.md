@@ -20,8 +20,9 @@ names the Intel-only tool it found. Install Apple's Command Line Tools (`xcode-s
 (clang and the macOS SDK; full Xcode is not needed). Install or update them in **System Settings > General > Software
 Update**, or run `xcode-select --install`, then build again. The macOS SDK must be version 14 or newer.
 
-**"The Carbon game folder was not found" / "has no NFSC.exe or no TRACKS folder"** — choose the installed Need for
-Speed Carbon (PC) folder that holds `NFSC.exe` together with `TRACKS`.
+**"The Carbon game folder was not found" / "has no NFSC.exe or no TRACKS folder"** — choose the installed PC folder with
+`NFSC.exe` and `TRACKS`, its `NFSC.exe`, or a `.zip` or `.7z` of the folder. You can also use your original PC discs. Keep the
+disc images or copied disc folders together and select the official update for your disc edition and a compatible `NFSC.exe`.
 
 **"NFSC.exe is not the supported PC release of Need for Speed Carbon"** — the port is a translation of one release of
 the PC game. Other releases contain different code and would not work. Setup changed nothing.
@@ -44,9 +45,10 @@ app version and your Mac. Please include it when you report a problem.
 **Check for updates says nothing new** — it asks GitHub only when you press it. "No answer: press to retry" means it
 could not reach GitHub.
 
-**Update now failed or asks for sources** — choose **Open log** in Display & performance > Online. Keep your original
-game folder and `~/Library/Application Support/NFSMW-Setup/source-choices.json`. If missing or moved, run the latest
-Setup and select them again, then retry.
+**Update now failed or asks for sources** — choose **F10 > Display & performance > Open log**. Keep
+`~/Library/Application Support/NFSMW-Setup/Carbon/source-choices.json` and every original source it lists, including
+the disc update, compatible `NFSC.exe` and optional Xbox 360 files if used. If sources are missing or moved, run the
+latest Setup and select them again, then retry.
 
 ## Reporting a bug
 

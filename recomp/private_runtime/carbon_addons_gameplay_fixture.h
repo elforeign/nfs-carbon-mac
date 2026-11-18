@@ -149,6 +149,10 @@ static unsigned skill(void) {
  MF32(0x1205C)=1;MF32(0x1207C)=1;MF32(0x12008)=1;MF32(0x12078)=1;
  f_00643100(&c);CHECK(c.esp==0x280018);return c.eax&255;
 }
+static void cards_open_original(Cpu *c) { c->esp += 4; }
+static void cards_open(uint32_t self) {
+ Cpu c=cpu(self);carbon_addons_cards_open(&c,cards_open_original);CHECK(c.esp==0x280004);
+}
 static void cards_remaining(unsigned limit,unsigned picked,int expected) {
  choose("gameplay.markers",limit);uint32_t self=0x50000;
  memset(G+self,0,0x200);M32(self+0xDC)=6;M32(self+0xC)=0x60000;
@@ -158,6 +162,7 @@ static void cards_remaining(unsigned limit,unsigned picked,int expected) {
  M32(0xA95378)=0x74000;M32(0xA95384)=1;M32(0x76018)=5;
  strcpy((char*)gptr(0x72000),"%d");
  Cpu c=cpu(self+0x28);cards_shown[0]=0;
+ cards_open(self);
  /* Old three-word call reads this unrelated word as its absent fourth arg. */
  M32(c.esp+4-256)=picked?2566684:1572708;
  f_0084E600(&c);
@@ -165,18 +170,25 @@ static void cards_remaining(unsigned limit,unsigned picked,int expected) {
  printf("cards remaining limit=%u picked=%u shown=%s want=%d\n",limit,picked,cards_shown,expected);fflush(stdout);
  CHECK(atoi(cards_shown)==expected);
 }
-static void cards(unsigned want) {
+static void cards(unsigned want,int change_mid_screen) {
  choose("gameplay.markers",want);uint32_t self=0x50000;memset(G+self,0,0x200);M32(self+0xDC)=6;M32(self+0x14)=0x60000;
  M32(self+0x28)=0x62000;M32(0x62008)=0xFF00000C;
  for(unsigned i=0;i<6;i++){M32(self+0xE0+12*i)=0xC;M32(self+0xE4+12*i)=1000+i;}
+ cards_open(self);
  unsigned before=awards, flow=transitions;
  Cpu initial=cpu(self);M32(initial.esp+8)=1;f_0084E1D0(&initial);CHECK(initial.eax==1&&initial.esp==0x28000C);
- for(unsigned i=0;i<6;i++) { Cpu c=cpu(self);M32(c.esp+4)=i;f_0084E220(&c);CHECK(c.esp==0x280008); }
+ for(unsigned i=0;i<6;i++) {
+  if(i==3 && change_mid_screen)choose("gameplay.markers",0);
+  Cpu c=cpu(self);M32(c.esp+4)=i;f_0084E220(&c);CHECK(c.esp==0x280008);
+ }
  unsigned selected=0;for(unsigned i=0;i<6;i++)selected+=!!M8(self+0xE8+12*i);
- unsigned limit=want?want:2;CHECK(selected==limit&&awards-before==limit&&transitions-flow==1);
- Cpu c=cpu(self);f_0084DEE0(&c);CHECK(c.eax==1&&c.esp==0x280004);
+ unsigned limit=want?want:2;
+ Cpu c=cpu(self);f_0084DEE0(&c);
+ printf("cards requested=%u selected=%u awards=%u completions=%u reachable=%u\n",limit,selected,awards-before,transitions-flow,c.eax);
+ fflush(stdout);
+ CHECK(selected==limit&&awards-before==limit&&transitions-flow==1);
+ CHECK(c.eax==1&&c.esp==0x280004);
  c=cpu(self);M32(c.esp+8)=1;f_0084E1D0(&c);CHECK(c.eax==UINT32_MAX&&c.esp==0x28000C);
- printf("cards requested=%u selected=%u awards=%u completions=%u\n",limit,selected,awards-before,transitions-flow);
 }
 int main(int argc,char **argv) {
  CHECK(argc==3);G=calloc(1,0xC00000);CHECK(G);FILE *file=fopen(argv[1],"rb");CHECK(file);CHECK(fread(G,1,0xC00000,file)==0xC00000);fclose(file);setup();
@@ -188,7 +200,7 @@ int main(int argc,char **argv) {
   if(!strcmp(row->id,"gameplay.no_catchup"))CHECK(skill()==0);
   if(!strcmp(row->id,"gameplay.skip_movies")){movie();CHECK(requests==0);}
   if(!strcmp(row->id,"gameplay.skip_prologue")){Cpu c=cpu(0);f_0064C560(&c);CHECK(c.eax&255);}
-  if(!strcmp(row->id,"gameplay.markers"))cards(6);
+  if(!strcmp(row->id,"gameplay.markers"))cards(6,0);
   printf("saved consumer %s=%s PASS\n",row->id,saved_value);
  } else if(!strcmp(argv[2],"movies")) {
   movie();CHECK(requests==1);choose("gameplay.skip_movies",1);movie();CHECK(requests==1&&M32(0xA9E6D8)==0);
@@ -219,7 +231,8 @@ int main(int argc,char **argv) {
  else if(!strcmp(argv[2],"cards_shown_all")) {
   for(unsigned limit=1;limit<=6;limit++)for(unsigned picked=0;picked<=limit;picked++)cards_remaining(limit,picked,limit-picked);
   cards_remaining(0,0,2);cards_remaining(0,3,-1);
- } else if(!strcmp(argv[2],"cards")) { for(unsigned i=0;i<=6;i++)cards(i); }
+ } else if(!strcmp(argv[2],"cards")) { for(unsigned i=0;i<=6;i++)cards(i,0); }
+ else if(!strcmp(argv[2],"cards_latched")) { cards(6,1);cards(0,0); }
  else CHECK(0);
  free(G);return 0;
 }

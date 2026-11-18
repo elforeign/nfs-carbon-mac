@@ -1,5 +1,8 @@
 """Public Setup offline proofs; run with the project's Python -I.
 
+Setup input bounds: 0/7 tests pass on 972909b3 (13 failed assertions);
+7/7 pass with preflight checks for PC/Xbox/Carbon ZIPs, speed.exe, hard links and .7z listings.
+
 Carbon PC disc CLI control: base de6085c1 fails 1/1; wired Setup passes 1/1
 (CarbonSetupDiscTests.test_disc_cli_check_build_resume). Six synthetic disc
 checks cover patch/executable refusal, cache changes, remembered inputs and cancellation.
@@ -474,6 +477,26 @@ if tool=='ar': pathlib.Path(args[1]).write_bytes(b'archive probe')
 
 
 class PCTests(Fixture):
+    def test_folder_executable_size_checked_before_fingerprint(self):
+        with mock.patch.object(b.rtpatch, "MAX_FILE", len(self.data) - 1), \
+                mock.patch.object(b, "exe_fingerprint") as fingerprint:
+            with self.assertRaisesRegex(b.SetupError, "regular file of the expected size"):
+                b.validate_pc(self.pc, self.source)
+        fingerprint.assert_not_called()
+        self.assertTrue(b.validate_pc(self.pc, self.source)[1])
+
+    def test_folder_check_refuses_multiply_linked_file(self):
+        original = self.pc / "extra.dat"
+        original.write_bytes(b"ordinary fixture data")
+        duplicate = self.pc / "extra-copy.dat"
+        os.link(original, duplicate)
+        runner = FakeRunner(self.log, self.child_env, self.paths.work)
+        with self.pipeline_stubs():
+            with self.assertRaisesRegex(ins.InstallError, "more than one hard link"):
+                b.build(self.args(check=True), self.paths, self.events, runner, self.source)
+            duplicate.unlink()
+            b.build(self.args(check=True), self.paths, self.events, runner, self.source)
+
     def test_T4_metadata_case_regions_missing(self):
         original = self.data
         self.assertTrue(b.validate_pc(self.pc, self.source)[1])
@@ -1171,6 +1194,18 @@ class SaveMigrationTests(Fixture):
 
 
 class X360ArchiveTests(Fixture):
+    def test_sevenzip_listing_is_bounded_without_spooling(self):
+        popen = subprocess.Popen
+
+        def listing_child(command, **kwargs):
+            return popen([sys.executable, "-I", "-c", 'print("listing" * 32)'], **kwargs)
+
+        with mock.patch.object(b, "SEVENZIP_MAX_LISTING", 128, create=True), \
+                mock.patch.object(b.subprocess, "Popen", side_effect=listing_child), \
+                mock.patch.object(b.tempfile, "TemporaryFile", side_effect=AssertionError("listing spooled to disk")):
+            with self.assertRaisesRegex(b.SetupError, "too many entries"):
+                b.sevenzip_members(self.home / "game.7z")
+
     """Xbox archive regression: old guard rejects 2/2 synthetic archives; fixed passes both formats.
     The preparation stub tests routing and identical bytes, not real disc conversion."""
     def archive(self, suffix, entries=None, stem="console"):
@@ -1335,6 +1370,39 @@ class X360ArchiveTests(Fixture):
 
 
 class PCZipTests(Fixture):
+    def test_zip_byte_and_entry_caps_precede_open_for_all_standalone_routes(self):
+        import zipfile
+        from setup_kit import carbon_source
+        archive = self.home / "game.zip"
+        # Use an ordinary small ZIP64 archive to exercise the same metadata path as big ISOs.
+        with mock.patch.object(zipfile, "ZIP64_LIMIT", 1), zipfile.ZipFile(archive, "w") as out:
+            out.writestr("first.txt", b"first")
+            out.writestr("second.txt", b"second")
+        routes = (b.extract_pc_zip, b.extract_x360_archive, carbon_source.prepare)
+        for route in routes:
+            for limit, value in (("ZIP_MAX_DIRECTORY", 32), ("ZIP_MAX_FILES", 1)):
+                with self.subTest(route=route.__module__ + "." + route.__name__, limit=limit), \
+                        mock.patch.object(b, limit, value, create=True), \
+                        mock.patch.object(zipfile, "ZipFile", side_effect=AssertionError("ZIP opened before preflight")):
+                    with self.assertRaisesRegex(b.SetupError, "too much file listing data or too many entries"):
+                        route(archive, self.paths.work, self.events)
+
+    def test_zip_preflight_counts_directory_headers_as_well_as_end_record(self):
+        import zipfile
+        stream = io.BytesIO()
+        with zipfile.ZipFile(stream, "w") as archive:
+            archive.writestr("first.txt", b"first")
+            archive.writestr("second.txt", b"second")
+        end = zipfile._EndRecData(stream)
+        end[zipfile._ECD_ENTRIES_TOTAL] = 1
+        archive = self.home / "game.zip"
+        archive.write_bytes(stream.getvalue())
+        with mock.patch.object(zipfile, "_EndRecData", return_value=end), \
+                mock.patch.object(b, "ZIP_MAX_FILES", 1), \
+                mock.patch.object(zipfile, "ZipFile", side_effect=AssertionError("ZIP opened before preflight")):
+            with self.assertRaisesRegex(b.SetupError, "too many entries"):
+                b.extract_pc_zip(archive, self.paths.work, self.events)
+
     """--pc accepts a .zip of the game folder (the game one level down)."""
     def make_zip(self, path, extra=(), top="Need For Speed Most Wanted/"):
         import zipfile
@@ -1352,6 +1420,50 @@ class PCZipTests(Fixture):
     def outside_work(self):
         work = self.paths.work
         return sorted(str(p) for p in self.home.rglob("*") if work not in p.parents and p != work)
+
+    def test_sevenzip_game_at_root_or_one_level_down(self):
+        # On 7942da5b both archive layouts fail (2/2); with the fix both pass (2/2).
+        # On 999f865a both layouts pass Check and fail Extras; the fix passes both stages for both layouts.
+        from setup_kit import car_selection
+
+        spec = car_selection.spec(next(row for row in car_selection.load() if row["origin"]["platform"] == "pc"))
+        recognition = dict(game="carbon", platform="pc", cars=[
+            dict(car_hash=b.car_sources.path_hash("CARS/" + spec["folder"]), status="importable")])
+        selection = self.home / "selection.json"
+        write(selection, json.dumps([spec]))
+        carbon = self.home / "Carbon game"
+        carbon.mkdir()
+        expected = b.digest_tree(self.pc)
+
+        def plan(_carbon, *, mw_pc, **kwargs):
+            if b.digest_tree(mw_pc) != expected:
+                raise AssertionError("Extras did not receive the checked MW donor files.")
+            return dict(measured=False, approved=False, volumes=[], cars=[])
+
+        for depth, directory, names in (
+            (0, self.pc, sorted(p.name for p in self.pc.iterdir())),
+            (1, self.pc.parent, [self.pc.name]),
+        ):
+            with self.subTest(depth=depth):
+                archive = self.home / f"pc-{depth}.7z"
+                subprocess.run(["/usr/bin/bsdtar", "--format=7zip", "-cf", str(archive),
+                                "-C", str(directory), *names], check=True, capture_output=True)
+                before = b.sha_file(archive)
+                args = self.args(check=True)
+                args.pc = str(archive)
+                with self.pipeline_stubs():
+                    self.assertIsNone(b.build(args, self.paths, self.events,
+                                              FakeRunner(self.log, self.child_env, self.paths.work), self.source))
+                root = self.paths.work / "pc_src"
+                self.assertEqual(b.digest_tree(root / self.pc.name if depth else root), b.digest_tree(self.pc))
+                self.assertEqual(b.sha_file(archive), before)
+                output = io.StringIO()
+                with redirect_stdout(output), mock.patch.object(b.car_sources, "recognise", return_value=recognition), \
+                     mock.patch.object(b.car_api().CarImporter, "plan", side_effect=plan):
+                    rc = b.main(["--cars-check", "--carbon", str(carbon), "--cars-spec", str(selection),
+                                 "--cars-mw-pc", str(archive), "--work", str(self.paths.work / "extras"), "--events"])
+                self.assertEqual((rc, json.loads(output.getvalue().splitlines()[-1])["ev"]), (0, "cars-result"),
+                                 output.getvalue()[-1500:])
 
     def test_zip_validates_like_the_folder_and_source_untouched(self):
         archive = self.make_zip(self.home / "Need For Speed Most Wanted.zip")
@@ -1413,8 +1525,8 @@ class PCZipTests(Fixture):
                 self.assertFalse(Path("/tmp/escaped-nfsmw-test.txt").exists())
                 self.assertFalse((self.home / "escaped.txt").exists())
         archive = self.make_zip(self.home / "big.zip")
-        for limit in ("ZIP_MAX_BYTES", "ZIP_MAX_FILES"):
-            with self.subTest(limit), mock.patch.object(b, limit, 3), self.assertRaisesRegex(b.SetupError, "far larger"):
+        for limit, message in (("ZIP_MAX_BYTES", "far larger"), ("ZIP_MAX_FILES", "too many entries")):
+            with self.subTest(limit), mock.patch.object(b, limit, 3), self.assertRaisesRegex(b.SetupError, message):
                 b.extract_pc_zip(archive, self.paths.work, self.events)
         # Broken control: a naive extractor writes the ../ entry outside work, and the oracle sees it.
         archive = self.make_zip(self.paths.work.parent / "evil-control.zip", cases["parent"])
@@ -1569,6 +1681,27 @@ class PCDiscTests(Fixture):
     def extract(self, disc=None, update=True, exe=True):
         return b.extract_pc_disc(disc or self.disc1, self.update if update else None, self.exe if exe else None,
                                  self.paths.work, self.events, self.source)
+
+    def test_disc_window_zip_byte_cap_precedes_open(self):
+        with mock.patch.object(b, "ZIP_MAX_DIRECTORY", 32, create=True), \
+                mock.patch.object(b.zipfile, "ZipFile", side_effect=AssertionError("ZIP opened before preflight")):
+            with self.assertRaisesRegex(b.SetupError, "too much file listing data"):
+                self.extract()
+        self.assertFalse((self.paths.work / "pc_src").exists())
+
+    def test_mounted_disc_rejects_multiply_linked_root_files_and_movies(self):
+        folder = self.home / "disc folder"
+        (folder / "MOVIES").mkdir(parents=True)
+        for rel in ("server.dll", "MOVIES/intro.vp6"):
+            with self.subTest(path=rel):
+                path = folder / rel
+                path.write_bytes(b"ordinary fixture data")
+                duplicate = path.with_name("copy-" + path.name)
+                os.link(path, duplicate)
+                with self.assertRaisesRegex(b.pc_disc.DiscError, "more than one hard link"):
+                    b.pc_disc.Disc(folder)
+                duplicate.unlink()
+                self.assertIn(rel, b.pc_disc.Disc(folder))
 
     def test_discs_install_like_the_folder_any_disc_chosen_inputs_untouched(self):
         before = self.inputs()
@@ -2180,6 +2313,14 @@ class PubSafetyTests(Fixture):
         b.check_locations(self.paths, self.pc, x360, self.dest, self.source)
         b.check_locations(self.paths, b.clean_path(archive), x360, self.home, self.source)
         b.check_locations(self.paths, b.clean_path(archive), x360, b.clean_path(archive.parent / "Applications"), self.source)
+
+    def test_file_destination_error_names_selected_input(self):
+        # On 7942da5b both filenames fail (2/2); with the fix both pass (2/2).
+        for name in ("Game Archive.7z", "Game Disc {1}.iso"):
+            selected = self.home / "downloads" / name
+            write(selected, b"synthetic input")
+            with self.subTest(name=name), self.assertRaisesRegex(b.SetupError, re.escape(name)):
+                b.check_locations(self.paths, selected, None, selected.parent, self.source)
 
     # F5 (MEDIUM, backend.py:222): a child started just before a Cancel is still stopped.
     def test_F5_cancel_between_spawn_and_registration_leaves_no_child(self):
@@ -3557,16 +3698,16 @@ class CarbonBuildTests(Fixture):
         self.assertTrue(bundle[bundle.index("--boot") + 1].endswith("recomp/out/carbon/boot_carbon"))
 
     def test_carbon_update_from_its_own_version_and_remembered_folder(self):
-        """Carbon's updater inputs: its own version 1.0.1 (Most Wanted's stays), its sources remembered at install in
-        its own Setup state, and an update staged from those alone, bound to its app and profile <data>/Carbon.
+        """Carbon's updater inputs: its own version 1.1.0 (Most Wanted's stays), its sources remembered at install in
+        its own Setup state, and a 1.0.1 update staged from those alone, bound to its app and profile <data>/Carbon.
         Proof: with main 583933e9's tools/setup_kit this fails at its first check (bundle --version 4.6.0); fixed: passes."""
         from setup_kit import apply   # the checked-in launch transaction (the builds below load the build copy's)
         installed, runner = self.carbon_build()
         bundle = next(c for c in runner.commands if "runtime/bundle.sh" in " ".join(c))
-        self.assertEqual(bundle[bundle.index("--version") + 1], "1.0.1")
+        self.assertEqual(bundle[bundle.index("--version") + 1], "1.1.0")
         self.assertNotEqual(b.PUBLIC_VERSION.split(".")[0], "1")   # Most Wanted keeps its 4.x numbers
         with (Path(installed) / "Contents/Info.plist").open("rb") as f:
-            self.assertEqual(plistlib.load(f)["CFBundleShortVersionString"], "1.0.1")
+            self.assertEqual(plistlib.load(f)["CFBundleShortVersionString"], "1.1.0")
         choices = b.staging.load_choices(self.paths.state / "Carbon", required=True)
         self.assertEqual((Path(choices["pc"]), Path(choices["destination"])), (self.carbon.resolve(), Path(installed)))
         self.assertFalse((self.paths.state / "source-choices.json").exists())   # Most Wanted's choices untouched
@@ -3575,12 +3716,13 @@ class CarbonBuildTests(Fixture):
         real = b.build
         with mock.patch.object(b, "build", lambda args, paths, events, runner, source_root=None:
                                real(args, paths, events, CarbonRunner(self.log, self.child_env, paths.work), self.source)), \
+             mock.patch.object(b, "CARBON_VERSION", "1.0.1"), \
              self.pipeline_stubs(), mock.patch.object(b, "assert_not_running"), redirect_stdout(self.stream):
             rc = b.main(["--stage-only", "--game", "carbon", "--stage", str(stage), "--work", str(self.paths.work), "--events"])
         self.assertEqual(rc, 0, self.stream.getvalue()[-2000:])
         ready = json.loads((stage / "ready.json").read_text())
         self.assertEqual((ready["version"], ready["app"], ready["profile"], ready["destination"]["path"]),
-                         ("1.0.1", "NFS Carbon Native.app", str(self.paths.data / "Carbon"), str(installed)))
+                         ("1.1.0", "NFS Carbon Native.app", str(self.paths.data / "Carbon"), str(installed)))
         record, app, data = apply.read_ready(stage / "ready.json", self.paths.data / "Carbon", Path(installed))
         self.assertTrue((Path(app) / "Contents/MacOS/NFSCarbon").is_file())
         self.assertTrue((stage / record["roots"]["pc_root"] / "NFSC.exe").is_file())
@@ -3821,6 +3963,53 @@ class CarbonSetupDiscTests(Fixture):
             del args[index:index + 2]
             self.cli("--check", *args, expected=1)
             self.assertIn(message, self.stream.getvalue())
+
+    def test_xbox_iso_in_pc_slot_points_to_optional_files(self):
+        # On 7942da5b this test fails (0/1); with the fix it passes (1/1).
+        from setup_kit import xdvdfs
+        from test_car_sources import tiny_iso
+
+        for base in (0, xdvdfs.PARTITION_OFFSETS[1]):
+            xbox = self.home / f"console-{base}.iso"
+            with xbox.open("wb") as image:
+                image.seek(base)
+                image.write(tiny_iso({"default.xex": b"XEX2"}))
+            with self.subTest(base=base):
+                with xbox.open("rb") as image:
+                    self.assertIn("DEFAULT.XEX", xdvdfs.inventory(image))
+                with self.assertRaises(b.SetupError) as error:
+                    b.carbon_source.prepare(xbox, self.paths.work, self.events)
+                self.assertEqual(str(error.exception), "This is an Xbox 360 disc image.")
+                self.assertEqual(error.exception.fix,
+                                 "Add it under Xbox 360 files (optional). Choose your PC game first.")
+
+    def test_pc_disc_with_xbox_magic_in_file_data(self):
+        # On 999f865a Check fails (0/1); with PC disc recognition first it passes (1/1).
+        from setup_kit import xdvdfs
+
+        # make_iso puts its first file at sector 21. The marker lives 11 sectors into that file.
+        self.disc = make_iso(self.disc, {"pad.bin": bytes(11 * xdvdfs.SECTOR) + xdvdfs.MAGIC, **self.files})
+        with self.disc.open("rb") as image:
+            self.assertEqual(xdvdfs.find_base(image), 0)
+        self.cli("--check", *self.selection())
+
+    def test_disc_helper_fix_uses_setup_labels(self):
+        # On 7942da5b this test fails (0/1); with the fix it passes (1/1).
+        for update, exe in ((False, True), (True, False)):
+            with self.subTest(update=update, exe=exe):
+                with self.assertRaises(b.SetupError) as error:
+                    self.prepare(update, exe)
+                self.assertEqual(error.exception.fix,
+                                 "Use Carbon update to select the official update and NFSC.exe to select your compatible game executable.")
+
+    def test_missing_carbon_disc_fix_points_to_sibling_inputs(self):
+        # On 7942da5b this test fails (0/1); with the fix it passes (1/1).
+        self.disc = make_iso(self.disc, dict(self.files, **{
+            "common_filelist.txt": self.files["common_filelist.txt"] + b"2,1,\r\n"}))
+        with self.assertRaisesRegex(b.SetupError, "Disc 2 of the set") as error:
+            self.prepare()
+        self.assertEqual(error.exception.fix,
+                         "Keep all disc images together, or copy each disc into its own folder beside the others. Then choose disc 1 again.")
 
     def test_disc_missing_inputs_and_wrong_exe(self):
         for update, exe, message in ((False, True, "need the official Carbon update"),

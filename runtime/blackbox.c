@@ -24,6 +24,8 @@ typedef struct {
 } Frame;
 typedef struct { Header h; uint32_t stage, valid; uint64_t values[3]; } Present;
 typedef struct { Header h; uint32_t kind, valid; uint64_t values[11]; } Event;
+enum { FE_LOAD = 3, FE_PACKAGE, FE_CONTEXTS };
+#define EVENT_WORDS (sizeof(Event) / sizeof(uint64_t))
 _Static_assert(sizeof(Frame) == 376, "frame budget");
 _Static_assert(sizeof(Present) == 56, "presentation budget");
 _Static_assert(sizeof(Event) == 120, "event budget");
@@ -34,8 +36,11 @@ _Static_assert(ATOMIC_LLONG_LOCK_FREE == 2, "recorder requires lock-free atomics
 static SLOT(Frame) frames[FRAMES];
 static SLOT(Present) presents[PRESENTS];
 static SLOT(Event) events[EVENTS], errors[ERRORS];
+/* The guest frame thread alone writes this context. Atomic words let a snapshot
+ * reject an overlapping write without blocking the writer or racing its payload. */
+static struct { _Atomic uint64_t version, words[EVENT_WORDS]; } fe_context[FE_CONTEXTS];
 _Static_assert(sizeof *frames == 384 && sizeof *presents == 64 && sizeof *events == 128, "published slot budgets");
-_Static_assert(sizeof frames + sizeof presents + sizeof events + sizeof errors < 11 * 1024 * 1024, "storage cap");
+_Static_assert(sizeof frames + sizeof presents + sizeof events + sizeof errors + sizeof fe_context < 11 * 1024 * 1024, "storage cap");
 typedef struct {
     void *slots;
     size_t stride, size, count;
@@ -53,6 +58,7 @@ typedef struct {
     Frame frames[FRAMES];
     Present presents[PRESENTS];
     Event events[EVENTS], errors[ERRORS];
+    Event fe_context[FE_CONTEXTS];
 } Snapshot;
 static Snapshot *frozen;
 static _Atomic uint64_t menu_generation, snapshot_losses;
@@ -250,25 +256,32 @@ uint32_t blackbox_fe_label(const char *name) {
 static const char *fe_label(uint64_t id) {
     return fe_labels[id < sizeof fe_labels / sizeof *fe_labels ? id : 0];
 }
-static void state_event(uint32_t kind, const void *state, size_t size, uint32_t valid,
+static void state_event(unsigned key, uint32_t kind, const void *state, size_t size, uint32_t valid,
                         uint64_t frame, uint64_t now) {
     if (!blackbox_enabled()) return;
     Event e = {.h = {0, now, frame}, .kind = kind, .valid = valid};
     memcpy(e.values, state, size);
     publish(2, &e);
+    uint64_t words[EVENT_WORDS];
+    memcpy(words, &e, sizeof e);
+    atomic_store_explicit(&fe_context[key].version, e.h.seq * 2 - 1, memory_order_relaxed);
+    atomic_thread_fence(memory_order_release);
+    for (unsigned i = 0; i < EVENT_WORDS; ++i)
+        atomic_store_explicit(&fe_context[key].words[i], words[i], memory_order_relaxed);
+    atomic_store_explicit(&fe_context[key].version, e.h.seq * 2, memory_order_release);
 }
 void blackbox_record_fe(const BlackboxFE *state, uint32_t valid, uint64_t frame, uint64_t now) {
-    state_event(BB_FE, state, sizeof *state, valid, frame, now);
+    if (state->index < FE_LOAD) state_event(state->index, BB_FE, state, sizeof *state, valid, frame, now);
 }
 void blackbox_record_load(const BlackboxLoad *state, uint32_t valid, uint64_t frame, uint64_t now) {
-    state_event(BB_LOAD, state, sizeof *state, valid, frame, now);
+    state_event(FE_LOAD, BB_LOAD, state, sizeof *state, valid, frame, now);
 }
 void blackbox_record_package(uint32_t label, uint32_t address, uint32_t count,
                              uint32_t truncated, uint64_t frame, uint64_t now) {
     uint32_t state[] = {label, address, count, truncated};
-    state_event(BB_PACKAGE, state, sizeof state, 1, frame, now);
+    state_event(FE_PACKAGE, BB_PACKAGE, state, sizeof state, 1, frame, now);
 }
-static void dump_fe_event(FILE *f, Event *v) {
+static void dump_fe_event(FILE *f, const Event *v) {
     if (v->kind == BB_FE) {
         BlackboxFE m; memcpy(&m, v->values, sizeof m);
         fprintf(f, "FE %s valid=%u address=%08X vt=%08X state=%d start=%d prev=%d screen='%s' next='%s' pending=%u wait=%d child=%08X\n",
@@ -323,6 +336,16 @@ static Snapshot *capture(void) {
     s->flow = atomic_load_explicit(&current_flow, memory_order_relaxed);
     s->flow_since = atomic_load_explicit(&flow_since, memory_order_relaxed);
     s->game = atomic_load_explicit(&game_id, memory_order_relaxed);
+    for (unsigned k = 0; k < FE_CONTEXTS; ++k) {
+        uint64_t version = atomic_load_explicit(&fe_context[k].version, memory_order_acquire);
+        if (!version || (version & 1)) continue;
+        uint64_t words[EVENT_WORDS];
+        for (unsigned i = 0; i < EVENT_WORDS; ++i)
+            words[i] = atomic_load_explicit(&fe_context[k].words[i], memory_order_relaxed);
+        atomic_thread_fence(memory_order_acquire);
+        if (version == atomic_load_explicit(&fe_context[k].version, memory_order_relaxed))
+            memcpy(&s->fe_context[k], words, sizeof(Event));
+    }
     for (unsigned k = 0; k < 4; ++k) {
         Ring *r = &rings[k];
         s->heads[k] = atomic_load_explicit(&r->head, memory_order_acquire);
@@ -383,14 +406,21 @@ static void dump(FILE *f, Snapshot *s, BlackboxTrigger trigger, uint64_t now, in
     fprintf(f, "AVAILABLE flow frame_timing attempted_draws ticks menu%s; UNAVAILABLE %smovie nis passes async_present input errors\n",
             s->game == BLACKBOX_CARBON ? " fe package load" : "",
             s->game == BLACKBOX_CARBON ? "" : "fe package load ");
-    uint64_t latest_fe[5] = {0};
+    uint64_t latest_fe[FE_CONTEXTS] = {0};
     for (unsigned i = 0; i < EVENTS; ++i) {
         Event *v = &s->events[i];
         if (!v->h.seq || v->h.ns > s->anchor) continue;
         uint32_t index; memcpy(&index, v->values, sizeof index);
-        unsigned key = v->kind == BB_LOAD ? 3 : v->kind == BB_PACKAGE ? 4 :
-                       v->kind == BB_FE ? index : 5;
-        if (key < 5 && v->h.seq > latest_fe[key]) latest_fe[key] = v->h.seq;
+        unsigned key = v->kind == BB_LOAD ? FE_LOAD : v->kind == BB_PACKAGE ? FE_PACKAGE :
+                       v->kind == BB_FE ? index : FE_CONTEXTS;
+        if (key < FE_CONTEXTS && v->h.seq > latest_fe[key]) latest_fe[key] = v->h.seq;
+    }
+    for (unsigned i = 0; i < FE_CONTEXTS; ++i) {
+        const Event *v = &s->fe_context[i];
+        if (v->h.seq <= latest_fe[i] || v->h.ns > s->anchor) continue;
+        fprintf(f, "% .6f f%llu FE_CONTEXT ", seconds(v->h.ns, s->anchor), (unsigned long long)v->h.frame);
+        dump_fe_event(f, v);
+        latest_fe[i] = 0;
     }
     const char *const names[] = {"frames", "present", "events", "errors"};
     for (unsigned k = 0; k < 4; ++k) {
@@ -401,7 +431,7 @@ static void dump(FILE *f, Snapshot *s, BlackboxTrigger trigger, uint64_t now, in
             Header *h = (void *)((char *)snapshot_records(s, k) + (i % r->count) * r->size);
             int menu = k == 2 && ((Event *)h)->kind == BB_MENU;
             int context = 0;
-            if (k == 2) for (unsigned j = 0; j < 5; ++j)
+            if (k == 2) for (unsigned j = 0; j < FE_CONTEXTS; ++j)
                 if (h->seq && h->seq == latest_fe[j]) context = 1;
             if (!h->seq || (h->ns < cutoff && !context) || (h->ns > s->anchor && !menu)) continue;
             if (!oldest || h->ns < oldest) oldest = h->ns;

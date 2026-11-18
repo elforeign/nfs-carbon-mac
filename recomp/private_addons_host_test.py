@@ -2,10 +2,12 @@
 Production-path dependencies: carbon_addons_host_settings.h game_settings.h
 carbon_addons_host_replay.c game_menu_policy.h game_menu_replay.h
  game_menu_shortcut.h game_menu_hold.h carbon_padprompts.m onscreen_keyboard.c
- guide.m cliprec.mm runtime_sources.json "addons_host.json" "carbon_addons_host_notes.md".
+ guide.m guide.h user32.m cliprec.mm runtime_sources.json "addons_host.json" "carbon_addons_host_notes.md".
 Good 66,144 checks / 0 failures; original Guide / note / binding / context no-ops
 produce 1 / 5 / 22,033 / 1 failures respectively. Missing menu-choice fallback
 and hidden Guide enable forwarding produce 2 / 1 failures. Native keyboard has its own fixture.
+During note entry, old routing forwards 0/2 Touchpad and Home shortcuts.
+Shared routing forwards 2/2.
 """
 from pathlib import Path
 import hashlib
@@ -113,6 +115,7 @@ const char *report_audio_device(void) { return "fixture output"; }
 int dsound_output_info(const char **mode,int *live,uint64_t *under) { *mode="PCM";*live=1;*under=0;return 1; }
 #include "game_menu_policy.h"
 #include "game_menu_shortcut.h"
+PAD_ACTIVITY
 static void pass(void) { Cpu c={0};osk_pass(&c); }
 static void notes(void) {
     char text[257]="";
@@ -127,6 +130,18 @@ static void notes(void) {
     osk_queue(osk_capture()->generation,OSK_TYPE,'B');input=0;pass();CHECK(!text[0]);input=1;
     osk_queue(osk_capture()->generation,OSK_TYPE,'C');pass();CHECK(!strcmp(text,"C"));
     osk_queue(osk_capture()->generation,OSK_ACCEPT,0);pass();CHECK(!osk_note_active());
+}
+static void note_shortcuts(void) {
+    char text[257]="";
+    PadState pad={0};
+    osk_note_begin(text,sizeof text,0);
+    osk_pad(0,0,0,0,0,0,0,0,1,0);
+    int touch=!osk_pad(0,pad_activity(8192u,&pad,1),0,0,0,0,0,0,1,0);
+    osk_pad(0,0,0,0,0,0,0,0,1,0);
+    int home=!osk_pad(0,pad_activity(4096u,&pad,0),0,0,0,0,0,0,1,1);
+    osk_note_end(0);
+    printf("note shortcut passes to F10: touchpad=%d home=%d\n",touch,home);
+    CHECK(touch && home);
 }
 static void bindings(void) {
     CHECK(!replay_key_in_use(0x42));
@@ -171,7 +186,7 @@ int main(void) { @autoreleasepool {
     guide_shortcut(&shortcut,1.1,64|512,0,0,1,-1,1,0);
     CHECK(guide_shortcut(&shortcut,1.5,64|512,0,0,1,-1,1,0).action==2);
     CHECK(settings_get("controls.guide_button")==1);
-    notes();bindings();
+    notes();note_shortcuts();bindings();
     printf("addons host: %d checks, %d failures; scroll=%.0f clip=%d replay=%d live=%d\n",checks,failures,offset,clipActions,saves,goes);
     free(G);return failures?1:0;
 } }
@@ -191,7 +206,9 @@ def main():
         (app/'Contents/Info.plist').write_bytes(plistlib.dumps({'CFBundleExecutable':'HostCheck','CFBundleIdentifier':'test.host.addons','CFBundlePackageType':'APPL'}))
         (resources/'Guide.md').write_text((RT/'docs/guide_carbon.md').read_text());(resources/'Licences.md').write_text('Licence fixture\n')
         for name in ('carbon_addons_host_settings.h','carbon_addons_host_replay.c','game_menu_replay.h'):(d/name).write_bytes((PRIVATE/name).read_bytes())
-        source=HARNESS
+        activity=(RT/'user32.m').read_text().split('static uint32_t pad_activity(',1)[1].split('\n}',1)[0]
+        activity='static uint32_t pad_activity('+activity+'\n}'
+        source=HARNESS.replace('PAD_ACTIVITY',activity)
         mutations={
           'original-guide': ('static void notes(void)', '#undef guide_scroll\n#define guide_scroll(lines) ((void)0)\nstatic void notes(void)'),
           'original-note': ('static void notes(void)', '#undef osk_note_begin\n#define osk_note_begin(text, capacity, owner) ((void)0)\nstatic void notes(void)'),
@@ -199,11 +216,12 @@ def main():
           'original-context': ('context=CARBON_PAD_DRIVING;', 'context=CARBON_PAD_MENU;'),
           'menu-choice': ('unused','unused'),
           'guide-enabled': ('unused','unused'),
+          'old-osk-choice': ('choice = carbon_menu_shortcut_choice(choice);', 'if (choice < 0) choice = 3;'),
         }
         for name,mutation in [('good',None),*mutations.items()]:
             shortcut=(PRIVATE/'game_menu_shortcut.h').read_text()
             if name=='menu-choice':shortcut=shortcut.replace('choice < 0 ? 0 : choice','choice')
-            if name=='guide-enabled':shortcut=shortcut.replace('choice < 0 ? 0 : choice, enabled, menu_open','choice < 0 ? 0 : choice, 0, menu_open')
+            if name=='guide-enabled':shortcut=shortcut.replace('carbon_menu_shortcut_choice(choice), enabled, menu_open','carbon_menu_shortcut_choice(choice), 0, menu_open')
             (d/'game_menu_shortcut.h').write_text(shortcut)
             (d/'game_menu_replay.h').write_text(ORIGINAL_CONTEXT if name=='original-context' else (PRIVATE/'game_menu_replay.h').read_text())
             text=source if not mutation or name=='original-context' else source.replace(*mutation)

@@ -8,14 +8,17 @@ a misleading sibling X360 folder beside the game with no Carbon manifest; Carbon
 Recorded: fixed 6/6 pass. --broken-roots (the original manifest path, pinned below): 2/6 pass (Carbon reads the parent
 Most Wanted manifest or none). --broken-builder (the -DNFS_PUBLIC=1 flag dropped, as the original builder had it):
 5/6 pass (the misleading sibling folder is used).
+Build ID recorded: original literal 0/4 pass, fixed 4/4 pass (clean, dirty, source archive, missing git).
 Run: tools/.venv/bin/python -I recomp/private_roots_test.py [--broken-roots|--broken-builder]
 """
 import hashlib
 import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 import tempfile
+from unittest.mock import patch
 
 HERE = Path(__file__).resolve().parent
 RUNTIME = HERE.parent / "runtime"
@@ -58,6 +61,39 @@ def carbon_flags(src, public):
     return keep + flags[i:i + 2]
 
 
+def check_build_ids(tmp):
+    git = tmp / "git"
+    git.write_text("""#!/bin/sh
+case "$*" in
+    "rev-parse --short HEAD")
+        [ "$TEST_GIT_STATE" != archive ] || exit 128
+        echo abc1234 ;;
+    "diff --quiet HEAD")
+        [ "$TEST_GIT_STATE" = clean ] ;;
+    *) exit 128 ;;
+esac
+""")
+    git.chmod(0o755)
+    cases = [
+        ("clean", {}, "abc1234"),
+        ("dirty", {}, "abc1234+"),
+        ("archive", {"NFS_PUBLIC": "1"}, "unknown+"),
+        ("missing", {"NFS_PUBLIC": "1"}, "unknown+"),
+    ]
+    failures = 0
+    for state, env, expected in cases:
+        git_path = tmp / "missing" if state == "missing" else tmp
+        with patch.dict(os.environ, {"PATH": str(git_path), "TEST_GIT_STATE": state}):
+            flags = compile_flags(tmp, tmp, env)
+        actual = [flag for flag in flags if flag.startswith("-DPORT_BUILD_ID=")]
+        pattern = re.escape(f'-DPORT_BUILD_ID="{expected} ') + r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}"'
+        ok = len(actual) == 1 and re.fullmatch(pattern, actual[0]) is not None
+        failures += not ok
+        print(f"{'ok  ' if ok else 'FAIL'}: build id ({state}): {actual}")
+    print(f"carbon build ids: {len(cases) - failures}/{len(cases)} passed")
+    return failures
+
+
 def build(d, name, flags, broken_roots):
     src = d / ("src_" + name)
     src.mkdir()
@@ -83,6 +119,7 @@ def main():
     broken_roots = "--broken-roots" in sys.argv
     with tempfile.TemporaryDirectory(prefix="carbon-roots-") as tmp:
         d = Path(tmp)
+        id_failures = check_build_ids(d)
         public = "--broken-builder" not in sys.argv     # broken: the flags the builder gave before it read NFS_PUBLIC
         carbon = build(d, "carbon", lambda src: carbon_flags(src, public), broken_roots)
         mw = build(d, "mw", ["-DNFS_PUBLIC=1"] if public else [], broken_roots)
@@ -129,7 +166,7 @@ def main():
             failures += not ok
             print("%s: %s%s" % ("ok  " if ok else "FAIL", name, "" if ok else " (got %s, want %s)" % (got, want)))
         print("carbon roots: %d/%d passed" % (len(cases) - failures, len(cases)))
-        sys.exit(1 if failures else 0)
+        sys.exit(1 if failures or id_failures else 0)
 
 
 if __name__ == "__main__":

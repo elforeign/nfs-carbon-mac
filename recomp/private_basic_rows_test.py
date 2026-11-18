@@ -125,6 +125,7 @@ void portmenu_status(const char *format, ...) {
 void carbon_envcube_apply(int v) { (void)v; }
 void carbon_ao_set(int v) { (void)v; }
 void carbon_audio_surround_set(int v) { (void)v; }
+int carbon_audio_surround_get(void) { return 1; }
 void private_carbon_limiter_set(int v) { (void)v; }
 void padfx_set_triggers(int v) { (void)v; }
 void carbon_devrows_crew(int v) { (void)v; }

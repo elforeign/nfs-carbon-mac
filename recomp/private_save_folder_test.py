@@ -30,6 +30,7 @@ BASELINES = {
 }
 
 ROOT_DRIVER = r'''
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

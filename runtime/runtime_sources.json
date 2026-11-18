@@ -2128,7 +2128,7 @@
       "required_providers": []
     },
     "report_github.h": {
-      "class": "mw",
+      "class": "shared",
       "kind": "include",
       "targets": [],
       "constructors": "forbidden",
@@ -2136,14 +2136,19 @@
       "required_providers": []
     },
     "report_github.m": {
-      "class": "mw",
+      "class": "mixed",
       "kind": "unit",
       "targets": [
-        "mw-public"
+        "mw-public",
+        "private"
       ],
-      "constructors": "forbidden",
+      "constructors": "allowed",
+      "constructor_symbols": [
+        "RegisterGitHub"
+      ],
       "generated_data": null,
-      "required_providers": []
+      "required_providers": [],
+      "review": "The GitHub action is public only; Discord registration is Most Wanted only."
     },
     "report_privacy.h": {
       "class": "shared",
@@ -2154,7 +2159,7 @@
       "required_providers": []
     },
     "report_submit.h": {
-      "class": "mw",
+      "class": "shared",
       "kind": "include",
       "targets": [],
       "constructors": "forbidden",
@@ -2162,10 +2167,11 @@
       "required_providers": []
     },
     "report_submit.m": {
-      "class": "mw",
+      "class": "shared",
       "kind": "unit",
       "targets": [
-        "mw-public"
+        "mw-public",
+        "private"
       ],
       "constructors": "forbidden",
       "generated_data": null,
@@ -3450,6 +3456,8 @@
         "pub_update.m",
         "pub_update_launch.m",
         "report.m",
+        "report_github.m",
+        "report_submit.m",
         "blackbox.c"
       ],
       "extra_units": [

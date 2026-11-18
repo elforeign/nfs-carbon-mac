@@ -525,6 +525,9 @@ atomic_int roam_online_active;
 void rumble_close(void) { }
 
 /* rumble.m */
+void rumble_select(void *controller) { }
+
+/* rumble.m */
 void rumble_update(void) { }
 
 /* save_timing.c */

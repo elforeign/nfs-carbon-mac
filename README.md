@@ -1,8 +1,8 @@
 # Need for Speed: Carbon (2006) — Native for Apple Silicon Macs
 
-The real PC game, running natively on your Mac. Setup translates the game's own code for Apple Silicon (static
-recompilation) and builds it on your Mac with a Metal renderer, native sound and native controller support.
-No emulator, no Wine, no Windows.
+**Best of all worlds:** The PC game on your Mac, with console-style controller layouts and button prompts, plus Xbox 360 art from your own console files.
+
+Setup builds the game on your Mac with native graphics, sound and controller support.
 
 > **You need your own copy of the game.** This repository contains **no game code, executables, artwork, sound,
 > movies, tracks or textures.** Setup builds the game on **your** Mac from **your** game files. Nothing it builds is
@@ -14,15 +14,20 @@ Watch the demo: [Carbon on a Mac (YouTube)](https://www.youtube.com/watch?v=Hp7f
 
 - An Apple Silicon Mac (M1 or later) with macOS 14.5 or later.
 - Free disk space for the build (Setup checks before it starts and tells you if there is not enough).
-- Your own Need for Speed: Carbon PC game: the installed game folder (the one with `NFSC.exe` and `TRACKS`).
-  Carbon installs on its own; no other game is needed.
+
+## What you can use
+
+- Choose your own installed Carbon PC game folder, or pick its `NFSC.exe`. You need the compatible version 1.4 `NFSC.exe`.
+- Or choose a `.zip` or `.7z` of that folder, or your original PC discs as `.iso` images, ISO-compatible `.mdf` images, or mounted/inserted discs. For PC discs, Setup also asks for the official update for your disc edition and your compatible 1.4 `NFSC.exe`; the disc executable is copy-protected.
+- Optional: add your own Xbox 360 files as an `.iso`, extracted folder, `.zip` or `.7z` for console art. They do not replace the PC game.
+- Have a `.rar` or `.bin/.cue`? Unpack it to a folder first.
 
 ## Install
 
 1. Download the **Setup app** from the [latest release](https://github.com/elforeign/nfs-carbon-mac/releases/latest)
    and open it. The first time, macOS asks you to allow it once (System Settings > Privacy & Security > Open Anyway).
-2. Choose your Carbon game folder and click **Build**. Setup offers to install Apple's free Command Line Tools if you
-   don't have them.
+2. Choose your PC game using one of the options above, optionally add your Xbox 360 files, and click **Build**.
+   Setup offers to install Apple's free Command Line Tools if you need them.
 3. Play **NFS Carbon Native** from Applications.
 
 Step by step: **[Getting started](GETTING_STARTED.md)**. Problems: **[Troubleshooting](TROUBLESHOOTING.md)**.
@@ -45,8 +50,8 @@ Press **F10** (Fn+F10 on a Mac keyboard, or click the touchpad on a DualSense or
   (Off, 120, 60 or 40) and an optional performance overlay.
 
 **Controllers**
-- DualSense, DualShock 4 and other controllers macOS supports, with the PC game's own button defaults and
-  PlayStation button prompts.
+- DualSense, DualShock 4 and other controllers macOS supports. The default is PlayStation buttons on PlayStation pads
+  and Xbox buttons on other pads. **F10 > Controls > Button layout** also offers PC.
 - Rumble that follows slips, collisions, gear shifts and nitrous; DualSense adaptive triggers.
 - An on-screen keyboard for typing with a controller.
 

@@ -18,6 +18,10 @@ void carbon_audio_output_request(Cpu *c, void (*original)(Cpu *)) {
 /* F10 only queues a choice. Deliver the native DAC command on the guest frame,
  * with the same option and request used by native Audio Mode (13BF). */
 static int carbon_audio_pending = -1;
+int carbon_audio_surround_get(void) {
+    if (carbon_audio_pending >= 0) return carbon_audio_pending == 2;
+    return G && M32(0x00A63E70u) == 2;
+}
 void carbon_audio_surround_set(int on) { carbon_audio_pending = on ? 2 : 1; }
 void carbon_audio_output_frame(void) {
     if (carbon_audio_pending < 0 || !M32(0x00A631B8u)) return;
@@ -34,4 +38,6 @@ void carbon_audio_output_frame(void) {
     if (!stack) stack = galloc(65536);
     Cpu c = {0}; c.esp = stack + 65536; c.cw = 0x37F; c.ecx = audio;
     call_guest(&c, 0x0050E050u, 1, &option);
+    void boot_reg_set_dword(const char *, uint32_t);
+    boot_reg_set_dword("g_AudioMode", option);
 }

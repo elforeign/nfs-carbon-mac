@@ -18,6 +18,11 @@
             10894960
           ]
         },
+        "carbon_audio_surround_get": {
+          "read": [
+            10894960
+          ]
+        },
         "carbon_audio_output_frame": {
           "read": [
             10891704
@@ -38,9 +43,14 @@
   "bindings": {
     "carbon_audio_output.c": {
       "source": "carbon_audio_output.c",
-      "sha256": "1e1cfd2d85a861ec1735827e5dfc3e1005af59d365369059173d40b7bfc27d5c",
+      "sha256": "2f8f4cf639fc429f37b201fe83961c9ae37238914fb641255ef4539a3a65d5a6",
       "functions": {
         "carbon_audio_output_request": {
+          "read": [
+            10894960
+          ]
+        },
+        "carbon_audio_surround_get": {
           "read": [
             10894960
           ]

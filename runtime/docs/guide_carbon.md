@@ -62,7 +62,7 @@ Under **Controls**, **Replay save key** enables F8, F7 or F6. A saved game bindi
 
 ## YouTube live
 
-Under **Display & performance > Live streaming**, choose **Enter stream key**. The secure sheet keeps the key only until quit; saving it does not start broadcasting. **Go live** explicitly starts video and stereo sound uploads. **Stop live** stops uploads while recording and replay continue. **Forget stream key** stops streaming and clears the key. Check **Stream status** for progress or errors; an error needs another explicit Go live.
+Under **Display & performance > Live streaming**, choose **Enter stream key**. **Remember on this Mac** is checked by default and keeps the key in Carbon's save folder across quits and updates. Uncheck it before saving to keep the key until quit and clear any remembered key. Choose **Go live** to start video and stereo sound uploads. **Stop live** stops uploads while recording and replay continue. **Forget stream key** also removes the key. Check **Stream status** for progress or errors. After an error, choose **Go live** again to resume.
 
 ## Controller text entry
 

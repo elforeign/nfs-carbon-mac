@@ -37,7 +37,7 @@ static DaynightClock carbon_dn_policy;
 static struct {
     uint32_t object;
     double hour;
-    float phase;
+    float phase, weight;
     int ready, blended;
     DaynightSample sample;
     DaynightRecord record;
@@ -152,6 +152,10 @@ static int carbon_reflect_draw(Cpu *c, void (*original)(Cpu *)) {
             uint32_t tod=M32(0x00B77F34u);
             float params[5][4]={{4*.220097f,4*.236764f,4*.263431f,4},
                 {.532102f,.476753f,.452102f,0},{.58f,.52f,.41f,0},{0},{2,-1,11,0}};
+            for (int k = 0; k < 3; ++k) {
+                params[1][k] *= carbon_dn_clock.weight;
+                params[2][k] *= carbon_dn_clock.weight;
+            }
             /* Match the native dryroad/raining_on_road selector (00748B50).
              * A650E0 is a render-pass brightness, unrelated to weather. */
             uint32_t active=M32(0x00AB08F4u);
@@ -251,7 +255,8 @@ void carbon_daynight_advance(Cpu *c, void (*original)(Cpu *)) {
         carbon_dn_clock.blended = 0;
     carbon_dn_clock.object = tod;
     /* 00647720 sets +6A14 for a race; 00641310 clears it for roaming.
-     * 0075CE00 reads simulation +24 (4 is paused). Career mode is not decoded. */
+     * 0064BAF0 checks +6A18 == 3 for Career. The shared input uses 2 for Career.
+     * 0075CE00 reads simulation +24 (4 is paused). */
     uint32_t race = M32(0x00A98284u), sim = M32(0x00B4CFE0u);
     input.active = 1;
     input.dt = carbon_dn_float(0x00A99A5Cu);
@@ -259,6 +264,7 @@ void carbon_daynight_advance(Cpu *c, void (*original)(Cpu *)) {
     input.azimuth = carbon_dn_float(tod+0xc);
     input.tilt = carbon_dn_float(tod+0x10);
     input.race = race && M32(race+0x6a14) != 0;
+    input.career = race && M32(race+0x6a18) == 3 ? 2 : 0;
     input.race_id = input.race ? M32(race+0x6a1c) : 0;
     input.paused = sim && M32(sim+0x24) == 4;
     input.override = carbon_dn_fixed;
@@ -272,6 +278,7 @@ void carbon_daynight_advance(Cpu *c, void (*original)(Cpu *)) {
     double start = carbon_dn_number("NFS_TEST_DAYNIGHT_START",NAN,0,24);
     carbon_dn_step(&carbon_dn_policy,&input,mode,hour,rate,start,&output);
     carbon_dn_clock.hour = output.hour;
+    carbon_dn_clock.weight = output.weight;
     carbon_dn_clock.ready = 1;
     if (diag_on) {
         static uint64_t last;
@@ -342,9 +349,11 @@ static void carbon_dn_constants(Cpu *c) {
     float constants[3][4] = {{0},{0,0,0,1},{0}};
     if (M32(0x00A99BBCu) == 6 && carbon_dn_clock.ready && carbon_dn_clock.blended) {
         memcpy(constants[0],carbon_dn_clock.sample.light,sizeof carbon_dn_clock.sample.light);
-        memcpy(constants[1],carbon_dn_clock.record.diffuse,sizeof carbon_dn_clock.record.diffuse);
+        for (int k = 0; k < 3; ++k)
+            constants[1][k] = carbon_dn_clock.record.diffuse[k] * carbon_dn_clock.weight;
         constants[1][3] = carbon_dn_clock.sample.night;
         memcpy(constants[2],carbon_dn_clock.record.ambient,3*sizeof(float));
+        constants[2][3] = carbon_dn_clock.weight;
         if (diag_on) {
             static int recorded;
             if (!recorded) {

@@ -28,9 +28,9 @@ when diagnostics are off. The recorder does not change watchdog thresholds.
 Storage is bounded: 16,384 frame slots (384 bytes), 65,536 reserved presentation
 slots (64 bytes), 4,096 state slots and 512 reserved error slots (128 bytes each).
 Publication gates and sequence numbers are inside these sizes: 10.5625 MiB plus
-ring bookkeeping (11,075,776 bytes), plus bounded label and adapter state,
+ring bookkeeping and five latest FE context slots (11,076,416 bytes), plus bounded label and adapter state,
 below 11 MiB. A menu snapshot
-adds 10,383,496 bytes until closing;
+adds 10,384,096 bytes until closing;
 export may temporarily add another snapshot and formatted text. No allocation,
 formatting, file I/O, guest calls or waiting occurs in frame/event publication.
 A producer tries its slot once and counts a loss if occupied. Readers acquire the
@@ -87,9 +87,9 @@ ignores case; unknown labels export as `<unknown>`, never arbitrary guest text.
 The allowlist contains 129 retail labels with case variants merged. Strings retain
 the probe's 31-character bound. The package walk stops at 24 entries,
 including cycles, and reports `truncated=1` if another readable link remains.
-The latest retained observation for each FE/load slot is included even when older
-than 30 seconds; its negative timestamp shows its age. These observations can be
-lost after sufficient event-ring churn; coverage counters still apply.
+The latest observation for each FE/load slot is included even when older than
+30 seconds. When it is missing from event history, a `FE_CONTEXT` row supplies
+the observation with its original timestamp.
 
 Inferred worst-case reader cost: at most 1,039 guest loads (1,357 bytes), comprising
 three managers with two bounded strings each, fixed loading globals and 24 packages
@@ -103,6 +103,7 @@ remains unmeasured.
 With diagnostics off, a persistent synthetic black screen names `FeBlackScreen.fng`,
 all three managers, mask, loader counts and garage readiness in 1/1 F10 exports,
 versus 0/1 with the tap removed. Stable state survives 40 virtual seconds without
-republication. The fixture also checks a 24-entry cyclic walk, unknown-label
-rejection, zero guest-memory changes, probe off 0 events and probe on 600 draw
-lines. This proves report visibility; it does not reproduce the safe-house fault.
+republication. After 4,097 root changes wrap the event ring, a hang export still
+includes all four unchanged context rows. The fixture also checks a 24-entry
+cyclic walk, unknown-label rejection, zero guest-memory changes, probe off 0
+events and probe on 600 draw lines even when `NFS_BLACKBOX=0` with diagnostics on.

@@ -7,6 +7,8 @@ pairwise distinct PCM channels; their six channels are preserved.
 Default/off, absent and incomplete sources keep every byte of PC speech through
 production Win32 imports, including the native small-file cache.
 Cache-patch control: only 2/6 cached sidecars match versus 6/6, exit 1.
+Copied link manifest: old fixture link exits 1 (missing _speed_imports),
+relocated fixture link exits 0.
 No audio output; scratch only; exit 3 without assets.
 """
 import hashlib
@@ -335,6 +337,17 @@ def main():
         for name in ('BOOT_DIAG', 'NFS_CARBON_TRACK_OVERLAY', 'NFS_CARBON_X360_MUSIC', 'NFS_CARBON_X360_GIN'):
             env.pop(name, None)
 
+        import private_files_test as imports
+        fixture_header = imports.HARNESS.split('static unsigned checks;', 1)[0]
+        imports.HARNESS = fixture_header + IMPORT_MAIN
+        folder = scratch / 'imports'
+        folder.mkdir()
+        # Exercise a manifest whose absolute archive path differs from the
+        # staged output path, including when the test runs in the build checkout.
+        staged_output = scratch / 'copied-build'
+        staged_output.symlink_to(output, target_is_directory=True)
+        binary = imports.build(staged_output, folder, 'good')
+
         def build(text):
             (scratch / 'selected_speech.c').write_text(text)
             command = ['clang', '-std=c11', '-D_DARWIN_C_SOURCE', '-O1', '-g', '-w',
@@ -363,13 +376,6 @@ def main():
         build(production.replace(broken, broken + '\n    if(kind==CS_IDX)return 1; /* broken: no endian conversion */'))
         result = run(1)
         assert result.returncode == 1 and 'served=0/8 native_decoded=0/14135' in result.stdout
-
-        import private_files_test as imports
-        fixture_header = imports.HARNESS.split('static unsigned checks;', 1)[0]
-        imports.HARNESS = fixture_header + IMPORT_MAIN
-        folder = scratch / 'imports'
-        folder.mkdir()
-        binary = imports.build(output, folder, 'good')
 
         def imported(want, unset=False, **changes):
             child = dict(env, **changes)

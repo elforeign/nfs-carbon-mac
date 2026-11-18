@@ -13,6 +13,8 @@ from . import pc_disc
 
 PRODUCT = "{259C0ABB-A3B2-4D70-008F-BF7EE491B70B}"
 FIX = "Choose the Carbon PC game disc image (.iso or ISO-compatible .mdf), with any other game discs beside it."
+MISSING_FIX = ("Keep all disc images together, or copy each disc into its own folder beside the others. "
+               "Then choose disc 1 again.")
 
 
 def is_disc(path):
@@ -47,7 +49,7 @@ def prepare(source, work, events, extra=()):
                 raise b.SetupError("This is not a supported Carbon PC disc.", FIX)
         finally:
             first.close()
-        discs = pc_disc.disc_set(source, extra, allow_mdf=True)
+        discs = pc_disc.disc_set(source, extra, allow_mdf=True, missing_fix=MISSING_FIX)
         archives = [name.casefold() for disc in discs.values() for name in disc.archives]
         if "0compressed.zip" not in archives or "1compressed.zip" not in archives:
             raise b.SetupError("The Carbon discs must hold both 0compressed.zip and 1compressed.zip.", FIX)
@@ -92,11 +94,12 @@ def _extract(discs, out, work, events):
               if name.casefold().startswith("movies/")]
     with ExitStack() as stack:
         archives = []
+        budget = b.ZipDirectoryBudget()
         for disc in discs.values():
             for name in disc.archives:
                 label = f"{name} on Carbon disc {disc.number}"
                 stream = stack.enter_context(disc.open(name))
-                archive = stack.enter_context(zipfile.ZipFile(stream))
+                archive = stack.enter_context(budget.open(stream, label, FIX))
                 archives.append((label, archive) + b.zip_members(archive, label, FIX))
         total = sum(size for _, _, _, size in archives) + sum(disc.size(name) for disc, name in loose)
         count = sum(len(members) for _, _, members, _ in archives) + len(loose)

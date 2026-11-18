@@ -8,11 +8,22 @@ import shutil
 import tempfile
 import zipfile
 
-from . import carbon_disc, carbon_patch
+from . import carbon_disc, carbon_patch, xdvdfs
 
 
-FIX = "Choose a Carbon PC folder with NFSC.exe and TRACKS, NFSC.exe, a .zip/.7z of that folder, or your PC disc image (.iso or ISO-compatible .mdf)."
-DISC_FIX = "Choose the official Carbon update with --pc-update and your compatible NFSC.exe with --pc-exe."
+FIX = "Choose a Carbon PC folder with NFSC.exe and TRACKS, NFSC.exe, a .zip/.7z of that folder, or your PC disc (.iso, ISO-compatible .mdf, or a disc folder)."
+DISC_FIX = "Use Carbon update to select the official update and NFSC.exe to select your compatible game executable."
+
+
+def is_xbox_iso(source):
+    if source.suffix.lower() != ".iso" or not source.is_file():
+        return False
+    try:
+        with source.open("rb") as image:
+            xdvdfs.find_base(image)
+    except (OSError, xdvdfs.DiscError):
+        return False
+    return True
 
 
 def prepare(source, work, events, update=None, exe=None):
@@ -23,8 +34,11 @@ def prepare(source, work, events, update=None, exe=None):
         source = source.parent
     if carbon_disc.is_disc(source):
         return prepare_disc(source, work, events, update, exe)
+    if is_xbox_iso(source):
+        raise b.SetupError("This is an Xbox 360 disc image.",
+                           "Add it under Xbox 360 files (optional). Choose your PC game first.")
     if update or exe:
-        raise b.SetupError("The Carbon update and a separate NFSC.exe are only used with Carbon PC disc images.", FIX)
+        raise b.SetupError("The Carbon update and a separate NFSC.exe are only used with original Carbon PC discs.", FIX)
     if source.is_file() and source.suffix.lower() == ".iso":
         try:
             from . import carbon_repack
@@ -41,7 +55,7 @@ def prepare(source, work, events, update=None, exe=None):
     def unpack(out):
         try:
             if source.suffix.lower() == ".zip":
-                with zipfile.ZipFile(source) as archive:
+                with b.ZipDirectoryBudget().open(source, "The Carbon archive", FIX) as archive:
                     members, total = b.zip_members(archive, "The Carbon archive", FIX)
                     space(total)
                     out.mkdir()
@@ -49,10 +63,7 @@ def prepare(source, work, events, update=None, exe=None):
                                  lambda i, written: events.progress(written, total),
                                  label="The Carbon archive", fix=FIX)
             else:
-                members, total = b.sevenzip_members(source)
-                space(total)
-                out.mkdir()
-                b.unpack_sevenzip(source, members, total, out, events)
+                b.unpack_pc_sevenzip(source, out, events, FIX)
             if b.sha_file(source) != before:
                 raise b.SetupError("The Carbon archive changed while being unpacked.", FIX)
             root = find_root(out)
@@ -109,7 +120,7 @@ def prepare_disc(source, work, events, update, exe):
     def inputs():
         discs = {}
         try:
-            discs = b.pc_disc.disc_set(source, allow_mdf=True)
+            discs = b.pc_disc.disc_set(source, allow_mdf=True, missing_fix=carbon_disc.MISSING_FIX)
             return dict(layout=1, discs=[dict(path=str(d.path.resolve()),
                         sha256=b.sha_file(d.path) if d.handle else b.digest_tree(d.path))
                         for d in discs.values()], update=dict(path=str(update), sha256=b.sha_file(update)),
@@ -137,5 +148,7 @@ def prepare_disc(source, work, events, update, exe):
         root = b.unpacked(Path(work), key, events, "the Carbon discs, update and NFSC.exe", unpack, name="carbon_src")
         b.validate_carbon(root)
         return root
-    except (carbon_patch.PatchError, b.pc_disc.DiscError, OSError) as error:
+    except b.pc_disc.DiscError as error:
+        raise b.SetupError(str(error), error.fix) from None
+    except (carbon_patch.PatchError, OSError) as error:
         raise b.SetupError(str(error), DISC_FIX) from None

@@ -152,6 +152,7 @@ def main():
     assert source.index('carbon_facade_shader_variant(tokens,count,patched_count)') < source.index('if (carbon_dn_on()) variant =')
     code = '#include "host.h"\n#include <string.h>\n#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n'
     code += 'static int carbon_reflect_draw(Cpu*c,void(*original)(Cpu*)){return 0;}\n'
+    code += 'static int carbon_tree_draw(Cpu*c,void(*original)(Cpu*)){return 0;}\n'
     code += 'static float day;static float carbon_compat_day(void){return day;}\n'
     code += 'void carbon_facade_draw(Cpu*c,void(*original)(Cpu*))'+body(source,'carbon_facade_draw')
     code += r'''

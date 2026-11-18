@@ -83,6 +83,7 @@
     "padlink_detach",
     "padlink_select",
     "rumble_close",
+    "rumble_select",
     "rumble_update"
   ]
 }

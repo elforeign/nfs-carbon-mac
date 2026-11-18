@@ -1,5 +1,7 @@
 """Carbon EA disc extraction, using tiny synthetic ISO9660/Joliet images.
 
+Shared ZIP listing budget: 0/1 passes on 972909b3, 1/1 passes with preflight.
+
 Good-disc control on base: 1/1 fails (extraction absent, exit 1);
 implementation: 1/1 passes (exit 0), full synthetic suite 14/14 passes.
 Private inventory/extraction: --private (CARBON_DISC_IMAGE), exit 3 if absent.
@@ -134,6 +136,14 @@ class CarbonDiscTests(unittest.TestCase):
     def test_total_size_bound(self):
         with mock.patch.object(b, "ZIP_MAX_BYTES", 10):
             self.refused(self.files, "larger")
+
+    def test_disc_window_zip_entry_budget_is_shared_before_open(self):
+        with mock.patch.object(b, "ZIP_MAX_FILES", 4), \
+                mock.patch.object(zipfile, "ZipFile", wraps=zipfile.ZipFile) as opened:
+            with self.assertRaisesRegex(b.SetupError, "1compressed.zip.*too many entries"):
+                self.prepare()
+        self.assertEqual(opened.call_count, 1)
+        self.assertFalse((self.work / "carbon_src").exists())
 
     def test_cancellation_removes_partial_tree(self):
         partial = []

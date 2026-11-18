@@ -121,7 +121,6 @@ if [ -f tools/inputs.py ] && [ "${OFFLINE_TESTS_PLAN:-0}" != 1 ] && [ "${1:-}" !
 fi
 # A whole-suite run (no test names) takes one of OFFLINE_SUITE_SLOTS (2) machine-wide slots; named-test runs do not.
 if [ $# -eq 0 ] && [ "${OFFLINE_TESTS_PLAN:-0}" != 1 ]; then . "$here/runtime/suite_slot.sh"; suite_slot_acquire; fi
-[ "${1:-}" = --one ] || [ "${OFFLINE_TESTS_PLAN:-0}" = 1 ] || "$TOOLS_PY" -I tools/gen_tables.py --if-stale || { echo "OFFLINE FAIL: gen_tables"; exit 1; }   # runtime/gen/*.inc
 export NFS_RUMBLE=off NFS_PAD_TRIGGERS=off NFS_PAD_LIGHT=off NFS_PAD_PLAYERS=off NFS_PAD_ROAD=off NFS_HDR_OUTPUT=${NFS_HDR_OUTPUT:-off}
 py=$TOOLS_PY
 X360=$NFS_PARENT/x360/files
@@ -430,6 +429,13 @@ fi
 OT_TIMES=${OFFLINE_TIMES-${NFS_RUNS:-$NFS_PARENT/.runs}/offline_times.tsv}; [ "$OT_TIMES" != - ] || OT_TIMES=; [ $# -eq 0 ] || OT_TIMES=; export OT_TIMES
 OT_DIR=$(mktemp -d "${TMPDIR:-/tmp}/offline.XXXXXX"); export OT_DIR
 mkdir -p "$OT_DIR/work"
+# Sandboxed checks use the development asset paths, with a separate profile root
+# for table generation and any offline checks that call the runtime resolver.
+if [ "${NFS_GPU_SANDBOX:-0}" = 1 ] && [ -z "${BOOT_USERDATA:-}" ]; then
+    export BOOT_USERDATA="$OT_DIR/profile"
+    mkdir -p "$BOOT_USERDATA"
+fi
+"$TOOLS_PY" -I tools/gen_tables.py --if-stale || { echo "OFFLINE FAIL: gen_tables"; rm -rf "$OT_DIR"; exit 1; }
 OT_TOOL_TMPDIR=${TMPDIR:-/tmp/}; export OT_TOOL_TMPDIR   # xcrun resolves downloaded toolchains via its original temp cache
 export PYTHONUNBUFFERED=1             # stdout and stderr interleave in order, so a traceback lands in the tail
 export TMPDIR=$OT_DIR/work              # tests' mkdtemp scratch lands here and goes with it (reverb keeps 10 s WAVs)

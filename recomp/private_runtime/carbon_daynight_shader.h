@@ -136,7 +136,7 @@ static uint32_t *carbon_dn_world_variant(const uint32_t *tokens, uint32_t count,
         i += 1 + length;
     }
     if (normal >= 16 || colour >= 16 || writes != 1 || !rgb) return NULL;
-    uint32_t added = trees ? 18 + 25 : 18;
+    uint32_t added = trees ? 18 + 29 : 18;
     uint32_t *out = (uint32_t *)malloc((size_t)(count + added) * sizeof *out);
     if (!out) return NULL;
     memcpy(out, tokens, (size_t)(count - 1) * sizeof *out);
@@ -153,6 +153,7 @@ static uint32_t *carbon_dn_world_variant(const uint32_t *tokens, uint32_t count,
         0x0300000bu, 0x8001000au, 0x8000000au, 0xa0ff00f0u,       /* max r10.x,r10.x,c240.w */
         0x03000002u, 0x8001000au, 0x8000000au, 0xa0ff00fbu,       /* add r10.x,r10.x,wrap */
         0x0300000au, 0x8001000au, 0x8000000au, 0xa0ff00fau,       /* min r10.x,r10.x,1 */
+        0x03000005u, 0x8001000au, 0x8000000au, 0xa0ff00f2u,       /* mul r10.x,r10.x,c242.w */
         0x04000004u, 0x8007000au, 0xa0e400fau, 0x8000000au, 0xa0e400fbu, /* mad day,2SD,x,2F */
         0x0000002bu
     };

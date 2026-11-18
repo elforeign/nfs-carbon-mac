@@ -5,6 +5,7 @@ under the ignored image output. This never launches the binary or writes the
 source runtime. MW engine hooks are namespaced and unavailable hooks fail closed.
 """
 import argparse
+from datetime import datetime
 import hashlib
 import concurrent.futures
 import json
@@ -38,11 +39,28 @@ from private_world import verify_world
 from private_hooks import load_registry, check_providers
 
 
+def build_id():
+    """Match runtime/build.sh, including its fallback in a source archive."""
+    commit, dirty = 'unknown', '+'
+    try:
+        rev = subprocess.run(['git', 'rev-parse', '--short', 'HEAD'], cwd=ROOT,
+                             stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+        if rev.returncode == 0:
+            commit = rev.stdout.strip()
+        diff = subprocess.run(['git', 'diff', '--quiet', 'HEAD'], cwd=ROOT, stderr=subprocess.DEVNULL)
+        if diff.returncode == 0:
+            dirty = ''
+    except FileNotFoundError:
+        pass
+    return f'{commit}{dirty} {datetime.now():%Y-%m-%d %H:%M}'
+
+
 def compile_flags(dst,out,env=None):
     """The runtime copy's clang flags. NFS_PUBLIC=1 (Setup's build environment, as runtime/build.sh reads it) compiles
     the public path rules: the program reads only its own roots.txt and never looks beside the game or in the cwd."""
     env=os.environ if env is None else env
-    flags=['-DNFS_GAME=2','-include',str(dst/'game_select.h'),'-O1','-g','-w','-fobjc-arc','-DSAVE_TIMING_ENABLED','-DPORT_BUILD_ID="private-offline"',
+    flags=['-DNFS_GAME=2','-include',str(dst/'game_select.h'),'-O1','-g','-w','-fobjc-arc','-DSAVE_TIMING_ENABLED',
+        f'-DPORT_BUILD_ID="{build_id()}"',
         '-I',str(dst),'-I',str(HERE),'-I',str(out),'-I',str(ROOT/'runtime'),'-I',str(ROOT/'third_party/ffmpeg/include')]
     if env.get('NFS_PUBLIC','0')=='1':flags.append('-DNFS_PUBLIC=1')
     return flags

@@ -34,6 +34,7 @@ static void carbon_port_preset_apply(int value) {
 }
 
 void carbon_ao_set(int), private_carbon_limiter_set(int), carbon_audio_surround_set(int), padfx_set_triggers(int);
+int carbon_audio_surround_get(void);
 void carbon_envcube_apply(int);
 void carbon_devrows_crew(int), carbon_devrows_nitrous(int), carbon_devrows_speedbreaker(int);
 static const char *const carbon_port_maps[] = {"Off", "Rockport", "Atlas"};
@@ -59,7 +60,8 @@ static Setting carbon_port_rows[] = {
      .env="NFS_CARBON_MINIMAP", .restart=1},
     {.id="audio.carbon_surround", .category=SET_AUDIO, .order=5, .label="Surround",
      .help="Select native Stereo or Surround now. Speaker layout is a separate startup choice.",
-     .type=SET_TOGGLE, .values=carbon_port_bool, .def=1, .env="NFS_CARBON_SURROUND", .apply=carbon_audio_surround_set},
+     .type=SET_TOGGLE, .values=carbon_port_bool, .def=1, .env="NFS_CARBON_SURROUND",
+     .pref="", .get=carbon_audio_surround_get, .apply=carbon_audio_surround_set},
     {.id="graphics.look_preset", .category=SET_PICTURE, .order=10, .label="Look preset",
      .help="Port restores the shipped graphics defaults. PC retail disables port graphics additions. My picks restores your choices. Live rows apply now; remaining rows show a restart notice.",
      .type=SET_CHOICE, .choices=carbon_port_presets, .values=carbon_port_preset_values, .nchoices=3,

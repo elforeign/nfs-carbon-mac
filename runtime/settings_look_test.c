@@ -236,9 +236,11 @@ int main(int argc, char **argv) {
     CHECK(settings_get("graphics.bloom_surfaces") == 2);
     CHECK(app_pref("graphics.my_picks.2") && *app_pref("graphics.my_picks.2")); // >1 KB, no truncation
     // Every affected extra participates in matching, automatic saving and restoration.
+    Setting *later_cars = settings_find("cars.later_games");
     for (int i=0;i<NEXTRAS;++i) {
-        settings_look_apply(PRESET_X360);
         Setting *s = &extras[i];
+        if (s == later_cars) continue;
+        settings_look_apply(PRESET_X360);
         int target = s->value;
         CHECK(settings_set(s, s->type == SET_SLIDER ? (target ? 0 : 100) : 1-target));
         int custom = s->value;
@@ -249,7 +251,9 @@ int main(int argc, char **argv) {
     }
     settings_look_apply(PRESET_PORT);
     CHECK(settings_look_state() == PRESET_PORT);
-    for (int i=0;i<NEXTRAS;++i) CHECK(extras[i].value == extras[i].def);
+    for (int i=0;i<NEXTRAS;++i) if (&extras[i] != later_cars) CHECK(extras[i].value == extras[i].def);
+    CHECK(later_cars->value==1 && settings_set(later_cars,0));
+    CHECK(settings_look_state()==PRESET_PORT);
     CHECK(settings_get("graphics.bloom_surfaces") == 2);
     CHECK(settings_get("audio.x360_music") == 1); // sound kept through all looks
     // A value changed elsewhere must invalidate the cached selection too.

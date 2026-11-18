@@ -44,6 +44,7 @@ PRELUDE = r'''
 #include <time.h>
 #include <unistd.h>
 #include "blackbox.h"
+#include "game_select.h"
 void carbon_blackbox_fe(uint64_t frame, uint32_t flow, uint64_t now) { (void)frame; (void)flow; (void)now; }
 static uint64_t virtual_ns = 100000000000ull;
 static int fixture_clock(clockid_t id, struct timespec *t) {
@@ -138,7 +139,7 @@ int main(int argc,char **argv) {
     /* Frame rate beyond capacity must say coverage is short. */
     for(unsigned i=0;i<20000;++i) { virtual_ns+=1000000;frame(91000+i,6); }
     f=fopen("capacity.txt","w");blackbox_export_at(f,BB_STALL,virtual_ns);fclose(f);
-    printf("storage=%zu snapshot=%zu lost=%llu\n",sizeof frames+sizeof presents+sizeof events+sizeof errors+sizeof rings,
+    printf("storage=%zu snapshot=%zu lost=%llu\n",sizeof frames+sizeof presents+sizeof events+sizeof errors+sizeof rings+sizeof fe_context,
            sizeof(Snapshot),(unsigned long long)atomic_load(&rings[0].lost));
     return 0;
 }
@@ -187,6 +188,7 @@ def main():
             (build / 'hooks.inc').write_text(hooks(game, broken))
             (build / 'fixture.c').write_text(PRELUDE)
             cmd = ['clang', '-std=gnu11', '-O2', '-g', '-Wall', '-Wextra', '-Werror', '-Wno-unused-function',
+                   '-DNFS_GAME=' + ('NFS_GAME_MW' if game == 'mw' else 'NFS_GAME_PRIVATE'),
                    '-Wno-unused-variable', '-fsanitize=address,undefined', '-I'+str(R), '-I'+str(build),
                    str(build / 'fixture.c'), '-o', str(build / 'fixture')]
             compiled = subprocess.run(cmd, capture_output=True, text=True)

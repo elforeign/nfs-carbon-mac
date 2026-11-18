@@ -1,6 +1,7 @@
 /* Synthetic guest ABI fixture; never loads or executes a game image. */
 #include "host.h"
 #include <assert.h>
+#include <errno.h>
 #include <math.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -14,19 +15,61 @@ static uint32_t sizes[1<<20];
 uint32_t galloc(uint32_t n) { uint32_t a=next;next=(next+n+15)&~15u;assert(next<(1<<20));sizes[a/16]=n;memset(G+a,0,n);return a; }
 uint32_t gmalloc(uint32_t n) { return galloc(n); }
 uint32_t gmalloc_size(uint32_t a) { return sizes[a/16]; }
-void gfree(uint32_t a) { (void)a; }
+void gfree(uint32_t a) { sizes[a / 16] = 0; }
 uint32_t gstr(const char *s) { uint32_t a=galloc(strlen(s)+1);strcpy((char *)G+a,s);return a; }
 void diag_event(const char *fmt,...) { (void)fmt; }
 void diag_begin_exit(void) { }
 void app_restart_game_exited(int successful) { (void)successful; }
-uint32_t host_fn(HostFn fn,const char *name) { (void)fn;(void)name;return 1; }
-uint32_t call_guest(Cpu *c,uint32_t fn,int n,const uint32_t *args) { (void)c;(void)fn;assert(n==2);return strcmp((char *)G+args[0],(char *)G+args[1]); }
+int private_crt(Cpu *, const char *);
+enum { THREAD_GUEST = 0x410000, THREAD_STACK = 0x9000, THREAD_CYCLES = 5000 };
+static unsigned registrations, callbacks, freed_at_entry;
+static HostFn trampoline;
+uint32_t host_fn(HostFn fn, const char *name) {
+    assert(!strcmp(name, "CRT thread entry"));
+    trampoline = fn;
+    /* Count all registrations so the old code can run beyond the real table limit. */
+    return HOSTFN_BASE + 4 * registrations++;
+}
+uint32_t call_guest(Cpu *c, uint32_t fn, int n, const uint32_t *args) {
+    if (fn == THREAD_GUEST) {
+        assert(n == 1 && args[0] == callbacks);
+        ++callbacks;
+        freed_at_entry += !gmalloc_size(M32(THREAD_STACK + 4));
+        if (args[0] & 1) {
+            M32(THREAD_STACK - 4) = 42;
+            c->esp = THREAD_STACK - 8;
+            private_crt(c, "_endthreadex");
+            abort();
+        }
+        return 42;
+    }
+    assert(n == 2);
+    return strcmp((char *)G + args[0], (char *)G + args[1]);
+}
 int private_resolve(const char *s,char *out,size_t n) { snprintf(out,n,"%s",s);return 0; }
 int win32_heap(Cpu *c,const char *fn) { (void)c;(void)fn;abort(); }
 int private_win32(Cpu *c,const char *fn) { (void)c;(void)fn;return 0; }
-int win32_threads(Cpu *c,const char *fn) { (void)c;(void)fn;return 0; }
-uint32_t private_thread_create(uint32_t a,uint32_t b,uint32_t d,uint32_t e,uint32_t *f) { (void)a;(void)b;(void)d;(void)e;(void)f;return 0; }
-int private_crt(Cpu *,const char *);
+int win32_threads(Cpu *c, const char *fn) {
+    assert(!strcmp(fn, "ExitThread"));
+    pthread_exit((void *)(uintptr_t)arg(c, 0));
+}
+static void *run_trampoline(void *opaque) {
+    Cpu *c = opaque;
+    assert(trampoline(c) && c->esp == THREAD_STACK + 8);
+    return (void *)(uintptr_t)c->eax;
+}
+uint32_t private_thread_create(uint32_t stack, uint32_t start, uint32_t param,
+                               uint32_t flags, uint32_t *tid) {
+    assert(!stack && !flags && start >= HOSTFN_BASE && (start - HOSTFN_BASE) / 4 < registrations);
+    Cpu thread = {.esp = THREAD_STACK};
+    M32(THREAD_STACK + 4) = param;
+    pthread_t child;
+    void *result;
+    assert(!pthread_create(&child, NULL, run_trampoline, &thread));
+    assert(!pthread_join(child, &result) && (uintptr_t)result == 42);
+    *tid = callbacks;
+    return 17;
+}
 uint32_t private_import_data(const char *);
 static unsigned checks;
 static void check(int yes,const char *why) { ++checks;if(!yes){fprintf(stderr,"FAIL %s (check %u)\n",why,checks);exit(1);} }
@@ -37,8 +80,55 @@ static uint32_t invoke(Cpu *c,const char *name,int n,...) {
     check(c->esp==0x8004,"cdecl preserves caller arguments");
     return c->eax;
 }
-int main(void) {
+static void thread_cycles(Cpu *c) {
+    uint32_t tid = galloc(4);
+    for (uint32_t i = 0; i < THREAD_CYCLES; ++i) {
+        uint32_t handle = invoke(c, "_beginthreadex", 6, 0u, 0u, (uint32_t)THREAD_GUEST, i, 0u, tid);
+        check(handle == 17 && M32(tid) == i + 1, "CRT thread result and thread ID");
+    }
+    printf("CRT thread cycles=%u, dispatch slots=%u, contexts freed before entry=%u\n",
+           callbacks, registrations, freed_at_entry);
+    check(registrations == 1 && callbacks == THREAD_CYCLES && freed_at_entry == THREAD_CYCLES,
+          "CRT trampoline is registered once and releases its context before guest entry");
+}
+static void strtol_width(Cpu *c) {
+    static const struct {
+        const char *text;
+        uint32_t base, result;
+        int error;
+    } cases[] = {
+        {"100000000!", 16, INT32_MAX, ERANGE},
+        {"2147483648!", 10, INT32_MAX, ERANGE},
+        {"-2147483649!", 10, (uint32_t)INT32_MIN, ERANGE},
+        {"99999999999999999999999999!", 10, INT32_MAX, ERANGE},
+        {"-99999999999999999999999999!", 10, (uint32_t)INT32_MIN, ERANGE},
+        {"2147483647!", 10, INT32_MAX, 0},
+        {"-2147483648!", 10, (uint32_t)INT32_MIN, 0},
+        {"   -0x13!", 0, (uint32_t)-19, 0},
+        {"0x7fffffff!", 0, INT32_MAX, 0},
+    };
+    unsigned passed = 0, count = sizeof cases / sizeof *cases;
+    uint32_t end = galloc(4);
+    for (unsigned i = 0; i < count; ++i) {
+        uint32_t text = gstr(cases[i].text);
+        errno = 0;
+        uint32_t result = invoke(c, "strtol", 3, text, end, cases[i].base);
+        uint32_t guest_errno = invoke(c, "_errno", 0);
+        if (result == cases[i].result && M32(end) == text + strlen(cases[i].text) - 1 &&
+            (int)M32(guest_errno) == cases[i].error) ++passed;
+    }
+    printf("CRT strtol cases=%u/%u\n", passed, count);
+    check(passed == count, "Win32 strtol result, end pointer and errno");
+}
+int main(int argc, char **argv) {
     G=calloc(1,1<<20);assert(G);Cpu c={0};
+    if (argc == 2) {
+        if (!strcmp(argv[1], "thread")) thread_cycles(&c);
+        else if (!strcmp(argv[1], "strtol")) strtol_width(&c);
+        else abort();
+        free(G);
+        return 0;
+    }
     uint32_t p=invoke(&c,"malloc",1,32u);memcpy(G+p,"abcdef",7);
     check(p&&!(p&15),"guest allocation");
     check(invoke(&c,"strlen",1,p)==6,"guest strlen");
@@ -93,5 +183,9 @@ int main(void) {
     check(invoke(&c,"_setjmp3",2,jump+4,0u)==0&&M32(jump+28)==seh&&M32(jump+32)==7&&c.ecx==0,"setjmp registered SEH try level");
     c.esp=0x8000;M32(c.esp+4)=jump+4;M32(c.esp+8)=1;M32(jump+4)=0xfeed;
     check(!private_crt(&c,"_setjmp3")&&c.esp==0x8000&&M32(jump+4)==0xfeed,"extended setjmp fails before state changes");
-    printf("CRT ABI PASS checks=%u\n",checks);free(G);return 0;
+    printf("CRT ABI PASS checks=%u\n",checks);
+    thread_cycles(&c);
+    strtol_width(&c);
+    free(G);
+    return 0;
 }

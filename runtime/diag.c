@@ -1,7 +1,18 @@
 #include "blackbox.h"
 #include "game_select.h"
 #include <stdint.h>
+#include <stdio.h>
+#include <pthread.h>
+#include <stdatomic.h>
+#include <stdarg.h>
+#include <string.h>
 static uint64_t diag_capture_late(uint64_t *from);
+static pthread_mutex_t file_mu = PTHREAD_MUTEX_INITIALIZER;
+void report_note(const char *fmt, ...) __attribute__((format(printf, 1, 2)));   // report.m
+void report_frame(uint64_t frame, uint32_t flow);
+void report_auto(const char *why, const char *diag_file);
+void portmenu_frame(void);
+static void dump_ring(FILE *f, int last);
 #if NFS_GAME == NFS_GAME_MW
 // diag.c - diagnostic mode: one run records everything needed to diagnose it afterwards.
 //
@@ -45,9 +56,7 @@ static uint64_t diag_capture_late(uint64_t *from);
 #include <malloc/malloc.h>
 #include <math.h>
 #include <execinfo.h>
-#include <pthread.h>
 #include <signal.h>
-#include <stdarg.h>
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <time.h>
@@ -72,78 +81,6 @@ static int shot_every = 3600;            // periodic overview shots (frame_NNNNN
 static FILE *timeline_f;                 // timeline.log (below)
 static float timeline_race0 = -1, timeline_secs = 60;
 void diag_timeline(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
-
-// ---------------- event ring ----------------
-#define RING 65536
-#define LINE 192
-static char ring[RING][LINE];
-// Call records (imports and COM methods, millions a second) are stored raw and formatted only when a report is written.
-static struct { uint64_t frame; const char *name; uint32_t v[8]; uint32_t tid; uint8_t nargs, raw; } rawrec[RING];
-static volatile uint32_t ring_head;
-static pthread_mutex_t file_mu = PTHREAD_MUTEX_INITIALIZER;
-
-uint32_t diag_thread_id(void);   // threads.c
-
-void diag_call_ring(const char *name, int nargs, const uint32_t *args, uint32_t ret, uint32_t ra) {
-    uint32_t i = __atomic_fetch_add(&ring_head, 1, __ATOMIC_RELAXED) % RING;
-    rawrec[i].frame = frame_now;
-    rawrec[i].tid = diag_thread_id();
-    rawrec[i].name = name;
-    rawrec[i].nargs = (uint8_t)(nargs < 6 ? nargs : 6);
-    for (int k = 0; k < rawrec[i].nargs; ++k) rawrec[i].v[k] = args[k];
-    rawrec[i].v[6] = ret; rawrec[i].v[7] = ra;
-    rawrec[i].raw = 1;
-}
-static const char *ring_line(uint32_t i, char *buf, size_t n) {
-    if (!rawrec[i].raw) return ring[i];
-    int k = snprintf(buf, n, "f%llu t%u %s(", (unsigned long long)rawrec[i].frame, rawrec[i].tid, rawrec[i].name);
-    for (int a = 0; a < rawrec[i].nargs && k < (int)n; ++a) k += snprintf(buf + k, n - (size_t)k, a ? ", %X" : "%X", rawrec[i].v[a]);
-    if (k < (int)n) snprintf(buf + k, n - (size_t)k, ") -> %X @%08X", rawrec[i].v[6], rawrec[i].v[7]);
-    return buf;
-}
-static uint32_t ring_put(const char *fmt, va_list ap) {
-    uint32_t i = __atomic_fetch_add(&ring_head, 1, __ATOMIC_RELAXED) % RING;
-    rawrec[i].raw = 0;
-    int n = snprintf(ring[i], LINE, "f%llu t%u ", (unsigned long long)frame_now, diag_thread_id());
-    vsnprintf(ring[i] + n, LINE - (size_t)n, fmt, ap);
-    return i;
-}
-void diag_event_ring(const char *fmt, ...) {
-    va_list ap;
-    va_start(ap, fmt);
-    ring_put(fmt, ap);
-    va_end(ap);
-}
-void diag_event(const char *fmt, ...) {
-    va_list ap;
-    va_start(ap, fmt);
-    va_list file_ap;
-    va_copy(file_ap, ap);
-    uint64_t frame = frame_now;
-    uint32_t tid = diag_thread_id();
-    ring_put(fmt, ap);
-    va_end(ap);
-    if (events_f) {
-        pthread_mutex_lock(&file_mu);
-        // Keep the crash ring compact, but don't truncate file events to its 192-byte slots: audiochain's byte
-        // totals grow during long runs and would otherwise lose the callback-gap/encode maxima at the end.
-        fprintf(events_f, "f%llu t%u ", (unsigned long long)frame, tid);
-        vfprintf(events_f, fmt, file_ap);
-        fputc('\n', events_f);
-        pthread_mutex_unlock(&file_mu);
-    }
-    va_end(file_ap);
-}
-void report_note(const char *fmt, ...) __attribute__((format(printf, 1, 2)));   // report.m
-void report_frame(uint64_t frame, uint32_t flow);
-void report_auto(const char *why, const char *diag_file);
-void portmenu_frame(void);
-static void dump_ring(FILE *f, int last) {
-    uint32_t head = ring_head, start = head > (uint32_t)last ? head - (uint32_t)last : 0;
-    fprintf(f, "\n==== last %u events ====\n", head - start);
-    char buf[LINE];
-    for (uint32_t k = start; k < head; ++k) fprintf(f, "%s\n", ring_line(k % RING, buf, sizeof buf));
-}
 
 // ---------------- symbols: the game's function names (decomp/functions.tsv) ----------------
 typedef struct { uint32_t addr; char *name; } Sym;
@@ -299,7 +236,6 @@ void diag_report(const char *file, const char *why) {
     fprintf(stderr, "boot: diagnostic report written: %s (%s)\n", path, why);
     if (!strcmp(file, "crash.txt") || !strncmp(file, "hang", 4)) report_auto(why, path);   // report.m: a report folder too
 }
-void diag_ring_dump(FILE *f, int last) { dump_ring(f, last); }   // report.m
 
 static void crash_signal(int sig) {
     static int once;
@@ -1717,6 +1653,112 @@ void f_00753060(Cpu *c) {
 #include "game_overlay_diagnostics.h"
 #endif
 
+
+// ---------------- event ring ----------------
+#define RING 65536
+#define LINE 192
+static char ring[RING][LINE];
+// Call records (imports and COM methods, millions a second) are stored raw and formatted only when a report is written.
+static struct { uint64_t frame; const char *name; uint32_t v[8]; uint32_t tid; uint8_t nargs, raw; } rawrec[RING];
+static struct { _Atomic uint64_t busy; uint64_t seq; } ring_slots[RING];
+static _Atomic uint64_t ring_head;
+
+uint32_t diag_thread_id(void);   // threads.c
+
+// As in the blackbox, never wait for a slot that another thread may hold at crash time.
+static int ring_lock(uint32_t i) {
+    uint64_t expected = 0;
+    return atomic_compare_exchange_strong_explicit(&ring_slots[i].busy, &expected, 1,
+                                                   memory_order_acquire, memory_order_relaxed);
+}
+static void ring_unlock(uint32_t i) {
+    atomic_store_explicit(&ring_slots[i].busy, 0, memory_order_release);
+}
+static int ring_begin(void) {
+    uint64_t seq = atomic_fetch_add_explicit(&ring_head, 1, memory_order_relaxed) + 1;
+    uint32_t i = (seq - 1) % RING;
+    if (!ring_lock(i)) return -1;
+    if (ring_slots[i].seq >= seq) {
+        ring_unlock(i);
+        return -1;
+    }
+    ring_slots[i].seq = seq;
+    return (int)i;
+}
+
+void diag_call_ring(const char *name, int nargs, const uint32_t *args, uint32_t ret, uint32_t ra) {
+    int i = ring_begin();
+    if (i < 0) return;
+    rawrec[i].frame = frame_now;
+    rawrec[i].tid = diag_thread_id();
+    rawrec[i].name = name;
+    rawrec[i].nargs = (uint8_t)(nargs < 6 ? nargs : 6);
+    for (int k = 0; k < rawrec[i].nargs; ++k) rawrec[i].v[k] = args[k];
+    rawrec[i].v[6] = ret; rawrec[i].v[7] = ra;
+    rawrec[i].raw = 1;
+    ring_unlock(i);
+}
+static void ring_line(uint32_t i, char *buf, size_t n) {
+    if (!rawrec[i].raw) {
+        memcpy(buf, ring[i], n);
+        return;
+    }
+    int k = snprintf(buf, n, "f%llu t%u %s(", (unsigned long long)rawrec[i].frame, rawrec[i].tid, rawrec[i].name);
+    for (int a = 0; a < rawrec[i].nargs && k < (int)n; ++a) k += snprintf(buf + k, n - (size_t)k, a ? ", %X" : "%X", rawrec[i].v[a]);
+    if (k < (int)n) snprintf(buf + k, n - (size_t)k, ") -> %X @%08X", rawrec[i].v[6], rawrec[i].v[7]);
+}
+static void ring_put(const char *fmt, va_list ap) {
+    int i = ring_begin();
+    if (i < 0) return;
+    rawrec[i].raw = 0;
+    int n = snprintf(ring[i], LINE, "f%llu t%u ", (unsigned long long)frame_now, diag_thread_id());
+    vsnprintf(ring[i] + n, LINE - (size_t)n, fmt, ap);
+    ring_unlock(i);
+}
+void diag_event_ring(const char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    ring_put(fmt, ap);
+    va_end(ap);
+}
+void diag_event(const char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    va_list file_ap;
+    va_copy(file_ap, ap);
+    uint64_t frame = frame_now;
+    uint32_t tid = diag_thread_id();
+    ring_put(fmt, ap);
+    va_end(ap);
+    if (events_f) {
+        pthread_mutex_lock(&file_mu);
+        // Keep the crash ring compact, but don't truncate file events to its 192-byte slots: audiochain's byte
+        // totals grow during long runs and would otherwise lose the callback-gap/encode maxima at the end.
+        fprintf(events_f, "f%llu t%u ", (unsigned long long)frame, tid);
+        vfprintf(events_f, fmt, file_ap);
+        fputc('\n', events_f);
+        pthread_mutex_unlock(&file_mu);
+    }
+    va_end(file_ap);
+}
+static void dump_ring(FILE *f, int last) {
+    uint64_t head = atomic_load_explicit(&ring_head, memory_order_relaxed);
+    uint64_t count = last > 0 ? (unsigned)last : 0;
+    if (count > RING) count = RING;
+    uint64_t start = head > count ? head - count : 0;
+    fprintf(f, "\n==== last %u events ====\n", (unsigned)(head - start));
+    char buf[LINE];
+    for (uint64_t k = start; k < head; ++k) {
+        uint32_t i = k % RING;
+        if (!ring_lock(i)) continue;
+        int valid = ring_slots[i].seq == k + 1;
+        if (valid) ring_line(i, buf, sizeof buf);
+        ring_unlock(i);
+        if (valid) fprintf(f, "%s\n", buf);
+    }
+}
+
+void diag_ring_dump(FILE *f, int last) { dump_ring(f, last); }   // report.m
 
 // Only synchronous diagnostic work on the game thread pauses the watchdog.
 // Background PNG encoding must never excuse a game stall. Nested texture/PNG

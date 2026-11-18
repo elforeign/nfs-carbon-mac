@@ -978,6 +978,12 @@
     "type": "void (void)"
   },
   {
+    "name": "rumble_select",
+    "source": "rumble.m",
+    "kind": "function",
+    "type": "void (void *)"
+  },
+  {
     "name": "rumble_update",
     "source": "rumble.m",
     "kind": "function",

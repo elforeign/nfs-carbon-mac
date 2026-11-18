@@ -325,16 +325,18 @@ int main(int argc,char **argv) {
     void (*callbacks[])(Cpu *,void (*)(Cpu *))={carbon_daynight_world,carbon_daynight_normalmap,carbon_daynight_glass,carbon_daynight_reflect,carbon_daynight_sky};
     const float sun[]={0.6f,0.48f,0.22f}, night_sun[]={0.025f,0.035f,0.055f};
     const float ambient[]={0.19f,0.24f,0.32f}, night_ambient[]={0.012f,0.018f,0.035f};
+    double height=fabs(cos((carbon_dn_clock.hour-12)*acos(-1.0)/12)*cos(0.5));
+    float weight=(float)fmin(1,height/DAYNIGHT_SUN_HEIGHT);
     for (int i=0;i<5;++i) {
         Cpu expected=c; native_pass(&expected); unsigned calls=original_calls;
         callbacks[i](&c,native_pass); CHECK(memcmp(&c,&expected,sizeof c)==0 && original_calls==calls+1);
         CHECK(uploads==(unsigned)i+1 && uploaded[1][3]==n);
         for(int k=0;k<3;++k) {
-            CHECK(fabsf(uploaded[1][k]-(sun[k]+n*(night_sun[k]-sun[k])))<0.000001f);
+            CHECK(fabsf(uploaded[1][k]-weight*(sun[k]+n*(night_sun[k]-sun[k])))<0.000001f);
             CHECK(fabsf(uploaded[2][k]-(ambient[k]+n*(night_ambient[k]-ambient[k])))<0.000001f);
             CHECK(uploaded[0][k]==carbon_dn_float(0x200160+4*k));
         }
-        CHECK(uploaded[0][3]==0 && uploaded[2][3]==0);
+        CHECK(uploaded[0][3]==0 && fabsf(uploaded[2][3]-weight)<0.000001f);
     }
     // A repeated native weather blend must not accumulate the night mix.
     float saved[3][4]; memcpy(saved,uploaded,sizeof saved);

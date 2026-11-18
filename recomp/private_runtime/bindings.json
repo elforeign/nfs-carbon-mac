@@ -48,7 +48,7 @@
     },
     "game_diagnostics.h": {
       "source": "game_diagnostics.h",
-      "sha256": "508b898da1c53334fad2b02869e1fe80a6aa38036601945eb32dde6cc7e30ad6",
+      "sha256": "36944bff95f49d995f9dbb837fc7348559a2e6af6601823c2cad03c94dbc3d80",
       "functions": {
         "diag_warp_pass": {
           "read": [

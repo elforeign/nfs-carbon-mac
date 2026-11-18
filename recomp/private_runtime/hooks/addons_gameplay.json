@@ -121,6 +121,17 @@
       },
       "provider": "carbon_addons_cards_redraw",
       "job": "gameplay-addons"
+    },
+    {
+      "address": "0084E320",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "0084E320",
+        "length": 16,
+        "sha256": "f26c2be72cfce3660f1044f330af77f95f9811af4ce9bb339b41c7139a4f61b5"
+      },
+      "provider": "carbon_addons_cards_open",
+      "job": "gameplay-addons"
     }
   ]
 }

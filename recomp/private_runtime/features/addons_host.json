@@ -45,7 +45,7 @@
   "bindings": {
     "carbon_addons_host_settings.h": {
       "source": "carbon_addons_host_settings.h",
-      "sha256": "d8a5053e881d29c618bc539748ac7d1e12dc0b05bc998fbe93e5e3db61e607de",
+      "sha256": "43ba66fdf2b95ac9a8e8a65e753bbef9098f985f61ce5b608aeac2192df5bd93",
       "functions": {}
     },
     "carbon_addons_host_replay.c": {

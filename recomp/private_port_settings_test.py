@@ -39,7 +39,7 @@ SETTINGS_ROWS = {
     'gameplay.cheat_speedbreaker': {'apply': 'carbon_devrows_speedbreaker'},
     'gameplay.cheat_crew': {'apply': 'carbon_devrows_crew'},
     'world.carbon_minimap': {},
-    'audio.carbon_surround': {'apply': 'carbon_audio_surround_set'},
+    'audio.carbon_surround': {'get': 'carbon_audio_surround_get', 'apply': 'carbon_audio_surround_set'},
     'graphics.look_preset': {'get': 'carbon_port_preset_get', 'apply': 'carbon_port_preset_apply'},
     'graphics.carbon_coat': {'apply': 'carbon_envcube_apply'},
     'graphics.carbon_materials': {},
@@ -58,6 +58,7 @@ SETTINGS_PROVIDERS = {
     'carbon_ao_set': 'carbon_ao.h',
     'private_carbon_limiter_set': 'private_carbon_audio_limiter.h',
     'carbon_audio_surround_set': 'carbon_audio_output.c',
+    'carbon_audio_surround_get': 'carbon_audio_output.c',
     'padfx_set_triggers': 'carbon_padfx.c',
     'carbon_devrows_crew': 'carbon_devrows.c',
     'carbon_devrows_nitrous': 'carbon_devrows.c',
@@ -71,6 +72,7 @@ void carbon_envcube_apply(int v) { (void)v; }
 void carbon_ao_set(int v) { (void)v; }
 void private_carbon_limiter_set(int v) { (void)v; }
 void carbon_audio_surround_set(int v) { (void)v; }
+int carbon_audio_surround_get(void) { return 1; }
 void carbon_audio_output_frame(void) {}
 void padfx_set_triggers(int v) { (void)v; }
 #include "carbon_devrows.c"
@@ -179,6 +181,7 @@ static int carbon_padfx_fake(void) { return 0; }
 static void padfx_stop(void) {}
 static void ds_set_peak_limiter(int on) { (void)on; }
 static void carbon_audio_surround_set(int on) { (void)on; }
+static int carbon_audio_surround_get(void) { return 1; }
 static void carbon_envcube_apply(int on) { (void)on; }
 enum { DAYNIGHT_GAME, DAYNIGHT_CYCLE, DAYNIGHT_FIXED };
 typedef int DaynightMode;

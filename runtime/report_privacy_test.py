@@ -22,6 +22,7 @@ Wall time (same load, back to back): 130 s with the broken controls in sequence,
 """
 import concurrent.futures
 import hashlib
+import json
 import os
 from pathlib import Path
 import re
@@ -402,11 +403,20 @@ def pinned_source(revision, name):
     return PINNED_SOURCES[revision, name]
 
 
-def run(name, header, *, baseline=False, expected_failure=False, fixture=None, report=None, copy_source=None, review=None, expected_counts=None):
+def run(name, header, *, baseline=False, expected_failure=False, fixture=None, report=None, copy_source=None,
+        review=None, expected_counts=None, game=None):
     work = SCRATCH / name
     work.mkdir(parents=True, exist_ok=True)
     for file in ('report_github_test.m', 'report_github.m', 'report_github.h', 'portmenu.m', 'report_submit.m', 'report_submit.h'):
         shutil.copyfile(RUNTIME / file, work / file)
+    if baseline:
+        # The original shared rules relied on the preview to mask absolute home names.
+        path = work / 'report_github.m'
+        source = path.read_text()
+        home = '    if (home.length) text = [text stringByReplacingOccurrencesOfString:home withString:@"~"];'
+        old_path_rule = r'    text = ReplacePattern(text, @"/(?:Users|home)/[^/\\s]+", @"~"); // home paths'
+        assert source.count(home) == 1
+        path.write_text(source.replace(home, home + '\n' + old_path_rule))
     (work / 'report_privacy.h').write_text(header)
     # Compile the actual log-copy function, including its truncation order, not a fixture substitute.
     report = report if report is not None else (RUNTIME / 'report.m').read_text()
@@ -426,13 +436,21 @@ def run(name, header, *, baseline=False, expected_failure=False, fixture=None, r
                '-framework', 'SystemConfiguration', '-framework', 'IOKit', '-Wl,-dead_strip', '-o', str(work / 'check')]
     if baseline:
         command.insert(1, '-DREPORT_PRIVACY_BASELINE=1')
+    if game:
+        manifest = json.loads((RUNTIME / 'runtime_sources.json').read_text())
+        public_carbon = game == 'carbon'
+        command[1:1] = ['-DREPORT_TARGET_PROBE=1', '-DNFS_GAME=' + ('2' if public_carbon else '1'),
+                        '-I' + str(ROOT / 'recomp/private_runtime')]
+        if public_carbon and 'report_github.m' not in manifest['targets']['private']['units']:
+            command.insert(1, '-DREPORT_TARGET_NO_UNIT=1')
     compiled = subprocess.run(command, capture_output=True, text=True, timeout=90)
     (work / 'compile.log').write_text(compiled.stdout + compiled.stderr)
     assert compiled.returncode == 0, name + ' compile failed:\n' + compiled.stderr[-5000:]
     result = subprocess.run([str(work / 'check'), str(profile)], capture_output=True, text=True, timeout=60,
                             env=dict(os.environ, TMPDIR=str(work), ASAN_OPTIONS='detect_leaks=0'))
     (work / 'result.log').write_text(result.stdout + result.stderr)
-    count = re.search(r'privacy: (\d+) checks, (\d+) failures', result.stdout)
+    label = 'report target' if game else 'privacy'
+    count = re.search(rf'{label}: (\d+) checks, (\d+) failures', result.stdout)
     assert count, name + ' did not finish:\n' + result.stderr[-4000:]
     checks, failures = map(int, count.groups())
     print(f'{name}: {checks} checks, {failures} failures', flush=True)
@@ -467,6 +485,8 @@ def main():
     if '--prove-room-code-premise' in sys.argv:
         room_code_proof(header,premise=True)
         return
+    run('public_carbon', header, game='carbon', expected_counts=(12, 0))
+    run('public_mw', header, game='mw', expected_counts=(10, 0))
     room_code_proof(header)
     original = pinned_source('13984ab7', 'report_privacy.h').encode()
     assert hashlib.sha256(original).hexdigest() == ORIGINAL
