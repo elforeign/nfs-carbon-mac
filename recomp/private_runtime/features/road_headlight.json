@@ -13,7 +13,7 @@
       "generated_data": null,
       "required_providers": [],
       "guest_layouts": {
-        "world": "0071E660 receives the per-draw row-major world matrix as its first stack argument. AB0ABC is the device; slot 94 uploads c244..247 after native SetWorld. Only the converter origin matrix (identity plus 8192 X) enables the position transform; native nonidentity props keep retail. No optional daylight dependency."
+        "world": "0071E660 receives the per-draw row-major world matrix as its first stack argument. AB0ABC is the device; slot 94 uploads c244..247 after native SetWorld, resetting the selector. The final effect-1 draw selects c247.w from material+30 tag 00010001; all placements, including baked deck copies, use the uploaded world columns. Native materials reset the selector to zero. No optional daylight dependency."
       }
     }
   },
@@ -23,7 +23,7 @@
   "bindings": {
     "carbon_road_headlight.c": {
       "source": "carbon_road_headlight.h",
-      "sha256": "298ba22a2d6766b7cb2b78a685dfaa5031b1f72e1e68d3c7aef1d0fc040f1d97",
+      "sha256": "23d9e49d77a1abe09fe03aa8e1e9fc9d139ea7173b52a34cf91a5c663bc02107",
       "functions": {}
     }
   },

@@ -7,6 +7,7 @@ pair controls in test_c1_world: 57 unmapped collisions (valid 0), unshifted
 (valid 0), 2613/2614 barriers, half merge 442/328/1238 vs 1147/483/2614.
 All six must be rejected, 0/6 accepted. Synthetic cases always run;
 private inputs absent exits 3. No game runs.
+Coast districts: mapped keys resolve 11/11; original MW keys resolve 0/11.
 """
 from collections import Counter
 from dataclasses import replace
@@ -22,12 +23,14 @@ sys.dont_write_bytecode = True
 sys.path.insert(0, str(HERE))
 import c1_zones as c
 import c1_world as w
+import districts
 import zones as z
 from formats import Chunk, FormatError, TrackIndex, u32
 from test_zones import polygon
 
 ASSETS = all((root/name).is_file() for root, base in ((w.DEFAULT_MW, 'L2RA'),
     (w.DEFAULT_CARBON, 'L5RA')) for name in (base+'.BUN', 'STREAM'+base+'.BUN'))
+CARBON_VAULT = (w.DEFAULT_CARBON.parent/'GLOBAL/attributes.bin').is_file()
 
 
 def fixture(native):
@@ -156,6 +159,35 @@ class Private(unittest.TestCase):
         boundary = w.union_boundary(template, 101, source.vertices)
         self.assertEqual(moved.bounds, boundary.bounds)
         self.assertEqual(moved.vertices, tuple(boundary.vertices))
+
+    @unittest.skipUnless(CARBON_VAULT, 'private Carbon vault absent')
+    def test_coast_districts_resolve_carbon_patterns(self):
+        shift = w.c3_crossing.COAST_SHIFT
+        chunk = c.merge_districts(self.carbon, self.source, shift, w.DEFAULT_CARBON)
+        result = tuple(chunk if part.kind == z.ZONES else part for part in z.select(self.carbon))
+        with patch.object(c, 'merge_districts', side_effect=AssertionError('reader used writer')), \
+             patch.object(z, 'convert', side_effect=AssertionError('reader used converter')):
+            report = c.reread_districts(result, self.carbon, self.source, shift, w.DEFAULT_CARBON)
+        self.assertEqual((report['zones'], report['markers'], report['barriers']), (453, 155, 1238))
+        self.assertEqual((report['resolved_rockport_districts'], report['rockport_districts']), (11, 11))
+
+        table = z.read(result)
+        native = z.read(z.select(self.carbon))
+        source = z.read(z.select(self.source))
+        self.assertEqual(table.markers, native.markers)
+        self.assertEqual(Counter(u32(row, 36) for row in source.markers)[2000], 9)
+        self.assertFalse(any(u32(row, 36) == 2000 for row in table.markers))
+        start = sum(zone.kind <= 9 for zone in native.zones)
+        originals = [zone for zone in source.zones if zone.kind == 9]
+        end = start + len(originals)
+        patterns = districts.traffic_patterns(w.DEFAULT_CARBON)
+        control = tuple(replace(written, header=written.header[:48] + original.header[48:52] + written.header[52:])
+                        for original, written in zip(originals, table.zones[start:end]))
+        self.assertEqual(sum(zone.key in patterns for zone in control), 0)
+        broken = replace(table, zones=table.zones[:start] + control + table.zones[end:])
+        with self.assertRaisesRegex(FormatError, 'Rockport traffic patterns resolve 0/11'):
+            c.reread_districts(broken.encode(), self.carbon, self.source, shift, w.DEFAULT_CARBON)
+        print('ACCEPT coast districts resolve 11/11; original MW keys resolve 0/11')
 
 
 if __name__ == '__main__':

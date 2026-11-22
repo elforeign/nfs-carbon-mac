@@ -13,7 +13,7 @@
       "generated_data": null,
       "required_providers": [],
       "guest_layouts": {
-        "allocation": "00477230 cdecl size/flags; return 0079EBFF identifies 0079EBFA Y00 request. 00476684 raw backing malloc returns at 0047668A; rounded payload+20+16+128 bytes. Engine pool headers and matching CRT free remain native."
+        "allocation": "00477230 cdecl size/flags; return 0079EBFF identifies 0079EBFA Y00 request. 00476684 raw backing malloc returns at 0047668A; rounded payload+20+16+128 bytes. Engine pool headers and matching CRT free remain native. Return 006ADC36 identifies 006ADBC0's compacted section copy: a 0 from pool 7 (flags & 15 == 7) is retried with flags 0x2000 (pool 0, same 128-byte alignment)."
       }
     }
   },
@@ -23,7 +23,7 @@
   "bindings": {
     "carbon_y00_heap.h": {
       "source": "carbon_y00_heap.h",
-      "sha256": "3f651ecf7872da1cccb3f11c27a3950592d2e43829a4d90a48b5003990de1e50",
+      "sha256": "96c529d5f87ef22ecae4978991bb271c60d87588bfe695bab6510932094ae751",
       "functions": {}
     }
   },

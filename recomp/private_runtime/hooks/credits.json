@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "hooks": [
+    {
+      "address": "00600C90",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "00600C90",
+        "length": 16,
+        "sha256": "b483050a20c42355f3090352cea5e2a6bfb023573f49aa864714761f0e14b341"
+      },
+      "provider": "carbon_credits_input",
+      "job": "career_credits"
+    }
+  ]
+}

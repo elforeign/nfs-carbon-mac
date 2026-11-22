@@ -23,7 +23,7 @@
   "bindings": {
     "carbon_lamplight.h": {
       "source": "carbon_lamplight.h",
-      "sha256": "e6c416ca8e17aa8d421ab2d99d9bfed92666f5799a64e5bfeaf9d048c5e74a39",
+      "sha256": "3d3913e6761bf620f3b86fd5ae50887c4fe8f3e57bd5c662a42fe19929c939b6",
       "functions": {}
     }
   },

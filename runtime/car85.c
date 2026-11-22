@@ -6,6 +6,7 @@
 #include <ctype.h>
 #include <dirent.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <stdlib.h>
 #include <strings.h>
 #include <limits.h>
@@ -22,8 +23,11 @@
 #include "private_cars.h"
 #include "traffic_pilot.h"
 #include "car_kit_fallback.h"
+#include "car_audio.h"
 #if !defined(NFS_PUBLIC) || !NFS_PUBLIC
 #include "car_physics.h"
+#else
+#include "car_catalog.h"
 #endif
 
 #define TYPES 84u
@@ -49,6 +53,7 @@ typedef struct {
     uint32_t key, model_key, record, type, hash, pv, fe, menu_fe, donor_model, string, logo, brand_string;
     int wheel_fit;
     CarGrip grip;
+    CarPerformance performance;
     CarGripBinding grip_binding;
 #if !defined(NFS_PUBLIC) || !NFS_PUBLIC
     CarPhysics physics;
@@ -65,10 +70,12 @@ typedef struct {
     uint32_t collision_size, collision, collision_key, collision_donor;
     uint32_t *solid_map;
     unsigned solid_count;
+    uint32_t stock_body[CAR_KIT_BODY_LODS];
     uint32_t paint_source, paint_key;
 } Addition;
 static Addition additions[MAX_ADDITIONS];
 static unsigned nadditions;
+static void performance_release(uint32_t vault);
 // Traffic is a separate role: never counted by player enumeration or save masks.
 static Addition traffic_addition;
 static int traffic_active, traffic_scratch;
@@ -77,10 +84,15 @@ static Addition *asset(unsigned j) { return j < nadditions ? additions + j : &tr
 static _Thread_local Addition *model_namespace;
 static uint32_t parts_hash(const char *s);
 /* Standalone catalog checks omit the optional sidecar adapter. */
-__attribute__((weak)) int car_audio_load(uint32_t key, const char *name, const char *path) {
-    (void)key; (void)name; (void)path; return 0;
+__attribute__((weak)) int car_audio_enabled(void) { return 0; }
+__attribute__((weak)) int car_audio_load(uint32_t key, uint64_t generation, const char *name, const char *path) {
+    (void)key; (void)generation; (void)name; (void)path; return 0;
 }
-__attribute__((weak)) void car_audio_unload(uint32_t key) { (void)key; }
+__attribute__((weak)) int car_audio_load_stream(uint32_t key, uint64_t generation, const char *name,
+                                              unsigned version, FILE *stream) {
+    (void)key; (void)generation; (void)name; (void)version; (void)stream; return 0;
+}
+__attribute__((weak)) void car_audio_unload(uint64_t generation) { (void)generation; }
 void f_00751540_orig(Cpu *c);
 void f_00752940_orig(Cpu *c);
 void f_00752B60_orig(Cpu *c);
@@ -174,13 +186,11 @@ void car85_vault_unloaded(uint32_t vault) {
             traffic_generation[i] = 0; traffic_vault[i] = 0;
             if (!i) traffic_pv_layout = 0;
         }
+    car_audio_unload(generation);
     unsigned before = nsources;
     memset(v, 0, sizeof *v);
     for (unsigned i = 0; i < nsources; ) {
         if (sources[i].generation != generation) { ++i; continue; }
-        if (car_audio_unload && M32(sources[i].ld + 4) == PVEHICLE)
-            for (unsigned j=0;j<nadditions;++j)
-                if (additions[j].pv==M32(sources[i].ld)) car_audio_unload(additions[j].key);
         gfree(sources[i].ld);
         memmove(sources + i, sources + i + 1, (--nsources - i) * sizeof *sources);
     }
@@ -290,19 +300,7 @@ static void folder(char out[16], const char *s) {
 
 // WFT1 is emitted by tools_snapshot/wheel_attrib.py from the source ecar.
 // Optional for existing manifests; legacy CAR85 never reads a sidecar.
-static void load_collision(Addition *a, const char *verified);
-static void load_wheel_fit(Addition *a, const char *verified) {
-    char path[PATH_MAX];
-    if (verified) snprintf(path,sizeof path,"%s",verified);
-    else if (snprintf(path, sizeof path, "%s/WHEELFIT.BIN", a->directory) >= (int)sizeof path)
-        fail("wheel geometry path too long");
-    FILE *f = fopen(path, "rb");
-    if (!f) {
-        if (errno != ENOENT) fail("cannot open wheel geometry");
-        if (diag_on) diag_event("addcars: wheel geometry absent name=%s (donor values retained)", a->name);
-        return;
-    }
-    if (fseek(f,0,SEEK_SET)) fail("cannot rewind wheel geometry");
+static const char *read_wheel_fit(Addition *a, FILE *f) {
     uint32_t header[4];
     int good = fread(header, 1, 16, f) == 16 &&
         fread(a->wheel_offsets, 1, 64, f) == 64 &&
@@ -324,98 +322,92 @@ static void load_wheel_fit(Addition *a, const char *verified) {
         if (a->spoke_count > 255) good = 0;
     }
     good = good && fgetc(f) == EOF && !ferror(f);
-    fclose(f);
-    if (!good || header[0] != 0x31544657u || (header[1] != 1 && header[1] != 2)) fail("invalid WHEELFIT.BIN");
+    if (!good || header[0] != 0x31544657u || (header[1] != 1 && header[1] != 2)) return "invalid WHEELFIT.BIN";
     // Validate identities with the game's StringToLowerCaseKey at vault load.
     a->wheel_fit = 1;
     a->wheel_key = header[2]; a->wheel_donor = header[3];
     for (unsigned i = 0; i < 16; ++i)
         if (!isfinite(a->wheel_offsets[i]) || fabsf(a->wheel_offsets[i]) > 20 ||
             ((i & 3) == 3 && (a->wheel_offsets[i] < .1f || a->wheel_offsets[i] > 1)))
-            fail("invalid wheel centre/radius");
+            return "invalid wheel centre/radius";
     for (unsigned i = 0; i < 2; ++i)
         if (!isfinite(a->wheel_compressions[i]) || fabsf(a->wheel_compressions[i]) > 20)
-            fail("invalid frontend wheel compression");
+            return "invalid frontend wheel compression";
     for (unsigned i = 0; i < 4; ++i)
         if (!isfinite(a->wheel_widths[i]) || a->wheel_widths[i] < .1f || a->wheel_widths[i] > 1)
-            fail("invalid render wheel width");
+            return "invalid render wheel width";
+    return NULL;
 }
 
-static void load_collision(Addition *a, const char *verified) {
-    char path[PATH_MAX];
-    if (verified) snprintf(path,sizeof path,"%s",verified);
-    else if (snprintf(path, sizeof path, "%s/COLLISION.BIN", a->directory) >= (int)sizeof path)
-        fail("collision path too long");
-    FILE *f = fopen(path, "rb");
-    if (!f) { if (errno != ENOENT) fail("cannot open collision sidecar"); return; }
-    if (fseek(f,0,SEEK_SET)) fail("cannot rewind collision sidecar");
-    uint32_t h[5];
-    if (fread(h, 4, 5, f) != 5 || h[0] != 0x31544C43u || h[1] != 1 ||
-        (a->wheel_fit && (h[2] != a->wheel_key || h[3] != a->wheel_donor)) || h[4] < 80 || h[4] > 1048576)
-        fail("invalid collision sidecar header");
-    uint8_t *b = malloc(h[4]);
-    if (!b || fread(b, 1, h[4], f) != h[4] || fgetc(f) != EOF || ferror(f))
-        fail("invalid collision sidecar extent");
-    fclose(f);
+static const char *collision_error(const uint8_t *b, uint32_t size) {
     uint32_t n; memcpy(&n, b + 4, 4);
     uint32_t at = 16 + n * 48, clouds;
-    if (!n || n > 128 || at + 16 > h[4]) fail("invalid collision bound count");
+    if (!n || n > 128 || at + 16 > size) return "invalid collision bound count";
     memcpy(&clouds, b + at, 4);
-    if (clouds > 128) fail("invalid collision cloud count");
+    if (clouds > 128) return "invalid collision cloud count";
     for (unsigned i = 0; i < n; ++i) {
-        uint8_t *bound = b + 16 + i * 48; int16_t dims[3], first;
+        const uint8_t *bound = b + 16 + i * 48; int16_t dims[3], first;
         memcpy(dims, bound + 16, 6); memcpy(&first, bound + 30, 2);
         if (dims[0] < 0 || dims[1] < 0 || dims[2] < 0 ||
             (dims[0] == 0 && dims[1] == 0 && dims[2] == 0) ||
             (first == -1 ? bound[22] != 0 : first < 0 || first + bound[22] > n) ||
             (int8_t)bound[23] < -1 || (int8_t)bound[23] >= (int)clouds)
-            fail("invalid collision bound topology");
+            return "invalid collision bound topology";
     }
     at += 16;
     for (unsigned i = 0; i < clouds; ++i) {
         uint32_t points;
-        if (at + 16 > h[4]) fail("truncated collision cloud");
+        if (at + 16 > size) return "truncated collision cloud";
         memcpy(&points, b + at, 4);
-        if (points < 4 || points > 4096 || points * 16 + 16 > h[4] - at)
-            fail("invalid collision points");
+        if (points < 4 || points > 4096 || points * 16 + 16 > size - at)
+            return "invalid collision points";
         for (unsigned j = 0; j < points * 4; ++j) {
             float value; memcpy(&value, b + at + 16 + j * 4, 4);
-            if (!isfinite(value) || fabsf(value) >= 1000) fail("invalid collision point value");
+            if (!isfinite(value) || fabsf(value) >= 1000) return "invalid collision point value";
         }
         at += 16 + points * 16;
     }
-    if (at != h[4]) fail("unexpected collision trailing bytes");
-    a->collision_bytes = b; a->collision_size = h[4];
-    a->collision_key=h[2]; a->collision_donor=h[3];
+    return at == size ? NULL : "unexpected collision trailing bytes";
 }
 
-static void load_solid_map(Addition *a, const char *path) {
-    FILE *f=fopen(path,"rb");
-    if (!f) fail("cannot open verified solid map");
-    if (fseek(f,0,SEEK_SET)) fail("cannot rewind solid map");
+static const char *read_collision(Addition *a, FILE *f) {
+    uint32_t h[5];
+    if (fread(h, 4, 5, f) != 5 || h[0] != 0x31544C43u || h[1] != 1 ||
+        (a->wheel_fit && (h[2] != a->wheel_key || h[3] != a->wheel_donor)) || h[4] < 80 || h[4] > 1048576)
+        return "invalid collision sidecar header";
+    uint8_t *b = malloc(h[4]);
+    const char *error = (!b || fread(b, 1, h[4], f) != h[4] || fgetc(f) != EOF || ferror(f))
+        ? "invalid collision sidecar extent" : collision_error(b, h[4]);
+    if (error) { free(b); return error; }
+    a->collision_bytes = b; a->collision_size = h[4];
+    a->collision_key=h[2]; a->collision_donor=h[3];
+    return NULL;
+}
+
+static const char *read_solid_map(Addition *a, FILE *f) {
     uint32_t h[4];
     // Version 2 adds private image rows to the same sorted donor -> private table.
     if (fread(h,1,16,f)!=16 || h[0]!=0x31504D53u || (h[1]!=1 && h[1]!=2) ||
-        (a == &traffic_addition && h[1] != 2) || h[2]!=parts_hash(a->name) || !h[3] || h[3]>8192) fail("invalid solid map header");
+        (a == &traffic_addition && h[1] != 2) || h[2]!=parts_hash(a->name) || !h[3] || h[3]>8192) return "invalid solid map header";
     a->solid_count=h[3]; a->solid_map=malloc(8u*h[3]);
     if (!a->solid_map || fread(a->solid_map,8,h[3],f)!=h[3] || fgetc(f)!=EOF || ferror(f))
-        fail("invalid solid map size");
-    fclose(f);
+        return "invalid solid map size";
     for (unsigned i=1;i<a->solid_count;++i)
-        if (a->solid_map[2*i]<=a->solid_map[2*i-2]) fail("unordered solid map");
+        if (a->solid_map[2*i]<=a->solid_map[2*i-2]) return "unordered solid map";
     if (a != &traffic_addition) {
         char geometry[PATH_MAX], space[32];
         if (a->geometry[0]) snprintf(geometry,sizeof geometry,"%s",a->geometry);
         else if (snprintf(geometry,sizeof geometry,"%s/GEOMETRY.BIN",a->directory)>=(int)sizeof geometry)
-            fail("geometry path too long");
+            return "geometry path too long";
         snprintf(space,sizeof space,"NFSAD_%s",a->name);
         FILE *models=fopen(geometry,"rb");
         if (models) {
-            int repaired=car_kit_fallback(models,space,a->solid_map,a->solid_count);
+            int repaired=car_kit_fallback(models,space,a->solid_map,a->solid_count,a->stock_body);
             fclose(models);
             if (diag_on && repaired>0) diag_event("car85: %s stock kit fallbacks=%d",a->name,repaired);
         }
     }
+    return NULL;
 }
 
 // Validate optional body values before any addition writes guest memory.
@@ -439,20 +431,65 @@ static void load_physics(Addition *a, const char *verified) {
 // conversion. Catalog mode reads only a hash-verified, listed output path.
 // Version 2 checks the full record; obsolete base-key selections and absent or
 // invalid metadata preserve the donor's stock paint.
-static void load_default_paint(Addition *a, const char *path) {
+static const char *read_default_paint(Addition *a, FILE *f) {
     a->paint_source = a->paint_key = 0;
     uint32_t h[8];
-    FILE *f = fopen(path, "rb");
-    if (!f) return;
-    int valid = !fseek(f,0,SEEK_SET) && fread(h, 1, sizeof h, f) == sizeof h && fgetc(f) == EOF && !ferror(f);
-    fclose(f);
+    int valid = fread(h, 1, sizeof h, f) == sizeof h && fgetc(f) == EOF && !ferror(f);
+    if (!valid) return "invalid default paint extent";
     uint32_t checksum = UINT32_MAX;
-    if (valid) for (unsigned i=0; i<7; ++i) checksum = (checksum ^ h[i]) * 16777619u;
-    if (!valid || h[0] != 0x31545044u || h[1] != 2 ||
+    for (unsigned i=0; i<7; ++i) checksum = (checksum ^ h[i]) * 16777619u;
+    if (h[0] != 0x31545044u || h[1] != 2 ||
         h[2] != parts_hash(a->name) || h[3] != parts_hash(a->donor_folder) ||
-        !h[4] || h[4] == UINT32_MAX || !h[5] || h[5] == UINT32_MAX || h[7] != checksum ||
-        (h[6] != 1 && h[6] != 2) || (h[6] == 1 && h[4] != h[5])) return;
+        h[7] != checksum) return "invalid default paint header";
+    if (h[6] == 0 && !h[5]) return NULL;
+    if (!h[4] || h[4] == UINT32_MAX || !h[5] || h[5] == UINT32_MAX ||
+        (h[6] != 1 && h[6] != 2) || (h[6] == 1 && h[4] != h[5])) return "invalid default paint selection";
     a->paint_source = h[4]; a->paint_key = h[5];
+    return NULL;
+}
+
+static void load_wheel_fit(Addition *a, const char *verified) {
+    char path[PATH_MAX];
+    if (verified) snprintf(path,sizeof path,"%s",verified);
+    else if (snprintf(path, sizeof path, "%s/WHEELFIT.BIN", a->directory) >= (int)sizeof path)
+        fail("wheel geometry path too long");
+    FILE *f = fopen(path, "rb");
+    if (!f) {
+        if (errno != ENOENT) fail("cannot open wheel geometry");
+        if (diag_on) diag_event("addcars: wheel geometry absent name=%s (donor values retained)", a->name);
+        return;
+    }
+    const char *error=fseek(f,0,SEEK_SET) ? "cannot rewind wheel geometry" : read_wheel_fit(a,f);
+    fclose(f);
+    if (error) fail(error);
+}
+
+static void load_collision(Addition *a, const char *verified) {
+    char path[PATH_MAX];
+    if (verified) snprintf(path,sizeof path,"%s",verified);
+    else if (snprintf(path, sizeof path, "%s/COLLISION.BIN", a->directory) >= (int)sizeof path)
+        fail("collision path too long");
+    FILE *f = fopen(path, "rb");
+    if (!f) { if (errno != ENOENT) fail("cannot open collision sidecar"); return; }
+    const char *error=fseek(f,0,SEEK_SET) ? "cannot rewind collision sidecar" : read_collision(a,f);
+    fclose(f);
+    if (error) fail(error);
+}
+
+static void load_solid_map(Addition *a, const char *path) {
+    FILE *f=fopen(path,"rb");
+    if (!f) fail("cannot open verified solid map");
+    const char *error=fseek(f,0,SEEK_SET) ? "cannot rewind solid map" : read_solid_map(a,f);
+    fclose(f);
+    if (error) fail(error);
+}
+
+static void load_default_paint(Addition *a, const char *path) {
+    a->paint_source = a->paint_key = 0;
+    FILE *f=fopen(path,"rb");
+    if (!f) return;
+    if (!fseek(f,0,SEEK_SET)) read_default_paint(a,f);
+    fclose(f);
 }
 
 static void configure_traffic(const PrivateCar *car, const char *directory) {
@@ -477,6 +514,21 @@ static void configure_traffic(const PrivateCar *car, const char *directory) {
     traffic_active = 1;
 }
 
+#if defined(NFS_PUBLIC) && NFS_PUBLIC
+static int load_catalog_sidecar(Addition *a, CarCatalogOutputKind kind,
+                                const char *(*decode)(Addition *, FILE *)) {
+    unsigned slot=a->catalog_id-CAR_CATALOG_FIRST_ID;
+    const CarCatalogSlot *entry=car_catalog_inventory_get(slot);
+    if (!entry || !entry->outputs[kind].present) return 0;
+    FILE *f=car_catalog_open_sidecar(slot,kind);
+    const char *error=f ? decode(a,f) : "cannot open verified sidecar";
+    if (f) fclose(f);
+    if (!error) return 0;
+    fprintf(stderr,"cars: skipped %s (%s): %s\n",a->name,car_catalog_output_name(kind),error);
+    return -1;
+}
+#endif
+
 static int on(void) {
     if (configured) return enabled;
     configured = 1;
@@ -488,13 +540,18 @@ static int on(void) {
 #endif
     if ((!legacy || !*legacy) && (!manifest || !*manifest)) {
         catalog_mode = manifest_mode = 1;
-        for (size_t i=0;i<private_cars_count();++i) {
+        for (size_t i=0;i<private_cars_count();) {
             const PrivateCar *car=private_cars_get(i);
-            if (car->swap) continue;
+            if (car->swap) { ++i; continue; }
             if (nadditions==MAX_ADDITIONS) fail("too many catalog additions");
+#if defined(NFS_PUBLIC) && NFS_PUBLIC
+            Addition *a=&additions[nadditions];
+#else
             Addition *a=&additions[nadditions++];
+#endif
             folder(a->name,car->name); folder(a->donor_folder,car->donor);
             a->catalog_id=car->id;
+            snprintf(a->display_name,sizeof a->display_name,"%s",car->display_name);
             snprintf(a->directory,sizeof a->directory,"%s",car->geometry);
             char *slash=strrchr(a->directory,'/');
             if (!slash) fail("verified addition has no pack directory");
@@ -506,19 +563,28 @@ static int on(void) {
             snprintf(a->pvehicle,sizeof a->pvehicle,"%s",car->pvehicle);
             snprintf(a->frontend,sizeof a->frontend,"%s",car->frontend);
             snprintf(a->ecar,sizeof a->ecar,"%s",car->ecar);
-            snprintf(a->display_name,sizeof a->display_name,"%s",car->display_name);
             snprintf(a->manufacturer_name,sizeof a->manufacturer_name,"%s",car->manufacturer);
-#endif
-            if (car->wheel_fit[0]) load_wheel_fit(a,car->wheel_fit);
-#if defined(NFS_PUBLIC) && NFS_PUBLIC
-            if (car->collision[0]) load_collision(a,car->collision);
+            if (load_catalog_sidecar(a,CAR_CATALOG_WHEEL_FIT,read_wheel_fit) ||
+                load_catalog_sidecar(a,CAR_CATALOG_COLLISION,read_collision) ||
+                load_catalog_sidecar(a,CAR_CATALOG_SOLID_MAP,read_solid_map) ||
+                load_catalog_sidecar(a,CAR_CATALOG_PAINT,read_default_paint)) {
+                car_catalog_unselect(a->catalog_id-CAR_CATALOG_FIRST_ID);
+                free(a->collision_bytes);
+                free(a->solid_map);
+                memset(a,0,sizeof *a);
+                continue;
+            }
+            ++nadditions;
 #else
+            if (car->wheel_fit[0]) load_wheel_fit(a,car->wheel_fit);
             if (a->render_fit) load_collision(a,NULL);
-#endif
             if (car->physics[0]) load_physics(a,car->physics);
-            a->grip=car->grip;
             if (car->solid_map[0]) load_solid_map(a,car->solid_map);
             if (car->paint[0]) load_default_paint(a,car->paint);
+#endif
+            a->grip=car->grip;
+            a->performance=car->performance;
+            ++i;
         }
         if (traffic_pilot_enabled()) {
             const PrivateCar *car = private_cars_traffic_get();
@@ -581,6 +647,20 @@ static int on(void) {
             load_wheel_fit(a,NULL);
             if (a->render_fit) load_collision(a,NULL);
             load_physics(a,NULL);
+#if !defined(NFS_PUBLIC) || !NFS_PUBLIC
+            if (car_performance_enabled()) {
+                char performance_path[PATH_MAX];
+                if (snprintf(performance_path,sizeof performance_path,"%s/PERFORMANCE.BIN",a->directory) >=
+                    (int)sizeof performance_path) fail("performance path too long");
+                int fd=open(performance_path,O_RDONLY|O_NOFOLLOW|O_NONBLOCK|O_CLOEXEC);
+                if (fd>=0) {
+                    int rc=car_performance_read(fd,car_physics_key(a->name),
+                                                car_physics_key(a->donor_folder),&a->performance);
+                    close(fd);
+                    if (rc) fail("invalid PERFORMANCE.BIN");
+                } else if (errno!=ENOENT) fail("cannot open PERFORMANCE.BIN");
+            }
+#endif
             char paint_path[PATH_MAX];
             if (snprintf(paint_path, sizeof paint_path, "%s/PAINT.BIN", a->directory) >= (int)sizeof paint_path)
                 fail("paint path too long");
@@ -623,12 +703,16 @@ void car85_vault_begin(uint32_t address) {
 
 void f_0045C380(Cpu *c) {
     car85_vault_unloaded(c->ecx); // before Deinitialize can release layouts/exports
+    uint32_t vault=c->ecx;
     f_0045C380_orig(c);
+    performance_release(vault);
 }
 
 void f_0045C090(Cpu *c) {
     car85_vault_unloaded(c->ecx); // Deinitialize releases .bin layouts before the destructor
+    uint32_t vault=c->ecx;
     f_0045C090_orig(c);
+    performance_release(vault);
 }
 
 uint32_t car85_asset_name(uint32_t address) {
@@ -805,17 +889,22 @@ static void register_names(void) {
         char labels[2][128];
         snprintf(labels[0], sizeof labels[0], "CARNAME_%s_%s", brand, a->name);
         snprintf(labels[1], sizeof labels[1], "CAR_NAME_%s", a->name);
-        for (unsigned k = a->display_name[0]?1:0; k < 2; ++k) {
+#if defined(NFS_PUBLIC) && NFS_PUBLIC
+        unsigned first_label = a->display_name[0] ? 1 : 0;
+#else
+        unsigned first_label = 0;
+#endif
+        a->display_string=packed_display(a);
+        for (unsigned k = first_label; k < 2; ++k) {
             uint32_t hash = parts_hash(labels[k]);
             for (uint32_t i = 0; i < n; ++i)
                 if (M32(owned + i * 8) == hash) fail("added name collides with language record");
             M32(owned + n * 8) = hash;
-            a->display_string=packed_display(a);
             M32(owned + n * 8 + 4) = a->display_string;
             ++n;
         }
         if (diag_on) diag_event("addcars: names %s %s text=%s manufacturer=%s",
-            labels[0], labels[1], a->name, brand);
+            labels[0], labels[1], a->display_name[0] ? a->display_name : a->name, brand);
     }
     qsort(G + owned, n, 8, language_compare);
     M32(0x0091CF80u) = owned; M32(0x0091CF78u) = n;
@@ -1048,14 +1137,16 @@ void f_00681340(Cpu *c) {
                 }
                 for (unsigned k = 0; k < n; ++k) {
                     uint32_t bound = p + 16 + k * 48;
-                    // Imported bounds can leave this cache empty. OnLoaded
-                    // copies the root radius into CarRenderInfo (+17A8), so
-                    // initialize a conservative box sphere before publishing.
+                    // Sphere primitives use the source game's largest half-extent.
+                    // Keep the enclosing diagonal for boxes and the root, whose
+                    // radius OnLoaded copies to CarRenderInfo (+17A8).
                     if (MF32(bound + 32) == 0.0f) {
                         float x = (int16_t)M16(bound + 16) * 0.001f;
                         float y = (int16_t)M16(bound + 18) * 0.001f;
                         float z = (int16_t)M16(bound + 20) * 0.001f;
-                        MF32(bound + 32) = sqrtf(x*x + y*y + z*z);
+                        int sphere = (M16(bound + 14) & 0xc0) == 0x80;
+                        MF32(bound + 32) = k && sphere
+                            ? fmaxf(x, fmaxf(y, z)) : sqrtf(x*x + y*y + z*z);
                     }
                     M32(bound + 44) = p;
                 }
@@ -1078,18 +1169,24 @@ void f_00681340(Cpu *c) {
 static Addition *solid_context(uint32_t ride) {
     return on() && ride ? addition_for_type(M32(ride)) : NULL;
 }
-static uint32_t private_solid_hash(Addition *a, uint32_t hash) {
+static uint32_t private_solid_hash(Addition *a, uint32_t hash, uint32_t fallback) {
     if (!a || !a->solid_count || !hash) return hash;
     unsigned lo=0,hi=a->solid_count;
     while (lo<hi) {
         unsigned m=lo+(hi-lo)/2; uint32_t key=a->solid_map[2*m];
         if (key<hash) lo=m+1; else hi=m;
     }
-    return lo<a->solid_count && a->solid_map[2*lo]==hash ? a->solid_map[2*lo+1] : hash;
+    if (lo<a->solid_count && a->solid_map[2*lo]==hash) return a->solid_map[2*lo+1];
+    return fallback ? fallback : hash;
 }
 static __attribute__((noinline)) void model_00751540(Cpu *c) {
+    Addition *a=model_namespace;
+    uint32_t lod=M32(c->esp+8), stock_body=0;
+    // BODY slot, primary model. Secondary models and textures have their own keys.
+    if (a && lod<CAR_KIT_BODY_LODS && M8(c->ecx+4)==0x17 && M32(c->esp+4)==0)
+        stock_body=a->stock_body[lod];
     f_00751540_orig(c);
-    c->eax=private_solid_hash(model_namespace,c->eax);
+    c->eax=private_solid_hash(a,c->eax,stock_body);
 }
 void f_00751540(Cpu *c) {
     if (!nadditions && !traffic_active) { f_00751540_orig(c); return; }
@@ -1111,7 +1208,7 @@ uint32_t car85_diag_model_hash(Cpu *c, uint32_t ride, uint32_t part, int lod) {
 static __attribute__((noinline)) void model_00751860(Cpu *c) {
     uint32_t info=M32(c->esp+4); Addition *a=solid_context(M32(c->esp+8));
     f_00751860_orig(c);
-    if (a) for (uint32_t at=info;at<info+0xE0*4;at+=4) M32(at)=private_solid_hash(a,M32(at));
+    if (a) for (uint32_t at=info;at<info+0xE0*4;at+=4) M32(at)=private_solid_hash(a,M32(at),0);
 }
 // materials.m records the lamp-state textures; tests that build this file alone keep this no-op.
 __attribute__((weak)) void mat_used_car_textures(uint32_t used) { (void)used; }
@@ -1163,7 +1260,8 @@ void car85_collection_seen(uint32_t ld, uint32_t vault) {
     if (!on() || inserting) return;
     uint32_t cls = M32(ld + 4);
     if (cls != PVEHICLE && cls != FRONTEND && cls != ECAR &&
-        cls != 0xAFA210F0u && cls != 0xBD38D1CAu && cls != 0x93C171E4u) return;
+        cls != 0xAFA210F0u && cls != 0xBD38D1CAu && cls != 0x93C171E4u &&
+        !(car_performance_enabled() && car_performance_class(cls))) return;
     VaultLife *v = life(vault);
     if (!v || v->ready) return; // dynamic/non-vault collections are not load descriptors
     if (nsources == sizeof sources / sizeof sources[0]) fail("source collection capacity exhausted");
@@ -1260,7 +1358,7 @@ static void apply_wheel_fit(uint32_t src, uint32_t ld, uint32_t lay, Addition *a
 
 // Add explicit metadata using the clone's spare descriptor capacity. Values
 // and RefSpec arrays always get new storage; retail data remains immutable.
-static uint32_t own_fit_entry(uint32_t src, uint32_t ld, uint32_t key) {
+static uint32_t own_fit_entry(uint32_t src, uint32_t ld, uint32_t key, uint32_t type) {
     uint32_t old = entry(src, key);
     if (!old) fail("fit donor attribute missing");
     uint32_t nt = M32(ld + 0x18), ne = M32(ld + 0x14);
@@ -1268,7 +1366,7 @@ static uint32_t own_fit_entry(uint32_t src, uint32_t ld, uint32_t key) {
     for (uint32_t i = 0; i < ne; ++i)
         if (M32(begin + 12 * i) == key) return begin + 12 * i;
     memmove(G + begin + 4, G + begin, 12 * ne);
-    M32(begin) = REFSPEC;
+    M32(begin) = type;
     uint32_t match = begin + 4 + 12 * ne;
     memcpy(G + match, G + old, 12);
     M16(match + 8) = (uint16_t)nt;
@@ -1277,7 +1375,30 @@ static uint32_t own_fit_entry(uint32_t src, uint32_t ld, uint32_t key) {
     return match;
 }
 
-static void append_collection_as(Cpu *, Source *, uint32_t, int, Addition *, uint32_t, unsigned);
+static void load_added_audio(Addition *a, uint64_t generation) {
+    int result=0;
+#if defined(NFS_PUBLIC) && NFS_PUBLIC
+    if (car_audio_enabled()) {
+        unsigned slot=a->catalog_id-CAR_CATALOG_FIRST_ID;
+        FILE *stream=car_catalog_open_sidecar(slot,CAR_CATALOG_AUDIO);
+        if (stream) {
+            const CarCatalogSlot *car=car_catalog_inventory_get(slot);
+            result=car?car_audio_load_stream(a->key,generation,a->name,car->outputs[CAR_CATALOG_AUDIO].version,stream):-1;
+            fclose(stream);
+        } else if (errno!=ENOENT) result=-1;
+    }
+#else
+    if (a->directory[0] && car_audio_enabled()) {
+        char path[PATH_MAX];
+        result=snprintf(path,sizeof path,"%s/AUDIO.BIN",a->directory)>=(int)sizeof path
+            ? -1 : car_audio_load(a->key,generation,a->name,path);
+    }
+#endif
+    if (result<0 && diag_on)
+        diag_event("addcar_audio: rejected sidecar car=%s key=%08X; using donor",a->name,a->key);
+}
+
+static void append_collection_as(Cpu *, Source *, uint32_t, int, Addition *, uint32_t, unsigned, const void *);
 
 static void apply_linked_fit(Cpu *c, uint32_t src, uint32_t ld, Addition *a) {
     if (!a->render_fit) return;
@@ -1303,12 +1424,31 @@ static void apply_linked_fit(Cpu *c, uint32_t src, uint32_t ld, Addition *a) {
             snprintf(name, sizeof name, "nfsad_%s_fit_%u_%u", a->name, i, tier);
             uint32_t text = gstr(name), key = call_guest(c, 0x004549B0, 1, &text);
             if (!key || source(M32(ref), key)) fail("fit linked identity collision");
-            append_collection_as(c, donor, i == 0 ? 0x74 : i == 1 ? 0x50 : 0x6F, 0, a, key, i + 1);
+            append_collection_as(c, donor, i == 0 ? 0x74 : i == 1 ? 0x50 : 0x6F, 0, a, key, i + 1, NULL);
             M32(ref + 4) = key; M32(ref + 8) = 0;
         }
-        uint32_t match = own_fit_entry(src, ld, links[i]);
+        uint32_t match = own_fit_entry(src, ld, links[i], REFSPEC);
         M32(match + 4) = copy;
     }
+}
+
+static void fit_showroom_reflection(uint32_t lay, const Addition *a) {
+    if (!a->wheel_fit || a == &traffic_addition) return;
+    float contact_sum = 0.0f, tallest = -INFINITY;
+    for (unsigned wheel = 0; wheel < 4; ++wheel) {
+        const float *tire = a->wheel_offsets + wheel * 4;
+        float contact = tire[3] - tire[2] - a->wheel_compressions[wheel / 2];
+        contact_sum += contact;
+        tallest = fmaxf(tallest, contact);
+    }
+    // 007A96C0 places the car at the mean tire contact height minus 25 mm.
+    // 00750980 adds the showroom translation and subtracts ReflectionOffset
+    // from that height, then draws the inverted car. Limit its tires to Z<=0.
+    float room_z, offset;
+    memcpy(&room_z, G + 0x009053C8u, sizeof room_z);
+    memcpy(&offset, G + lay + 0xF4, sizeof offset);
+    float minimum = contact_sum * 0.25f - 0.025f + room_z + tallest;
+    if (offset < minimum) memcpy(G + lay + 0xF4, &minimum, sizeof minimum);
 }
 
 static void apply_render_fit(uint32_t lay, Addition *a, unsigned kind) {
@@ -1341,7 +1481,12 @@ static void apply_render_fit(uint32_t lay, Addition *a, unsigned kind) {
     }
 }
 
-static void append_collection_as(Cpu *c, Source *s, uint32_t layout_size, int vehicle, Addition *a, uint32_t key, unsigned fit_kind) {
+void f_006794E0_orig(Cpu *c);
+void f_00683EB0_orig(Cpu *c);
+#include "car_performance_attrib_impl.h"
+
+static void append_collection_as(Cpu *c, Source *s, uint32_t layout_size, int vehicle, Addition *a,
+                                 uint32_t key, unsigned fit_kind, const void *performance_layout) {
     VaultLife *v = life(s->vault);
     if (!v || !v->ready || v->generation != s->generation) return;
     uint32_t src = s->ld, vault = s->vault, cls = M32(src + 4);
@@ -1350,9 +1495,10 @@ static void append_collection_as(Cpu *c, Source *s, uint32_t layout_size, int ve
     // same long-lived vault as the donor; body values can be overridden below.
     uint32_t nt = M32(src + 0x18), ne = M32(src + 0x14);
     uint32_t bytes = 0x20 + 4 * nt + 12 * ne;
-    uint32_t ld = gmalloc(bytes + 128), lay = gmalloc(layout_size);
+    uint32_t ld=performance_layout ? performance_alloc(vault,bytes) : gmalloc(bytes+128);
+    uint32_t lay=performance_layout ? performance_alloc(vault,layout_size) : gmalloc(layout_size);
     memcpy(G + ld, G + src, bytes);
-    memcpy(G + lay, G + M32(src + 0x1C), layout_size);
+    memcpy(G + lay, performance_layout ? performance_layout : G + M32(src + 0x1C), layout_size);
     M32(ld) = key; M32(ld + 0x1C) = lay;
 #if !defined(NFS_PUBLIC) || !NFS_PUBLIC
     if (vehicle && cls == PVEHICLE) {
@@ -1362,6 +1508,7 @@ static void append_collection_as(Cpu *c, Source *s, uint32_t layout_size, int ve
 #endif
     if (cls == ECAR) apply_wheel_fit(src, ld, lay, a);
     if (fit_kind || cls == ECAR) apply_render_fit(lay, a, fit_kind);
+    if (cls == ECAR) fit_showroom_reflection(lay, a);
     if (manifest_mode && cls == FRONTEND) {
         Source *menu = source(FRONTEND, a->menu_fe);
         if (!menu) fail("price/unlock donor frontend missing");
@@ -1405,7 +1552,8 @@ static void append_collection_as(Cpu *c, Source *s, uint32_t layout_size, int ve
         }
         M32(match + 4) = ref;
     }
-    if (cls == PVEHICLE || cls == ECAR) apply_linked_fit(c, src, ld, a);
+    if (cls == ECAR || (cls == PVEHICLE && !apply_performance(c,s,ld,lay,a)))
+        apply_linked_fit(c, src, ld, a);
     uint32_t tt = M32(vault + 4), tidx = 0xFFFFFFFFu;
     for (uint32_t i = 0; i < M32(tt + 8); ++i)
         if (M32(M32(tt) + 8 * i) == 0x8E112EB7u) tidx = i;
@@ -1426,14 +1574,16 @@ static void append_collection_as(Cpu *c, Source *s, uint32_t layout_size, int ve
     M32(e) = coll; M32(e + 4) = 0; M32(e + 8) = tidx; M32(e + 12) = 0;
     M32(keys + (nd + n) * 4) = key;
     M32(vault + 0x34) = n + 1;
-    if (vehicle && cls == PVEHICLE && a!=&traffic_addition && a->catalog_id)
-        car_grip_bind(&a->grip_binding,&a->grip,a->key,vault,v->generation);
+    if (vehicle && cls == PVEHICLE && a!=&traffic_addition) {
+        if (a->catalog_id) car_grip_bind(&a->grip_binding,&a->grip,a->key,vault,v->generation);
+        load_added_audio(a,v->generation);
+    }
     if (diag_on) diag_event("car85: collection class=%08X donor=%08X new=%08X vault=%08X generation=%llu exports=%u->%u",
                             cls, M32(src), key, vault, (unsigned long long)v->generation, n, n + 1);
 }
 
 static void append_collection(Cpu *c, Source *s, uint32_t layout_size, int vehicle, Addition *a) {
-    append_collection_as(c, s, layout_size, vehicle, a, addition_key(a,M32(s->ld+4)), 0);
+    append_collection_as(c, s, layout_size, vehicle, a, addition_key(a,M32(s->ld+4)), 0, NULL);
 }
 
 void f_00739B40(Cpu *c) {
@@ -1575,13 +1725,6 @@ void car85_vault_loaded(Cpu *c, uint32_t vault) {
             if (!a->frontend_key || !a->ecar_key) fail("zero catalog binding key");
         }
         if (!a->key) fail("zero addition Attrib key");
-        if (car_audio_load && a->directory[0]) {
-            char path[PATH_MAX];
-            if (snprintf(path,sizeof path,"%s/AUDIO.BIN",a->directory)>=(int)sizeof path ||
-                car_audio_load(a->key,a->name,path)<0) {
-                if (diag_on) diag_event("addcar_audio: rejected sidecar key=%08X; using stock engine",a->key);
-            }
-        }
         for (unsigned i = 0; i < j; ++i) {
             Addition *b=&additions[i];
             if (a->key==b->key || addition_key(a,FRONTEND)==addition_key(b,FRONTEND) ||
@@ -1641,7 +1784,7 @@ void car85_vault_loaded(Cpu *c, uint32_t vault) {
              * Keep the catalog ecar binding and provide that folder alias to the
              * same owned values, without changing either binding's identity. */
             if (a->ecar[0] && a->ecar_key!=a->folder_key)
-                append_collection_as(c,ec,0x11D,0,a,a->folder_key,0);
+                append_collection_as(c,ec,0x11D,0,a,a->folder_key,0,NULL);
         }
     }
     register_traffic(c);

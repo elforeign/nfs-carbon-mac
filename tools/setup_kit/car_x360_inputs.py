@@ -113,7 +113,7 @@ class XenonAttributes:
                     require(identity not in self.collections, 'X360 duplicate collection')
                     self.collections[identity] = v, off
 
-    def raw(self, cls, key, name, seen=()):
+    def raw(self, cls, key, name, seen=(), *, allow_empty=False):
         cls = cc.hash32(cls) if isinstance(cls, str) else cls
         field = cc.hash32(name) if isinstance(name, str) else name
         require(key not in seen and len(seen) < 32, 'X360 attribute parent cycle/depth')
@@ -142,11 +142,12 @@ class XenonAttributes:
         if target is None:
             parent = v.uint(raw, off + 8)
             require(parent != 0, 'X360 attribute field absent: ' + str(name))
-            return self.raw(cls, parent, name, seen + (key,))
+            return self.raw(cls, parent, name, seen + (key,), allow_empty=allow_empty)
         dep, pos = target
         if flags & 1:
             alloc, count, esz, enc = cc.words(v.buffers[dep], pos, '>4H')
-            require(0 < count <= alloc <= maximum and esz == size, 'X360 attribute array shape')
+            require((allow_empty or count > 0) and count <= alloc <= maximum and esz == size,
+                    'X360 attribute array shape')
             pos += 8 + (8 if enc & 0x8000 else 0)
             size *= count
         require(size <= 4096, 'X360 projected field limit')
@@ -170,6 +171,11 @@ def grip_metadata(data, car, donor):
         return None
     return car_grip.optional_metadata(data, car, donor, attrib=src,
         read_field=lambda cls, key, field: _little(src.raw(cls, key, field)))
+
+
+def performance_metadata(data, car, donor):
+    from . import car_performance
+    return car_performance.metadata(data, car, donor, attrib=XenonAttributes(data), endian='>')
 
 
 def _project_vpak(rows):
@@ -494,7 +500,7 @@ class LogicalReader:
     """
     def __init__(self, source, expected):
         self.source = source
-        self.logical = cs._logical(source, cs._physical(source))
+        self.logical = cs._logical(source, cs._physical(source), engine_audio=True)
         self.expected, self.inputs = {}, {}
         for row in expected:
             identity = row['path_hash']
@@ -534,7 +540,7 @@ class LogicalReader:
         return self.read(name)
 
     def check_unchanged(self):
-        current = cs._logical(self.source, cs._physical(self.source))
+        current = cs._logical(self.source, cs._physical(self.source), engine_audio=True)
         for identity, row in self.inputs.items():
             if (current.get(identity) != self.logical[identity] or
                     cs._digest(self.source, current[identity]) != row['sha256']):

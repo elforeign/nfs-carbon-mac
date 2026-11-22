@@ -19,6 +19,10 @@ With only that fix applied, the earlier engine fails three checks (45 run,
 2 failures, 1 error): a link planted at the stage 'outputs' redirects seven
 real converter writes into a player folder, and an external disable or
 deselection landing after the state read is undone. Fixed engine: 45 OK.
+Carbon Xbox 360 logical export without audio: donor imports 0/1 -> 1/1.
+Oversized console audio reaches the resource reader 2/2 -> 0/2 (file and set).
+Retail console audio preflight at 2 MiB: 0/6 pass (350Z: 2,917,462 bytes).
+At 4 MiB: 6/6 pass. The 4,194,305-byte set fails before payload read.
 """
 import copy
 from contextlib import contextmanager
@@ -39,6 +43,7 @@ from unittest import mock
 ROOT = Path(__file__).resolve().parents[2]
 sys.path[:0] = [str(ROOT / 'tools'), str(Path(__file__).resolve().parent)]
 from setup_kit import car_catalog as catalog, car_convert as converter, car_sources as sources
+from setup_kit import car_audio_pack
 if importlib.util.find_spec('setup_kit.car_import') is not None:
     from setup_kit import car_import as ci
 else:
@@ -188,8 +193,10 @@ class Lifecycle(unittest.TestCase):
         self.assertTrue(result['approved'])
         self.assertFalse((self.engine.root / 'current.json').exists())
         volume = result['volumes'][0]
-        for key in ('extraction_bytes', 'staging_bytes', 'output_bytes', 'retention_bytes', 'margin_bytes'):
+        for key in ('extraction_bytes', 'staging_bytes', 'output_bytes', 'margin_bytes'):
             self.assertGreater(volume[key], 0, key)
+        self.assertEqual(volume['retention_bytes'], 0)
+        self.assertFalse(list(self.engine.work.glob('.txn-*')))
         self.assertEqual(volume['required_bytes'], sum(volume[k] for k in
             ('extraction_bytes', 'staging_bytes', 'output_bytes', 'margin_bytes')))
         receipt = result['receipt']
@@ -229,6 +236,92 @@ class Lifecycle(unittest.TestCase):
                          sum(len(v) for v in self.assets.files.values()))
         self.assertEqual(catalog.fingerprint(iso), before)
         self.assertEqual(first['pointer'], second['pointer'])
+
+    def test_x360_audio_less_export_imports_with_donor_sound(self):
+        pin = catalog.fingerprint(self.x360 / 'GLOBAL/ATTRIBUTES.BIN')['sha256']
+        with mock.patch.object(car_audio_pack, 'X360_ATTRIBUTES', pin), \
+                mock.patch.object(car_audio_pack, 'x360_resource_paths',
+                                  return_value=['SOUND/ENGINE/FIXTURE.ABK']):
+            checked = self.engine.check(self.x360, mw_pc=self.mw, cars=[self.car])
+            selected = sources.path_hash('CARS/' + self.car['folder'])
+            self.assertIn((selected, 'importable'),
+                          {(r['car_hash'], r['status']) for r in checked['recognition']['cars']})
+            self.run_import(self.x360)
+        row = self.ready().selected[0]
+        self.assertEqual(row['donors']['model'], self.car['donors']['model'])
+        self.assertNotIn('AUDIO.BIN', row['outputs'])
+
+    def test_x360_retail_audio_sets_fit_preflight(self):
+        # Logical resource sizes from the retail Carbon Xbox 360 ZDIR.
+        muscle = (143642, 162860, 180614, 183032, 194760, 310089, 310089, 391021, 391021)
+        cases = {
+            '350Z': (54672, 58193, 89175, 99794, 132372, 137516, 137516, 159600,
+                     159876, 279069, 279069, 286414, 286414, 378891, 378891),
+            'IMPREZAWRXSTI': (39808, 66508, 68032, 73108, 101648, 121152,
+                             293145, 293145, 298247, 298247, 326188, 337780),
+            'CHALLENGER71': muscle,
+            'CHARGER69': muscle,
+            'CUDA': muscle,
+            'VIPER': (86712, 103528, 142384, 265876, 271064, 309869, 309869, 353269, 353269),
+        }
+        for car, sizes in cases.items():
+            with self.subTest(car=car, total=sum(sizes)):
+                pins = {f'SOUND/ENGINE/FIXTURE{i}': dict(size=size) for i, size in enumerate(sizes)}
+                logical = {sources.path_hash(name): ('fixture', 0, pin['size']) for name, pin in pins.items()}
+                with mock.patch.object(car_audio_pack, 'x360_resource_paths', return_value=list(pins)), \
+                        mock.patch.object(converter, '_x360_audio_pins', return_value=pins):
+                    self.assertEqual(converter.x360_audio_inputs(b'', car, logical), pins)
+
+    def test_x360_archive_audio_limits_before_reading(self):
+        attr = catalog.fingerprint(self.x360 / 'GLOBAL/ATTRIBUTES.BIN')['sha256']
+        # Each resource in the total-size control fits the 512 KiB file limit.
+        for sizes, message in (([6666, 6666, 6666, 6666, 524289], 'file size limit'),
+                               ([524288] * 8 + [1], 'total size limit')):
+            with self.subTest(sizes=sizes):
+                paths = [f'SOUND/ENGINE/FIXTURE{i}.ABK' for i in range(len(sizes))]
+                files = self.assets.files | dict(zip(paths, map(bytes, sizes)))
+                physical = source_fixture.archive_files(source_fixture.fake_xex(), files)
+                archive = self.root / 'oversized.iso'
+                archive.write_bytes(source_fixture.tiny_iso(physical))
+                read = ci._logical
+
+                def watch(reader, entry, **kwargs):
+                    self.assertNotIn(entry[2], sizes, 'oversized audio set reached the resource reader')
+                    return read(reader, entry, **kwargs)
+
+                with mock.patch.object(car_audio_pack, 'X360_ATTRIBUTES', attr), \
+                        mock.patch.object(car_audio_pack, 'x360_resource_paths', return_value=paths), \
+                        mock.patch.object(ci, '_logical', side_effect=watch):
+                    with self.assertRaisesRegex(ValueError, message):
+                        self.run_import(archive)
+
+    def test_x360_audio_partial_and_changed_exports_fail_before_staging(self):
+        name = 'SOUND/ENGINE/FIXTURE.ABK'
+        expected = b'approved resource'
+        pins = {name: dict(size=len(expected), sha256=hashlib.sha256(expected).hexdigest())}
+        audio = self.x360 / name
+        audio.parent.mkdir(parents=True)
+        attr = catalog.fingerprint(self.x360 / 'GLOBAL/ATTRIBUTES.BIN')['sha256']
+        read = ci._logical
+
+        def watch(reader, entry, **kwargs):
+            self.assertIsNone(kwargs.get('stage'), 'invalid audio reached staging')
+            return read(reader, entry, **kwargs)
+
+        with mock.patch.object(car_audio_pack, 'X360_ATTRIBUTES', attr), \
+                mock.patch.object(converter, '_x360_audio_pins', return_value=pins), \
+                mock.patch.object(ci, '_logical', side_effect=watch), \
+                mock.patch.object(self.engine, '_convert') as convert:
+            audio.with_name('OTHER.ABK').write_bytes(expected)
+            with mock.patch.object(car_audio_pack, 'x360_resource_paths', return_value=[name]):
+                with self.assertRaisesRegex(ValueError, 'Incomplete console engine audio'):
+                    self.run_import(self.x360)
+                audio.write_bytes(b'x' * len(expected))
+                with self.assertRaisesRegex(ValueError, 'does not match the approved file'):
+                    self.run_import(self.x360)
+            convert.assert_not_called()
+        self.assertFalse((self.engine.root / 'current.json').exists())
+        self.assertFalse(list(self.engine.work.glob('c-*')))
 
     def test_missing_pack_restore_needs_neither_source_nor_cache(self):
         first = self.run_import()
@@ -291,6 +384,26 @@ class Lifecycle(unittest.TestCase):
         with mock.patch.object(converter, 'convert', wraps=converter.convert) as writer:
             self.run_import()
         self.assertEqual(writer.call_count, 1)
+
+    def test_retained_pack_can_use_prior_policy_receipt(self):
+        for revision, name in ((4, 'PRE_AUDIO_POLICY_SHA256'), (5, 'PC_AUDIO_POLICY_SHA256'),
+                               (6, 'X360_AUDIO_POLICY_SHA256'), (7, 'AUDIO_V7_POLICY_SHA256'),
+                               (5, 'CPF1_POLICY_SHA256'), (6, 'CPF2_POLICY_SHA256'),
+                               (7, 'CPF3_POLICY_SHA256')):
+            with self.subTest(revision=revision):
+                self.policy_doc['revision'] = revision
+                self.save_policy()
+                with mock.patch.object(catalog, name, self.policy.sha256):
+                    self.run_import()
+                    row = self.ready().selected[0]
+                    self.policy_doc['revision'] = 8
+                    self.save_policy()
+                    entry = self.engine._retained_input(row, self.policy)
+                    identity = json.loads((entry / 'receipt.json').read_bytes())['identity']
+                    with self.assertRaisesRegex(ci.CacheError, 'cache approval revision is stale'):
+                        self.engine._cached(entry, identity, self.policy)
+                    self.engine.disable()
+                    force_remove(entry)
 
     def test_unapproved_default_never_activates_or_accepts_approval_argument(self):
         self.policy = None
@@ -375,9 +488,11 @@ class Lifecycle(unittest.TestCase):
         self.assertEqual(self.before_sources, self.snapshot())
         self.run_import()
 
-    def test_interruption_leaves_only_unselected_stage_then_retry_completes(self):
+    def test_interruption_cleans_unselected_stage_then_retry_completes(self):
+        """An interruption leaves one new stage at c4b98837 and zero with cleanup."""
         self.run_import(self.x360)
         pointer = self.pointer()
+        previous_stages = set(self.engine.work.glob('.txn-*'))
 
         def interrupt(event):
             if event['phase'] == 'converted':
@@ -386,10 +501,22 @@ class Lifecycle(unittest.TestCase):
         with self.assertRaises(KeyboardInterrupt):
             self.run_import(progress=interrupt)
         self.assertEqual(self.pointer(), pointer)
-        self.assertTrue(list(self.engine.work.glob('.txn-*')))
+        self.assertEqual(set(self.engine.work.glob('.txn-*')), previous_stages)
         self.assertEqual(self.before_sources, self.snapshot())
         self.assertEqual(self.run_import()['reused'], 0)
         self.assertEqual([r['id'] for r in self.ready().selected], [95])
+
+    def test_snapshot_space_checked_before_extraction(self):
+        """c4b98837 starts extraction with zero free bytes. The fixed engine starts none."""
+        self.run_import(self.x360)
+        pointer = self.pointer()
+        with mock.patch.object(ci.shutil, 'disk_usage', return_value=shutil._ntuple_diskusage(1, 1, 0)), \
+             mock.patch.object(ci, '_range', wraps=ci._range) as read:
+            with self.assertRaisesRegex(ci.ImportError, 'not enough free disk space'):
+                self.run_import()
+        self.assertFalse(any(call.kwargs.get('target') for call in read.call_args_list))
+        self.assertFalse(list(self.engine.work.glob('.txn-*')))
+        self.assertEqual(self.pointer(), pointer)
 
     def test_corrupt_cache_rejected_before_plan_or_activation(self):
         self.run_import()
@@ -538,6 +665,33 @@ class Lifecycle(unittest.TestCase):
         self.assertEqual(self.pointer(), pointer)
         self.assertEqual(self.before_sources, self.snapshot())
 
+    def test_cold_publication_minimum_is_checked_before_conversion(self):
+        """At 265b530a a full catalog volume reaches one conversion. Fixed reaches zero."""
+        row = self.engine.plan(self.carbon, mw_pc=self.mw, cars=[self.car], measure=True)['cars'][0]['contract']
+        for entry in self.engine.work.glob('c-*'):
+            force_remove(entry)
+        usage = shutil.disk_usage(self.engine.root)
+        minimum = self.engine.margin + sum(p['size'] for p in row['outputs'].values())
+
+        def disk_usage(path):
+            return usage._replace(free=minimum - 1) if path == self.engine.root else usage
+
+        def volume(path):
+            return str(path), disk_usage(path).free
+
+        with mock.patch.object(self.engine, '_later_rows', return_value={row['slot']: row}), \
+             mock.patch.object(ci.shutil, 'disk_usage', side_effect=disk_usage), \
+             mock.patch.object(ci, '_volume', side_effect=volume), \
+             mock.patch.object(converter, 'convert', wraps=converter.convert) as writer:
+            plan = self.engine.plan(self.carbon, mw_pc=self.mw, cars=[self.car])
+            with self.assertRaises(OSError) as failure:
+                self.run_import()
+        self.assertEqual(failure.exception.errno, errno.ENOSPC)
+        self.assertEqual(writer.call_count, 0)
+        catalog_volume = next(v for v in plan['volumes'] if str(self.engine.root) in v['paths'])
+        self.assertEqual(catalog_volume['minimum_bytes'], minimum)
+        self.assertFalse((self.engine.root / 'current.json').exists())
+
     def test_identical_generation_needs_no_additional_payload_space(self):
         self.run_import()
         with mock.patch.object(converter, 'convert', side_effect=AssertionError('unexpected writer')):
@@ -623,23 +777,27 @@ class Lifecycle(unittest.TestCase):
             self.run_import()
 
     def test_parent_swap_cannot_redirect_selected_extraction_into_source(self):
-        original = catalog._directory
-        target = self.root / 'target/UNEXPECTED.BIN'
-        moved = self.root / 'original-target'
         source = self.carbon / 'GLOBAL/GLOBALB.LZC'
+        parent = self.root / 'stage/target'
+        moved = self.root / 'original-target'
+        with catalog._directory(self.root) as base:
+            with self.assertRaisesRegex(catalog.CatalogError, 'left unexpected stage entries'):
+                with catalog._stage(base, 'stage') as stage:
+                    original = stage.directory
 
-        @contextmanager
-        def swapped(path, create=False):
-            with original(path, create=create) as fd:
-                if Path(path) == target.parent and create:
-                    target.parent.rename(moved)
-                    target.parent.symlink_to(self.carbon, target_is_directory=True)
-                yield fd
+                    @contextmanager
+                    def swapped(path):
+                        with original(path) as directory:
+                            if path == 'target':
+                                parent.rename(moved)
+                                parent.symlink_to(self.carbon, target_is_directory=True)
+                            yield directory
 
-        with mock.patch.object(catalog, '_directory', side_effect=swapped):
-            ci._range(source, 0, source.stat().st_size, target=target)
+                    with mock.patch.object(stage, 'directory', side_effect=swapped):
+                        ci._range(source, 0, source.stat().st_size, stage=stage, target='target/UNEXPECTED.BIN')
         self.assertFalse((self.carbon / 'UNEXPECTED.BIN').exists(), 'extraction escaped into source tree')
-        self.assertEqual((moved / target.name).read_bytes(), source.read_bytes())
+        self.assertTrue(parent.is_symlink())
+        self.assertEqual((moved / 'UNEXPECTED.BIN').read_bytes(), source.read_bytes())
         self.assertEqual(self.before_sources, self.snapshot())
 
     def test_writers_serialize_across_independent_instances(self):
@@ -795,6 +953,7 @@ class Lifecycle(unittest.TestCase):
         self.assertFalse(self.engine.list_cars()['generations'][0]['verified'])
 
     def test_incremental_import_merges_other_slots_and_retains_old_generation(self):
+        """With no room for the retained pack, 265b530a converts once. Fixed converts zero cars."""
         other = spec('OTHER', 0)
         second = self.root / 'other-carbon'
         data = {'CARS/OTHER/GEOMETRY.BIN': pc_fixture.geometry('OTHER', True),
@@ -810,6 +969,29 @@ class Lifecycle(unittest.TestCase):
             self.approve(result['cars'][0]['contract'])
         self.save_policy()
         first = self.run_import()
+        pointer = self.pointer()
+        retained = sum(p['size'] for p in self.ready().selected[0]['outputs'].values())
+        minimum = self.engine.margin + retained
+        usage = shutil.disk_usage(self.engine.root)
+
+        def disk_usage(path):
+            return usage._replace(free=minimum - 1) if path == self.engine.root else usage
+
+        def volume(path):
+            return str(path), disk_usage(path).free
+
+        with mock.patch.object(ci.shutil, 'disk_usage', side_effect=disk_usage), \
+             mock.patch.object(ci, '_volume', side_effect=volume), \
+             mock.patch.object(converter, 'convert', wraps=converter.convert) as writer:
+            plan = self.engine.plan(second, mw_pc=self.mw, cars=[other])
+            with self.assertRaises(OSError) as failure:
+                self.run_import(second, other)
+        self.assertEqual(failure.exception.errno, errno.ENOSPC)
+        self.assertEqual(writer.call_count, 0)
+        catalog_volume = next(v for v in plan['volumes'] if str(self.engine.root) in v['paths'])
+        self.assertIsNone(catalog_volume['output_bytes'])
+        self.assertEqual(catalog_volume['minimum_bytes'], minimum)
+        self.assertEqual(self.pointer(), pointer)
         self.run_import(second, other)
         self.assertEqual([r['id'] for r in self.ready().selected], [84, 95])
         self.assertEqual(len(self.engine.list_cars()['generations']), 2)

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.0
+
+- **Sharper rear-view mirror:** with the game's Rearview Mirror option on, the mirror shows the same buildings and scenery detail as the main view. The option stays off until you turn it on.
+- **Skippable credits:** Back closes the credits from the menu and at the end of the career.
+- **Fixed:** traffic headlights no longer paint bright patches on the road at midday with the day-night clock on; F12 screenshots no longer freeze the picture for a moment.
+- **Going back to an older version:** run that version's Setup again.
+
 ## 1.1.0
 
 - **Send to GitHub:** F10 > Help > Report a problem can now preview your report and post it to Carbon's GitHub issues, or open the issue form. Your home folder paths are hidden first, and nothing is sent without your choice.

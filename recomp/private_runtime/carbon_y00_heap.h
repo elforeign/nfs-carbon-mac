@@ -1,6 +1,7 @@
 /* 0079EBFA requests section 2500 with 00477230(size, 0x2000). Keep the
  * native pool headers, alignment, lists and frees; isolate only its oversized
  * CRT backing block. Stock packs stay on the original resource heap path.
+ * The same hook retries a section's compacted copy outside a full pool 7.
  * Guest execution owns the guest lock; the scope is local to its thread.
  */
 static _Thread_local uint32_t carbon_y00_request;
@@ -9,12 +10,27 @@ static int carbon_y00_live;
 
 void carbon_y00_allocate(Cpu *c, void (*original)(Cpu *)) {
     uint32_t size = arg(c, 0), saved = carbon_y00_request;
+    uint32_t sp = c->esp, ret = M32(sp), flags = arg(c, 1);
     /* 00476B20 adds 20 bytes; 00476560 rounds to four and adds 16+128.
      * The caller and flags distinguish Y00 from other pool-0 allocations. */
-    carbon_y00_request = M32(c->esp) == 0x0079EBFFu && arg(c, 1) == 0x2000u &&
+    carbon_y00_request = ret == 0x0079EBFFu && flags == 0x2000u &&
                          size > 0x08000000u && size <= UINT32_MAX - 167u
                          ? ((size + 23u) & ~3u) + 144u : 0;
     original(c);
+    /* 006ADC31 takes a loaded section's compacted copy from streaming pool 7
+     * while the raw block still holds its place there, and 006ADBC0 uses the
+     * result unchecked: on 0 the kept chunks are dropped (00699570), the
+     * section keeps state 4 with base 0 and its unload (006A83A0) walks guest
+     * memory from address 0. A full pool 7 sends that copy to the main heap,
+     * as 0079EBFA does for section 2500; 00476D70 frees either block. */
+    if (!c->eax && ret == 0x006ADC36u && (flags & 0xFu) == 7u) {
+        c->esp = sp;
+        M32(sp) = ret;
+        M32(sp + 8) = 0x2000u;
+        original(c);
+        M32(sp + 8) = flags;
+        if (diag_on) diag_event("section copy to main heap: size=%u base=%08x", size, c->eax);
+    }
     carbon_y00_request = saved;
 }
 

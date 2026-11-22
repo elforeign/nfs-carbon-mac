@@ -14,15 +14,11 @@
  * is the retail one), never smaller than retail. NFS_MIRROR_MSAA=on|off (default on): the texture and depth get
  * the back buffer's sample count (render_target_msaa; render.m resolves each pass into the texture).
  *
- * World detail. The mirror pass 0072E350 sets AB0B98 to 1 (0072E382) and back to 0 (0072E453); the road
- * reflection (0072E0FD/0072E339) and the env-map faces (0072ECEA/0072ED1C) do the same. Two code sites read it,
- * and both only choose a technique: 00723600 (effect start without a technique name) takes the effect's
- * low-detail index (+0x1774) instead of its first technique, and 00748B83 pushes "lowlod" (009E99EC) instead
- * of going on to its weather choice for the active view. So the retail mirror draws every world effect with
- * its lowlod technique (a 4K race frame: 112 of 114 mirror draws). NFS_MIRROR_DETAIL=full|pc (default pc,
- * env only, read once): full clears the flag after 0072E070 sets up the mirror view (B4B090, called right
- * after 0072E382 and before any mirror draw), so the mirror gets the main view's techniques. The reflection
- * and env-map passes keep it.
+ * Gameplay's native Rearview Mirror option gates the pass and composite. When enabled, the mirror
+ * uses the Xbox 360 scenery registration policy and full world techniques. Clear the low-detail
+ * pass flag before 0072E070 flushes the sky dome. Reset the mirror depth after the dome so
+ * its colour remains behind the depth-tested scenery. Reflection and env-map passes retain
+ * their original techniques and depth.
  *
  * View. 0071B780 (thiscall, ECX = the view's platform, M32(view)) builds the mirror's projection with
  * 0070F2F0 into platform+0x40 and the depth-biased one into +0xC0, m00 = 1/tan(fov/2), m11 = 1/tan(fov/2 *
@@ -113,39 +109,72 @@ void carbon_mirror_allocate(Cpu *c, void (*original)(Cpu *)) {
     }
 }
 
-/* ---- World detail and view (NFS_MIRROR_DETAIL, NFS_MIRROR_VIEW) ---- */
 #define CARBON_MIRROR_VIEW 0x00B4B090u
+#define CARBON_ACTIVE_TARGET 0x00AB08F4u
+#define CARBON_MIRROR_TARGET 0x00AB0540u
 #define CARBON_LOWLOD_PASS 0x00AB0B98u
+#define CARBON_PROFILE_MANAGER 0x00A97A7Cu
 
-static int carbon_mirror_detail = -1;
+static int carbon_mirror_enabled(void) {
+    /* Property 0x13AF getter (004A44F0): player zero's current profile. */
+    uint32_t manager = M32(CARBON_PROFILE_MANAGER);
+    uint32_t profiles = manager ? M32(manager + 0xD4u) : 0;
+    uint32_t profile = profiles ? M32(profiles) : 0;
+    return profile && M8(profile + 0x24209u);
+}
+
+/* 0072E070 (view, index, ...), cdecl: view setup may draw the sky. */
+void carbon_mirror_view_setup(Cpu *c, void (*original)(Cpu *)) {
+    if (M32(c->esp + 4) != CARBON_MIRROR_VIEW || M32(CARBON_LOWLOD_PASS) != 1 ||
+        !carbon_mirror_enabled()) {
+        original(c);
+        return;
+    }
+    M32(CARBON_LOWLOD_PASS) = 0;
+    original(c);
+
+    /* 007AFB70 queues the camera-centred sky. Its depth can cover distant
+     * scenery. Clear only Z on the active mirror surface after the sky flush. */
+    uint32_t device = M32(CARBON_DEVICE);
+    if (device && M32(CARBON_ACTIVE_TARGET) == CARBON_MIRROR_TARGET) {
+        Cpu clear = *c;
+        uint32_t args[] = {device, 0, 0, 2, 0, 0x3f800000u, 0};  /* D3DCLEAR_ZBUFFER, Z=1 */
+        call_guest(&clear, M32(M32(device) + 0xACu), 7, args);
+    }
+    if (diag_on) {
+        static int reported;
+        if (!reported) {
+            reported = 1;
+            diag_event("carbon mirror: full detail and sky colour behind scenery");
+        }
+    }
+}
+
+/* 0079AE80 thiscall: manager in ECX, then view and incoming cull flags.
+ * The mirror's native registration adds 0x40, preserving admission and the
+ * 32 px cutoff. Without 0x2000, 0079FA60 selects the ordinary model
+ * slot +0x30, as Xbox 360 does at 82586960. */
+void carbon_mirror_register_scenery(Cpu *c, void (*original)(Cpu *)) {
+    uint32_t flags_arg = c->esp + 8;
+    uint32_t flags = M32(flags_arg);
+    if (M32(c->esp + 4) != CARBON_MIRROR_VIEW || !(flags & 0x2000u) ||
+        !carbon_mirror_enabled()) {
+        original(c);
+        return;
+    }
+    M32(flags_arg) = flags & ~0x2000u;
+    original(c);
+    M32(flags_arg) = flags;
+}
+
 static float carbon_mirror_hfov = -1.0f;   /* 0: pc */
 
-static void carbon_mirror_options(void) {
-    if (carbon_mirror_detail < 0) {
-        const char *e = getenv("NFS_MIRROR_DETAIL");
-        carbon_mirror_detail = e && !strcmp(e, "full");
-    }
+static void carbon_mirror_view_options(void) {
     if (carbon_mirror_hfov < 0.0f) {
         const char *v = getenv("NFS_MIRROR_VIEW");
         float d = v && *v ? (float)atof(v) : 0.0f;
         carbon_mirror_hfov = d >= 10.0f && d <= 150.0f ? d : 0.0f;
     }
-}
-
-/* The pass flag after the view setup: 0 for the mirror view with full detail, else unchanged. */
-static uint32_t carbon_mirror_pass_flag(uint32_t view, uint32_t flag, int full) {
-    return full && view == CARBON_MIRROR_VIEW && flag == 1 ? 0 : flag;
-}
-
-/* 0072E070 (view, index, ...), cdecl: view setup at the start of each view's pass. */
-void carbon_mirror_view_setup(Cpu *c, void (*original)(Cpu *)) {
-    uint32_t view = M32(c->esp + 4);
-    original(c);
-    carbon_mirror_options();
-    uint32_t flag = M32(CARBON_LOWLOD_PASS), now = carbon_mirror_pass_flag(view, flag, carbon_mirror_detail);
-    if (now == flag) return;
-    M32(CARBON_LOWLOD_PASS) = now;
-    if (diag_on) { static int once; if (!once++) diag_event("carbon mirror: full detail (lowlod pass flag %u -> %u)", flag, now); }
 }
 
 /* m00 and m11 for a horizontal angle and the quad's on-screen aspect (the shown half of the target's height). */
@@ -159,7 +188,7 @@ void carbon_mirror_projection(Cpu *c, void (*original)(Cpu *)) {
     uint32_t out = M32(c->esp + 4), platform = M32(CARBON_MIRROR_VIEW);
     original(c);
     if (!platform || (out != platform + 0x40u && out != platform + 0xC0u)) return;
-    carbon_mirror_options();
+    carbon_mirror_view_options();
     if (carbon_mirror_hfov <= 0.0f) return;
     uint32_t bw = M32(CARBON_BACK_W), bh = M32(CARBON_BACK_H);
     if (!bw || !bh) return;

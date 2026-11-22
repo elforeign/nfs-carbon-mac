@@ -893,7 +893,7 @@ class PlatformConversion(unittest.TestCase):
                 lighting={'amplitudes':True,'gains':cl.Gains(.25,1,1)})
             self.assertTrue(result['lighting']['rows'])
             expected = {'car_convert.py','car_texture_namespace.py','huff.py','car_lighting.py','car_paint.py',
-                        'car_physics.py','car_grip.py','car_sources.py','x360.py','xdvdfs.py'}
+                        'car_physics.py','car_grip.py','car_performance.py','car_sources.py','x360.py','xdvdfs.py'}
             if platform == 'x360': expected |= {'car_x360.py','car_x360_inputs.py','x360_tex.py','texture_compare.py'}
             self.assertEqual(set(result['converter_policy']['modules']),expected)
             self.assertEqual(len(result['dependencies']),len(result['inputs']))
@@ -950,7 +950,7 @@ def driver_normals(models, name):
     return normals.astype('<f4')[ix]
 
 
-def asset_main():
+def asset_main(out=ROOT/'.metal-cache/cw-assets'):
     """Write and independently inspect local outputs; preserve a hash manifest."""
     names = ('NFS_CARBON_PC','NFS_CARBON_X360','NFS_CARBON_CARS','NFS_GAME')
     if any(not os.environ.get(n) for n in names):
@@ -965,7 +965,6 @@ def asset_main():
             not (mw/'CARS'/donor/'GEOMETRY.BIN').is_file() for car,donor in zip(cars,donors))):
         print('SKIP: selected local car/donor inputs are absent')
         return 3
-    out = ROOT/'.metal-cache/cw-assets'
     out.mkdir(parents=True,exist_ok=True)
     recognition = cs.recognise(xroot)
     source = Source(xroot)
@@ -1034,6 +1033,7 @@ def asset_main():
             print(car,'written indexed position/normal/UV maxima',maxima.tolist(),flush=True)
     finally:
         source.close()
+    print('CAR PLATFORM PARITY PASS: ' + ', '.join(cars))
     return 0
 
 

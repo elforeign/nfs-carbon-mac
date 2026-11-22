@@ -1,9 +1,12 @@
 """Six private D3DX APIs through native imports and shared resources, no GPU/game.
 
-Good: 90 checks with real hard links; 87 when file-link is denied (case SKIP).
+Good: 97 checks with real hard links; 94 when file-link is denied (case SKIP).
 Synthetic DDS, mips/faces/depth, fill callback, surface copy (including 32-bit into
 DXT1, the car skin composite: the loader before the encoder fails check 85, 82 passed),
 ID3DXBuffer and scratch saves. Disabled APIs fail checks 5/18/33/38/43/52, exit 1.
+Install-directory JPEG rejection returns 80070005 in both builds. The original
+code fails check 62 with 1 readback call and 1 ImageIO finalization. The fix counts
+0 and 0. An allowed JPEG save still exercises both counters once.
 Two runs in one tree: the 2nd PASSES before and after the fix (reproduction not seen here; scratch now cleared anyway).
 Exit 3 when private build artifacts are absent.
 """
@@ -36,6 +39,7 @@ IMPORT_TABLE
 extern void threads_init(void);extern uint32_t private_fixture_device(void),private_fixture_surface(uint32_t,unsigned,unsigned);
 extern const char *game_dir;
 static unsigned checks,callbacks;
+unsigned fixture_readbacks, fixture_encodes;
 #define CHECK(v) do{++checks;if(!(v)){fprintf(stderr,"D3DX CHECK %u line %d failed: %s\n",checks,__LINE__,#v);return 1;}}while(0)
 static uint32_t api(Cpu*c,unsigned i,unsigned n,...){c->esp=0x100000;M32(c->esp)=0xfeed;va_list ap;va_start(ap,n);for(unsigned k=0;k<n;k++)M32(c->esp+4+4*k)=va_arg(ap,uint32_t);va_end(ap);host_import(c,0x100+4*i);if(c->esp!=0x100004+4*n){fprintf(stderr,"bad D3DX stdcall\n");exit(2);}return c->eax;}
 static uint32_t com(Cpu*c,uint32_t self,unsigned slot,unsigned n,...){c->esp=0x100000;M32(c->esp)=0xfeed;M32(c->esp+4)=self;va_list ap;va_start(ap,n);for(unsigned k=1;k<n;k++)M32(c->esp+4+4*k)=va_arg(ap,uint32_t);va_end(ap);dispatch(c,M32(M32(self)+4*slot));if(c->esp!=0x100004+4*n)exit(2);return c->eax;}
@@ -63,6 +67,30 @@ static int run(int argc,char**argv){CHECK(argc==3);game_dir=argv[2];G=mmap(NULL,
  snprintf(path,sizeof path,"%s/../escape.dds",argv[1]);strcpy((char*)G+0x6000,path);CHECK(api(&c,5,5,0x6000u,4u,src,0u,0u)==0x80070005u);
  snprintf(path,sizeof path,"%s/link/escape.dds",argv[1]);strcpy((char*)G+0x6000,path);CHECK(api(&c,5,5,0x6000u,4u,src,0u,0u)==0x80070005u);
  snprintf(path,sizeof path,"%s/asset.dds",argv[2]);strcpy((char*)G+0x6000,path);CHECK(api(&c,5,5,0x6000u,4u,src,0u,0u)==0x80070005u);
+ // A render target goes through the same readback and JPEG encoder as the back buffer.
+ uint32_t usage=obj(src)->usage;
+ obj(src)->usage|=1;
+ snprintf(path,sizeof path,"%s/saved.jpg",argv[1]);
+ strcpy((char*)G+0x6000,path);
+ fixture_readbacks=fixture_encodes=0;
+ CHECK(api(&c,5,5,0x6000u,1u,src,0u,0u)==0);
+ CHECK(fixture_readbacks==1&&fixture_encodes==1);
+ f=fopen(path,"rb");
+ CHECK(f!=NULL);
+ size_t jpeg_header=fread(encoded,1,2,f);
+ fclose(f);
+ CHECK(jpeg_header==2&&encoded[0]==0xff&&encoded[1]==0xd8);
+
+ strcpy((char*)G+0x6000,"C:\\NFSMWnfscarbon000.jpg");
+ fixture_readbacks=fixture_encodes=0;
+ uint32_t denied=api(&c,5,5,0x6000u,1u,src,0u,0u);
+ printf("denied JPEG: hr=%08x readbacks=%u encodes=%u\n",denied,fixture_readbacks,fixture_encodes);
+ CHECK(denied==0x80070005u&&fixture_readbacks==0&&fixture_encodes==0);
+ obj(src)->usage=usage;
+ snprintf(path,sizeof path,"%s/invalid.jpg",argv[1]);
+ strcpy((char*)G+0x6000,path);
+ CHECK(api(&c,5,5,0x6000u,1u,0u,0u,0u)==0x8876086cu);
+ CHECK(access(path,F_OK)==-1&&errno==ENOENT);
  int hardlink=getenv("PRIVATE_D3DX_HARDLINK")&&!strcmp(getenv("PRIVATE_D3DX_HARDLINK"),"1");
  if(hardlink){snprintf(path,sizeof path,"%s/hardlink.dds",argv[1]);strcpy((char*)G+0x6000,path);CHECK(api(&c,5,5,0x6000u,4u,src,0u,0u)==0);
   snprintf(path,sizeof path,"%s/../outside/keep.bin",argv[1]);FILE*keep=fopen(path,"rb");CHECK(keep!=NULL);char sentinel[64]={0};size_t n=fread(sentinel,1,sizeof sentinel,keep);fclose(keep);CHECK(n==sizeof("outside scratch must survive")-1&&!memcmp(sentinel,"outside scratch must survive",sizeof("outside scratch must survive")-1));}
@@ -96,13 +124,26 @@ def build(root,out):
     dst=root/'runtime';table='const struct {uint32_t slot;const char *name;} speed_imports[]={'+','.join('{'+str(0x100+4*i)+','+json.dumps('d3dx9_30.dll!'+name)+'}' for i,name in enumerate(NAMES))+'};const unsigned speed_import_count=6;'
     (out/'test.m').write_text(HARNESS.replace('IMPORT_TABLE',table))
     source=selected_source(dst/'d3d9.m').replace('int private_d3dx_textures(Cpu *c,const char *fn)', 'int fixture_d3dx_real(Cpu *c,const char *fn)')
-    signature='static int px_save_file(const char *guest,const uint8_t *bytes,size_t size){'
-    if source.count(signature)!=1:raise ValueError('save fixture source shape changed')
-    source=source.replace(signature,signature+'''
-    if(getenv("PRIVATE_D3DX_UNSAFE_HARDLINK")&&strstr(guest,"/hardlink.dds")){
-        FILE*f=fopen(guest,"wb");if(!f)return 0;int ok=fwrite(bytes,1,size,f)==size;if(fclose(f))ok=0;return ok;
+    readback='private_surface_readback(s->guest,m,*pitch)'
+    encode='CGImageDestinationFinalize(dest)'
+    assert source.count(readback)==source.count(encode)==1
+    source=source.replace(readback,'(++fixture_readbacks, '+readback+')')
+    source=source.replace(encode,'(++fixture_encodes, '+encode+')')
+    source='extern unsigned fixture_readbacks, fixture_encodes;\n'+source
+    temp_open='openat(dir,temp,O_WRONLY|O_CREAT|O_EXCL|O_NOFOLLOW,0600)'
+    assert source.count(temp_open)==1
+    source=source.replace(temp_open,'fixture_save_open(dir,temp,part)')
+    helper='''
+static int fixture_save_open(int dir,char *temp,const char *part){
+    if(getenv("PRIVATE_D3DX_UNSAFE_HARDLINK")&&!strcmp(part,"hardlink.dds")){
+        strcpy(temp,part);
+        return openat(dir,temp,O_WRONLY|O_TRUNC|O_NOFOLLOW);
     }
-''')
+    return openat(dir,temp,O_WRONLY|O_CREAT|O_EXCL|O_NOFOLLOW,0600);
+}
+'''
+    save=source.rindex('\n',0,source.index(' px_save_file('))+1
+    source=source[:save]+helper+source[save:]
     source+='''
 uint32_t private_fixture_device(void){d3d9_init();dev.self=new_obj(K_DEVICE,vt_device);return dev.self->guest;}
 uint32_t private_fixture_surface(uint32_t t,unsigned f,unsigned l){return texture_surface(obj(t),f,l);}
@@ -169,6 +210,7 @@ def main(*,out_name='d3dx_test'):
         if broken=='unsafe-hardlink':
             assert 'n==sizeof("outside scratch must survive")-1' in r.stderr and keep.read_bytes()!=b'outside scratch must survive'
         else:assert keep.read_bytes()==b'outside scratch must survive'
+        assert not list(scratch.glob('.d3dx-save-*'))
         assert not (folder/'escape.dds').exists() and sorted(p.name for p in outside.iterdir())==['keep.bin'] and not list(game.iterdir())
     print('PRIVATE D3DX REGRESSION PASS six disabled imports rejected');return 0
 

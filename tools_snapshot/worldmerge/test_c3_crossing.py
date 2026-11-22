@@ -79,6 +79,28 @@ class Synthetic(unittest.TestCase):
         untouched = outline(239, square)
         self.assertIs(seam.apply([untouched], (), seam.SHIFT)[0][0], untouched)
 
+    def test_coast_seam_line_sides_north_cut_and_wrong_side_refused(self):
+        self.assertEqual((len(seam.COAST_PALMONT), len(seam.COAST_ROCKPORT)), (29, 11))
+        self.assertFalse(set(seam.COAST_PALMONT) & set(seam.COAST_ROCKPORT))
+        n, c = seam.COAST_NORMAL, seam.COAST_LINE
+        d = lambda p: n[0]*p[0] + n[1]*p[1] - c
+        square = [(-200., -200.), (300., -200.), (300., 300.), (-200., 300.)]   # straddles the line
+        for number, side in ((913, 1.), (2014, -1.)):
+            cut = seam.apply([outline(number, square)], (), seam.COAST_SHIFT)[0][0]
+            cut.validate()
+            self.assertTrue(all(side*d(p) >= .05 - 1e-3 for p in cut.vertices))
+            self.assertTrue(any(abs(side*d(p) - .05) < 1e-3 for p in cut.vertices))
+            # The old crossing placement and other placements leave it untouched.
+            for shift in (seam.SHIFT, (4096., -8192.)):
+                self.assertEqual(seam.apply([outline(number, square)], (), shift)[0][0].raw,
+                                 outline(number, square).raw)
+        north = seam.apply([outline(1317, [(-900., -900.), (-500., -900.), (-500., 0.), (-900., 0.)])], (),
+                           seam.COAST_SHIFT)[0][0]
+        self.assertAlmostEqual(max(p[1] for p in north.vertices), seam.COAST_NORTH, places=3)
+        with self.assertRaisesRegex(ValueError, 'no part on its own side'):
+            seam.apply([outline(913, [(-700., -400.), (-600., -400.), (-600., -350.), (-700., -350.)])], (),
+                       seam.COAST_SHIFT)
+
     def test_sloping_edges_interpolate_the_uncut_axis(self):
         ring = [(6500.,0.),(6700.,200.),(6700.,400.),(6500.,200.)]
         for number, limit, expected in (
@@ -187,7 +209,7 @@ class Private(unittest.TestCase):
         # C3 re-pin: "Keep crossing GPS on retail road chains and complete its junction"
         # (base 6df9b36e): current serialized tile and resident scene rows.
         self.assertEqual(self.report['grid']['tile_bytes'],379872)
-        self.assertEqual(totals,{326:51832628,220:55218232})
+        self.assertEqual(totals,{326:51125052,220:55217976})
         panorama = next(r for r in self.table.rows if r.number == 326)
         self.assertEqual(panorama.entries.count(283),1)
         self.assertEqual(len(panorama.entries),22)
@@ -256,14 +278,14 @@ class Private(unittest.TestCase):
 
     def test_other_placement_hashes(self):
         pins = (
-            (w.DEFAULT_SHIFT,False,'c910f1278bcc3cdff202b13d88b49b04da5c2bd28ab3ddc154cd62f77acee4cc',
-             '15810118ff076c9aa08a649648291d9816e80a0d60908763f52405a531eef525'),
-            (w.DEFAULT_SHIFT,True,'ae114f50e5e346ef92bc8783a2e86d8f399cf9a3a4d9d6ae2358af2457786b03',
-             '15810118ff076c9aa08a649648291d9816e80a0d60908763f52405a531eef525'),
-            ((4096,-8192),False,'fe7d728e38fca4fe8835f3aada1c627f5dd1d08e053357378da18dfdf946a5c7',
-             '078b94d75c6d79f44a03d5c11e8ede37f86af6a969e2e69349b17bdba6f17160'),
-            ((4096,-8192),True,'0686d64fe2c286d15358027d9eebe3e9caa1328cfbb1d3f2c6f5530b16a17e76',
-             '078b94d75c6d79f44a03d5c11e8ede37f86af6a969e2e69349b17bdba6f17160'))
+            (w.DEFAULT_SHIFT,False,'cc154fc5746163678b855231301857105de67c50644527171228973172fa3b7e',
+             '0ccd820a2d83a1a6c95b3393f26d59cd030644e244cf06c2c7e0f419de9148b7'),
+            (w.DEFAULT_SHIFT,True,'b32d7c45a83176d464bf8f1d5518c9bebacfc8ffec3a5667d933beb4c9c48aa6',
+             '0ccd820a2d83a1a6c95b3393f26d59cd030644e244cf06c2c7e0f419de9148b7'),
+            ((4096,-8192),False,'b28990b1deb95623b54d56f47b738aa13f83c094d505886331c5033ebbe2ec3f',
+             '8767d6f340620151948687085dd10f91e6c1baa2d7aa673b4370c769250484dc'),
+            ((4096,-8192),True,'ac4b982d5720b9d61788f3fa13ede7cd5fe71f58221f256e68722748e00ffdbb',
+             '8767d6f340620151948687085dd10f91e6c1baa2d7aa673b4370c769250484dc'))
         for shift,zones,index_hash,stream_hash in pins:
             with self.subTest(shift=shift,zones=zones), tempfile.TemporaryDirectory(dir=self.root) as tmp:
                 report = w.build(w.DEFAULT_MW,w.DEFAULT_CARBON,Path(tmp)/'pair',shift=shift,zones=zones)

@@ -56,6 +56,7 @@
 # quarter-grey 74.2047; missing x2/ambient reject the full-road scene fixture.
 #   recomp/private_skydome_test.py: B2 sky selection and native ownership; auto-discovered
 #   recomp/private_daynight_cars_test.py: B2 car rig by day, key dot sun .9848; kind-2 control; auto-discovered
+#   recomp/private_daylamps_test.py: Carbon traffic quad skips noon (0 draws vs 1 without the gate); auto-discovered
 # Private region coverage: private_world_test, private_files_test and test_worldmerge.
 #   recomp/private_carbon_speech_test.py: CSI v3/IDX + cached sidecars, 14135 native decodes and endian/cache controls.
 #   recomp/private_carbon_music_test.py: PC graphs, 2004 offsets, native XA decode and PC-offset control.
@@ -134,6 +135,14 @@ release_critical="maxperf_career_test maxperf_checkout_test padprompts_shop_test
 # ---- one test: run_one <name> <dir for its scratch files>; exit 0 pass, 3 skip, else fail
 run_one() {
     n=$1; d=$2; mkdir -p "$d"
+    case $n in
+    private_facade_test|private_road_headlight_test|private_worldreflect_test|private_c1load_test|private_shaders_test|test_car_platform_conversion)
+        # Present only in private trees. Run the same fixtures in nightly and named runs.
+        if [ -f runtime/private_suite_inputs.py ]; then
+            for f in recomp/$n.py tests/setup/$n.py; do [ -f "$f" ] && break; done
+            exec "$py" -I runtime/private_suite_inputs.py "$f" "$NFS_GAME"
+        fi ;;
+    esac
     case $n in
     ws2_policy|ws2_policy_test) clang -O1 -Iruntime -Irecomp -Irecomp/out runtime/ws2_policy_test.c -o "$d/t" && exec "$d/t" ;;
     settings_look|settings_look_test) clang $CF -I recomp runtime/settings_look_test.c runtime/settings.c -o "$d/t" && exec "$d/t" ;;

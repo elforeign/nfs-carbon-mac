@@ -16,9 +16,9 @@ sys.path.insert(0,str(HERE))
 from build_private import ignored_output
 
 
-def main():
-    ap=argparse.ArgumentParser();ap.add_argument('--build-only',action='store_true');args=ap.parse_args()
-    root=HERE/'out/carbon';corpus=root/'shaders';shaders=HERE.parent/'host/shaders';library=shaders/'build/libsmtranslate.a'
+def main(corpus=HERE/'out/carbon/shaders', argv=None):
+    ap=argparse.ArgumentParser();ap.add_argument('--build-only',action='store_true');args=ap.parse_args(argv)
+    root=HERE/'out/carbon';shaders=HERE.parent/'host/shaders';library=shaders/'build/libsmtranslate.a'
     if not (corpus/'passes.tsv').exists() or not library.exists():print('SKIP: private shader corpus/build absent');return 3
     out=ignored_output(root/'shader_check');binary=out/'link_check'
     cmd=['clang++','-std=c++17','-O1','-fobjc-arc',str(shaders/'tests/link_check.mm'),str(library),'-framework','Foundation','-framework','Metal','-o',str(binary)]

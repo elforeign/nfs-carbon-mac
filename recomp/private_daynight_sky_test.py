@@ -1,15 +1,11 @@
-"""Dome scattering, original-gradient broken control and protected endpoints.
+"""One native dome gradient, clouds and moon in both camera regions.
 
-Source-domain Y': 143.7020721 (minimum 140), original gradient 72.7290649;
-original fails 220 checks, source passes 4,756 with 864 Metal comparisons.
-Source cloud coordinate (unscaled v1, u-only scroll) on a 4x4 alpha map: error
-0 fixed; the native 2.77x density the old branch kept errs 0.0541986 (3 checks).
-The 108 protected native/night GPU outputs are byte-identical to the pinned
-original gradient. Native uploads cover overlay/city/clock/FE resets. Alpha,
-fog coordinates, native cloud coverage and absent-clock tokens survive.
-Night (native path, imported dome key 1F389568, c17.w=1): error against the
-pinned program at the source coordinate 0 fixed; the 2.77x night sample the old
-code kept differs by 0.0507360 (3 checks; native check 1 fails with the night flag unset); own domes (c17.w=0) byte-identical.
+The native gradient is pinned independently. CPU and Metal comparisons cover
+height, cloud density, clear fraction and day/dusk/night; every output must
+match the previous native-city branch. Removing the day/night blend must fail.
+Native constant uploads are independent of overlay and dome key.
+Good: 2,383 checks / 0 failures, 432 Metal comparisons and 108 bit-identical
+protected Metal outputs; no-lerp control fails the first protected CPU output.
 Private inputs absent: 3. No game is launched.
 """
 from pathlib import Path
@@ -78,11 +74,7 @@ SHADER = r'''
 struct ShaderEntry { uint32_t *tokens, ntokens; };
 static bool submit_on;
 static unsigned compiled;
-#ifdef SKY_OLD_DOMAIN
 static constexpr unsigned expected_tokens=465, expected_constants=17;
-#else
-static constexpr unsigned expected_tokens=531, expected_constants=20;
-#endif
 uint32_t *carbon_daynight_shader(const uint32_t *tokens,uint32_t count,uint32_t *patched_count) {
     return submit_on?carbon_dn_sky_variant(tokens,count,patched_count):nullptr;
 }
@@ -153,17 +145,13 @@ int main(int argc,char **argv) { @autoreleasepool {
         MTLSamplerDescriptor *sd=[MTLSamplerDescriptor new]; sd.minFilter=sd.magFilter=MTLSamplerMinMagFilterNearest;
         sampler=[device newSamplerStateWithDescriptor:sd];
     }
-    for(bool source:{false,true}) for(float z:{0.f,3500.f,7000.f,14000.f}) for(float alpha:{0.f,0.35f,1.f})
+    for(float z:{0.f,3500.f,7000.f,14000.f}) for(float alpha:{0.f,0.35f,1.f})
     for(float clear:{0.f,0.4f,1.f}) for(float n:{0.f,0.5f,1.f}) {
         float constants[256][4]={}; int integers[16][4]={},booleans[16]={};
         const float sky[]={0.12f,0.21f,0.37f,n},haze[]={0.31f,0.38f,0.42f,1},fog[]={0.27f,0.33f,0.39f,1.f/7000};
         memcpy(constants[14],sky,sizeof sky);memcpy(constants[15],haze,sizeof haze);memcpy(constants[16],fog,sizeof fog);
         float native_fog[]={0.215686f,0.305882f,0.341176f,1},bake[]={2,2,1,0.4f};
         memcpy(constants[0],native_fog,sizeof native_fog);memcpy(constants[1],bake,sizeof bake);
-        if(source) {
-            const float rayleigh[]={.291406572f,.384309356f,.481958865f,1},mie[]={.143051176f,.147644651f,.131309167f,0},light[]={0,0,1,1};
-            memcpy(constants[17],rayleigh,16);memcpy(constants[18],mie,16);memcpy(constants[19],light,16);
-        }
         constants[2][0]=1500;constants[2][1]=-2000;constants[2][2]=200;constants[3][0]=0.75f;
         interp::Texture clouds,moon;clouds.texels={0.65f,0.9f,0.2f,alpha};moon.texels={0.2f,0.75f,0.4f,1};
         interp::Context ctx;ctx.c=&constants[0][0];ctx.ci=&integers[0][0];ctx.cb=booleans;ctx.opt=opt;ctx.tex[0]=&clouds;ctx.tex[1]=&moon;
@@ -171,22 +159,13 @@ int main(int argc,char **argv) { @autoreleasepool {
         interp::PSOut before={},after={},prior_out={};std::string error;
         if(!interp::run_ps(original,ctx,input,before,&error)||!interp::run_ps(variant,ctx,input,after,&error)){fprintf(stderr,"%s\n",error.c_str());return 2;}
         if(!interp::run_ps(prior,ctx,input,prior_out,&error))return 2;
-        if(!source&&memcmp(after.oc,prior_out.oc,sizeof after.oc)){fprintf(stderr,"protected CPU endpoint changed n=%g\n",n);return 1;}
+        if(memcmp(after.oc,prior_out.oc,sizeof after.oc)){fprintf(stderr,"protected CPU endpoint changed n=%g\n",n);return 1;}
         float h=fminf(1,fmaxf(0,z/7000)),radius=sqrtf(5000.f*5000+6000.f*6000+(z-7000)*(z-7000));
         float density=alpha*(1-powf(fminf(1,radius/14700),4));
         for(int k=0;k<3;++k) {
             float day=haze[k]+h*(sky[k]-haze[k]);day+=density*(0.5f-day);
             day=fog[k]+clear*(day-fog[k]);
-            if(source) {
-                float mu=(200-z)/sqrtf(3500.f*3500+8000.f*8000+(200-z)*(200-z));
-                day=fminf(1,fmaxf(0,(1+mu*mu)*constants[17][k]+constants[18][k]));
-                day+=density*(.5f-day);
-            }
             check(after.oc[0][k],n==1?before.oc[0][k]:day+n*(before.oc[0][k]-day));
-        }
-        if(source&&z==3500&&alpha==0&&clear==1&&n==0) {
-            auto &v=after.oc[0];float y=255*(.2126f*v[0]+.7152f*v[1]+.0722f*v[2]);
-            printf("SKY DOMAIN Y=%.7f minimum=140\n",y);check(fmaxf(y,140.f),y);
         }
         check(after.oc[0][3],before.oc[0][3]);
         for(int k=1;k<4;++k)for(int j=0;j<4;++j)check(after.oc[k][j],before.oc[k][j]);
@@ -203,40 +182,20 @@ int main(int argc,char **argv) { @autoreleasepool {
             [enc setBytes:booleans length:sizeof booleans atIndex:4];[enc setBytes:&aux length:sizeof aux atIndex:5];
             for(int k=0;k<2;++k){[enc setTexture:textures[k] atIndex:k];[enc setSamplerState:sampler atIndex:k];}
             [enc dispatchThreads:MTLSizeMake(1,1,1) threadsPerThreadgroup:MTLSizeMake(1,1,1)];
-            if(!source) {
+            {
                 [enc setComputePipelineState:prior_pipeline];[enc setBuffer:control offset:0 atIndex:1];
                 [enc dispatchThreads:MTLSizeMake(1,1,1) threadsPerThreadgroup:MTLSizeMake(1,1,1)];
             }
             [enc endEncoding];[command commit];[command waitUntilCompleted];
             if(command.error)return 2;
-            if((!source)&&memcmp(control.contents,out.contents,4*sizeof(float))) {
-                fprintf(stderr,"protected GPU endpoint changed: source=%d n=%g\n",source,n);return 1;
+            if(memcmp(control.contents,out.contents,4*sizeof(float))) {
+                fprintf(stderr,"protected GPU endpoint changed: n=%g\n",n);return 1;
             }
-            if(!source)++protected_checks;
+            ++protected_checks;
             for(int k=0;k<4;++k){check(((float *)out.contents)[k],after.oc[0][k]);++gpu_checks;}
         }
     }
-    {   // Cloud coordinate: 4x4 alpha map, the source branch samples unscaled v1 with a u-only scroll.
-        float constants[256][4]={}; int integers[16][4]={},booleans[16]={};
-        const float rayleigh[]={.291406572f,.384309356f,.481958865f,1},mie[]={.143051176f,.147644651f,.131309167f,0},light[]={0,0,1,1};
-        memcpy(constants[17],rayleigh,16);memcpy(constants[18],mie,16);memcpy(constants[19],light,16);
-        constants[2][0]=1500;constants[2][1]=-2000;constants[2][2]=200;constants[3][0]=0.75f;
-        interp::Texture clouds,moon;clouds.w=clouds.h=4;clouds.texels.resize(64);moon.texels={0.2f,0.75f,0.4f,1};
-        for(int k=0;k<16;++k){clouds.texels[4*k]=0.65f;clouds.texels[4*k+1]=0.9f;clouds.texels[4*k+2]=0.2f;clouds.texels[4*k+3]=(k+1)/17.f;}
-        interp::Context ctx;ctx.c=&constants[0][0];ctx.ci=&integers[0][0];ctx.cb=booleans;ctx.opt=opt;ctx.tex[0]=&clouds;ctx.tex[1]=&moon;
-        interp::PSIn input={};input.tex[0]={0.3f,0.6f,0,1};input.tex[1]={5000,6000,3500,1};input.fog={1,0,0,0};
-        interp::PSOut after={};std::string error;
-        if(!interp::run_ps(variant,ctx,input,after,&error))return 2;
-        float u=0.3f-0.75f*0.14f,radius=sqrtf(5000.f*5000+6000.f*6000+3500.f*3500);
-        float alpha=clouds.texels[4*(int(0.6f*4)*4+int(u*4))+3],density=alpha*(1-powf(radius/14700,4));
-        float mu=(200-3500.f)/sqrtf(3500.f*3500+8000.f*8000+3300.f*3300),worst_cloud=0;
-        for(int k=0;k<3;++k) {
-            float day=fminf(1,fmaxf(0,(1+mu*mu)*constants[17][k]+constants[18][k]));day+=density*(.5f-day);
-            worst_cloud=fmaxf(worst_cloud,fabsf(after.oc[0][k]-day));check(after.oc[0][k],day);
-        }
-        printf("SKY CLOUD UV error=%.7f (unscaled v, u-only scroll)\n",worst_cloud);
-    }
-    {   // Night (n=1): the native path itself samples the dome once over v, equal to the pinned program at the 2.77x-equivalent coordinate.
+    {   // Native night cloud scroll and moon sampling survive on a nonuniform texture.
         float constants[256][4]={}; int integers[16][4]={},booleans[16]={};
         const float sky[]={0.12f,0.21f,0.37f,1},haze[]={0.31f,0.38f,0.42f,1},fog[]={0.27f,0.33f,0.39f,1.f/7000};
         memcpy(constants[14],sky,sizeof sky);memcpy(constants[15],haze,sizeof haze);memcpy(constants[16],fog,sizeof fog);
@@ -249,21 +208,21 @@ int main(int argc,char **argv) { @autoreleasepool {
         interp::PSIn input={};input.tex[0]={0.3f,0.6f,0,1};input.tex[1]={5000,6000,3500,1};input.fog={1,0,0,0};
         const float rayleigh[]={.291406572f,.384309356f,.481958865f,1},mie[]={.143051176f,.147644651f,.131309167f,0},light[]={0,0,1,1};
         interp::PSOut got={},native_dome={},want={};std::string error;
-        // Own dome: c17.w=1 at night. Reference: the pinned program at the v1 whose 2.77x sample is the source coordinate (0.3-0.105, 0.6).
+        // Reserved constants must not switch the native cloud coordinate or moon path.
         memcpy(constants[17],rayleigh,16);memcpy(constants[18],mie,16);memcpy(constants[19],light,16);
         if(!interp::run_ps(variant,ctx,input,got,&error))return 2;
-        interp::PSIn reference=input;reference.tex[0]={0.3f/2.77f,(0.6f+0.21f)/2.77f,0,1};
+        interp::PSIn reference=input;
         if(!interp::run_ps(original,ctx,reference,want,&error))return 2;
         float worst_night=0;for(int k=0;k<3;++k){worst_night=fmaxf(worst_night,fabsf(got.oc[0][k]-want.oc[0][k]));check(got.oc[0][k],want.oc[0][k]);}
-        // The native 2.77x night sample on the same input reads another texel.
+        // Native night uses the same input coordinate, including the authored scroll.
         interp::PSOut scaled={};if(!interp::run_ps(original,ctx,input,scaled,&error))return 2;
         float scaled_gap=0;for(int k=0;k<3;++k)scaled_gap=fmaxf(scaled_gap,fabsf(scaled.oc[0][k]-want.oc[0][k]));
-        if(!(scaled_gap>0.03f)){fprintf(stderr,"night control has no cloud contrast\n");return 2;}
-        // Carbon's own domes (c17.w=0) run the original night path unchanged.
+        if(scaled_gap != 0){fprintf(stderr,"native night cloud coordinate changed\n");return 2;}
+        // Clearing unused constants also leaves the native output unchanged.
         memset(constants[17],0,48);
         if(!interp::run_ps(variant,ctx,input,native_dome,&error))return 2;
         for(int k=0;k<4;++k)check(native_dome.oc[0][k],scaled.oc[0][k]);
-        printf("SKY NIGHT CLOUD UV error=%.7f (native night samples the pinned program's source coordinate; the 2.77x sample differs by %.7f)\n",worst_night,scaled_gap);
+        printf("SKY NIGHT CLOUD UV native_error=%.7f reserved_constants_gap=%.7f\n",worst_night,scaled_gap);
     }
     printf("SKY SHADER checks=%u GPU=%u protected_GPU=%u failures=%u max_error=%.9g\n",checks,gpu_checks,protected_checks,failures,worst);
     sm_result_free(&result);free(prior_tokens);free(patched);return failures?1:0;
@@ -277,9 +236,9 @@ NATIVE = r'''
 uint8_t *G;int diag_on;
 uint64_t host_ticks(void) { return 0; }
 void diag_event(const char *format,...) {(void)format;}
-static float pixels[6][4];static unsigned pixel_uploads,calls,checks;
+static float pixels[3][4];static unsigned pixel_uploads,calls,checks;
 uint32_t call_guest(Cpu *c,uint32_t fn,int n,const uint32_t *args) {
-    assert(n==4&&args[0]==0x3000&&args[3]==(fn==0xf1005678?6u:3u));
+    assert(n==4&&args[0]==0x3000&&args[3]==3u);
     if(fn==0xf1005678){assert(args[1]==14);memcpy(pixels,G+args[2],sizeof pixels);++pixel_uploads;}
     else assert(fn==0xf1001234&&args[1]==240);
     c->eax=0x777;c->esp+=80;return 0;
@@ -322,29 +281,13 @@ int main(int argc,char **argv) {
         M32(c.esp+8)=0x5000;expected=c;fog_original(&expected);float original[10];memcpy(original,G+0x5000,sizeof original);
         carbon_daynight_fog(&c,fog_original);CHECK(!memcmp(G+0x5000,original,sizeof original)&&!memcmp(&c,&expected,sizeof c));
     }
-    if(argc>1 && n==1) {
-        M32(0xA99BBC)=6;M32(0xA73358)=1;M32(0xB77918)=0x1F389568;
-        setenv("NFS_CARBON_TRACK_OVERLAY","fixture",1);
-        carbon_dn_sky_constants(&c);CHECK(pixels[3][3]==1);
-        for(unsigned other=0;other<2;++other){M32(0xB77918)=other?0xBE43EDBBu:0xED85BA82u;carbon_dn_sky_constants(&c);CHECK(pixels[3][3]==0);}
-    }
-    if(argc>1 && n<1) {
-        M32(0xA99BBC)=6;M32(0xA73358)=1;M32(0xB77918)=0x1F389568;
-        setenv("NFS_CARBON_TRACK_OVERLAY","fixture",1);
-        carbon_dn_sky_constants(&c);CHECK(pixels[3][3]==1);
-        for(int k=0;k<3;++k) {
-            double br=sky[k]*(.0001+.0099*.01),bm=haze[k]*(.0001+.0099*.001);
-            double gain=10*(1-exp(-15000*(br+bm)))/(br+bm);
-            CHECK(fabs(pixels[3][k]-br*.059683103*gain)<1e-6);
-            CHECK(fabs(pixels[4][k]-bm*.07957747*gain)<1e-6);
-        }
-        for(int state=0;state<7;++state) {
-            M32(0xB77918)=state==0?0xED85BA82:state==1?0xBE43EDBB:0x1F389568;
-            M32(0xA73358)=state==2?0:1;
-            setenv("NFS_CARBON_TRACK_OVERLAY",state==3?"":"fixture",1);
-            carbon_dn_clock.ready=state!=4;carbon_dn_clock.blended=state!=5;
-            M32(0xA99BBC)=state==6?3:6;
-            carbon_dn_sky_constants(&c);CHECK(pixels[3][3]==(state==4||state==5?1:0));
+    if(argc>1) {
+        M32(0xA99BBC)=6;M32(0xA73358)=1;
+        carbon_dn_sky_constants(&c);float saved[3][4];memcpy(saved,pixels,sizeof saved);
+        for(unsigned city=0;city<2;++city) {
+            M32(0xB77918)=city?0xED85BA82u:0xBE43EDBBu;
+            setenv("NFS_CARBON_TRACK_OVERLAY",city?"fixture":"",1);
+            carbon_dn_sky_constants(&c);CHECK(!memcmp(saved,pixels,sizeof saved));
         }
     }
     printf("SKY NATIVE n=%.1f checks=%u uploads=%u\n",n,checks,pixel_uploads);free(G);return 0;
@@ -367,7 +310,7 @@ def fixtures(out, tokens):
     (out/'carbon_daynight_grade.h').write_bytes((HERE/'private_runtime/carbon_daynight_grade.h').read_bytes())
     shaders = ROOT/'host/shaders'
     assert hashlib.sha256(OLD_GRADIENT.encode()).hexdigest() == OLD_GRADIENT_SHA256
-    for name, text in [('good', variant), ('old-gradient', '#define SKY_OLD_DOMAIN 1\n'+OLD_GRADIENT), ('no-lerp', variant.replace('0x04000012u, 0x80070800u, 0xa0ff000eu, 0x80e4000bu, 0x80e4000au', '0x02000001u, 0x80070800u, 0x80e4000bu, 0x00000000u, 0x00000000u')), ('scaled-clouds', variant.replace('0x8002000cu, 0x90550001u', '0x8002000cu, 0x80550000u')), ('scaled-night', variant.replace('0x80020000u, 0x90550001u', '0x80020000u, 0x80550000u'))]:
+    for name, text in [('good', variant), ('no-lerp', variant.replace('0x04000012u, 0x80070800u, 0xa0ff000eu, 0x80e4000bu, 0x80e4000au', '0x02000001u, 0x80070800u, 0x80e4000bu, 0x00000000u, 0x00000000u'))]:
         assert name == 'good' or text != variant
         (out/'variant.inc').write_text(text)
         binary = out/('shader-'+name)
@@ -377,7 +320,7 @@ def fixtures(out, tokens):
         print(name+': '+run([binary, out/'tokens.bin'], 0 if name == 'good' else 1))
     env = dict(os.environ)
     env.pop('NFS_DAYNIGHT', None)
-    for name, text in [('good', source), ('night-flag-ignored', source.replace('if (imported) constants[3][3] = 1;', '')), ('fog-night-ignored', source.replace('haze+n*(native-haze)', 'haze+0*(native-haze)').replace('fog && tod && n < 1', 'fog && tod'))]:
+    for name, text in [('good', source), ('fog-night-ignored', source.replace('haze+n*(native-haze)', 'haze+0*(native-haze)').replace('fog && tod && n < 1', 'fog && tod'))]:
         assert name == 'good' or text != source
         (out/'carbon_daynight_sky.h').write_text(text)
         binary = out/('native-'+name)
@@ -404,7 +347,7 @@ def main():
     for row in feature['bindings'].values():
         assert hashlib.sha256((HERE/'private_runtime'/row['source']).read_bytes()).hexdigest() == row['sha256']
     hook = json.loads((HERE/'private_runtime/hooks/daynight_sky.json').read_text())['hooks']
-    assert len(hook) == 1 and hook[0]['address'] == '0073E890' and hook[0]['provider'] == 'carbon_daynight_fog'
+    assert len(hook) == 2 and hook[1]['provider'] == 'carbon_daynight_view' and hook[0]['address'] == '0073E890' and hook[0]['provider'] == 'carbon_daynight_fog'
     assert hashlib.sha256(pe.read(0x0073E890, 16)).hexdigest() == hook[0]['witness']['sha256']
     out = ignored_output(HERE/'out/carbon/daynight_sky_check')
     capture = io.StringIO()

@@ -51,7 +51,13 @@ static uint32_t crt(Cpu *c, const char *name, uint32_t ret, uint32_t value) {
     CHECK(call.esp == sp + 4, "cdecl stack cleanup");
     return call.eax;
 }
+static unsigned pool7_full, pool_calls;
+static uint32_t pool_flags[2];
 static void pool(Cpu *c) {
+    if (pool_calls < 2) pool_flags[pool_calls] = arg(c, 1);
+    ++pool_calls;
+    /* Streaming pool 7 with no block large enough: 00476B20 returns 0. */
+    if (pool7_full && (arg(c, 1) & 0xFu) == 7u) { c->eax = 0; c->esp += 4; return; }
     /* The decoded pool requests a 16-byte list node, then the raw backing.
      * Keep the two return sites distinct, as in 00476560. */
     uint32_t node = crt(c, "malloc", 0x00476677, 16);
@@ -66,6 +72,7 @@ static uint32_t request(Cpu *c, uint32_t size, uint32_t flags, uint32_t ret) {
     M32(c->esp) = ret; M32(c->esp + 4) = size; M32(c->esp + 8) = flags;
     carbon_y00_allocate(c, pool);
     CHECK(c->esp == 0x8004 && c->ebx == 11 && c->esi == 22 && c->edi == 33 && c->ebp == 44, "wrapper preserves native ABI");
+    CHECK(M32(0x8004) == size && M32(0x8008) == flags, "wrapper leaves the caller's arguments");
     return c->eax;
 }
 static void release(Cpu *c, uint32_t p) { crt(c, "free", 0x00476542, p); }
@@ -86,6 +93,22 @@ int main(void) {
     CHECK(heap_owns(resource, p), "other flags unchanged"); release(&c, p);
     p = crt(&c, "malloc", 0x0047668A, raw);
     CHECK(heap_owns(resource, p), "scope restored outside hook"); release(&c, p);
+
+    /* A full pool 7: only 006ADBC0's compacted section copy (return 006ADC36) moves to the main heap. */
+    pool7_full = 1; pool_calls = 0;
+    p = request(&c, 18011520, 0x2087, 0x006ADC36);
+    CHECK(p && heap_owns(resource, p) && pool_calls == 2 && pool_flags[0] == 0x2087 && pool_flags[1] == 0x2000,
+          "section copy leaves a full pool 7 for the main heap");
+    release(&c, p);
+    pool_calls = 0;
+    p = request(&c, 18708736, 0x2087, 0x0079EC0F);
+    CHECK(!p && pool_calls == 1, "other pool 7 callers keep the native 0");
+    pool_calls = 0;
+    p = request(&c, 18011520, 0x2000, 0x006ADC36);
+    CHECK(p && pool_calls == 1, "section copy outside pool 7 unchanged"); release(&c, p);
+    pool7_full = 0; pool_calls = 0;
+    p = request(&c, 18011520, 0x2087, 0x006ADC36);
+    CHECK(p && pool_calls == 1 && pool_flags[0] == 0x2087, "section copy that fits stays in pool 7"); release(&c, p);
 
     uint32_t holes[5], pins[5];
     for (int i = 0; i < 5; ++i) {

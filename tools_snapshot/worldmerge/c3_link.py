@@ -270,14 +270,17 @@ def render_row(source, m, t, vertices, model):
     return bytes(row)
 
 
-def bake(source, instance, m, t, article_id):
-    """Copy a complete article, quantizing world vertices on the 1/128 m grid."""
+def bake(source, instance, m, t, article_id, move=None):
+    """Copy a complete article, quantizing world vertices on the 1/128 m grid.
+
+    move, when given, replaces the affine map (a per-vertex bake)."""
     row = source.instances[instance*64:(instance+1)*64]
     article = source.articles[struct.unpack_from('<H', row, 26)[0]]
     require(article[4:8] == bytes(4), 'link donor carries barriers')
     translation = struct.unpack_from('<3f', row, 48)
-    def move(v):
-        return add(mv(m, v), t)
+    if move is None:
+        def move(v):
+            return add(mv(m, v), t)
     vertices = [move(v) for f in source.faces(instance) for v in f.vertices]
     lo, hi = bounds(vertices)
     center = tuple(round((a+b)*64)/128 for a, b in zip(lo, hi))

@@ -35,14 +35,14 @@ from formats import TrackIndex, Chunk
 import visibility
 
 PAIR_SHA256 = {
-    'L5RA.BUN': '4d09e48aa8fc524f61430c008ee90c07a43f7af344818cdc0ad83d24004591ec',
-    'STREAML5RA.BUN': '34a46c86781b7b3245fdff04a7451fbf58bba360743475e117ce1547e972a525',
+    'L5RA.BUN': 'cc154fc5746163678b855231301857105de67c50644527171228973172fa3b7e',
+    'STREAML5RA.BUN': '0ccd820a2d83a1a6c95b3393f26d59cd030644e244cf06c2c7e0f419de9148b7',
 }
 # C3 pair includes converted prop rows and GlossyWindow GLASS_REFLECT with
 # retained/reordered normals and the source-effect-5/1 identity words.
 C3_PAIR_SHA256 = {
-    'L5RA.BUN': '57d8d71befd0c86823a397ba4d72b249f46180a926e682d348c564d69cd31dca',
-    'STREAML5RA.BUN': '2d042b20bf882755108e497233ecfa48b213abed5a3a713e09bb4bc335756807',
+    'L5RA.BUN': '574ddbe77352a8c6d0b315612a0578ec0c9f4a013f9aee5a5b416d08ec8b3228',
+    'STREAML5RA.BUN': '567d4487620828b792befddcad3c434b9070f12b025f4bca9ff22227dbafe5c8',
 }
 POOL, WORLD_SHARE, HEAP_MIB = 139059200, 71680000, 752
 FRAME = re.compile(r'^f(\d+) t\d+ ')
@@ -79,9 +79,9 @@ def world_rows(tracks, pinned=True):
     return rows, sizes
 
 
-def broken_index(tracks, out):
+def broken_index(tracks, out, *, hashes=PAIR_SHA256):
     """Change exactly the serialized rectangle width; clone the stream."""
-    verify_pair(tracks)
+    verify_pair(tracks, hashes)
     from collision import CDAT, RECT
     from region import collision_body, collision_tags
     index = TrackIndex((tracks / 'L5RA.BUN').read_bytes())

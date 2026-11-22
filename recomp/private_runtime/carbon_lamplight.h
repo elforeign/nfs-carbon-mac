@@ -1,4 +1,4 @@
-/* Optional local world lighting from loaded street-light records. */
+/* Optional local world lighting from loaded street and imported tunnel records. */
 #include "lighting_colour.h"
 extern int postfx_look_variant(const char *);
 extern float carbon_dn_lamps_level(void);
@@ -10,6 +10,7 @@ static void carbon_lamplight_init(void) {
     e=diag_on?getenv("BOOT_DIAG_LAMPLIGHT_SHIFT"):NULL;
     carbon_lamplight_shift=e && !strcmp(e,"1");
 }
+/* LMP2 uses inner < 0 to store the imported tunnel's negative intensity. */
 typedef struct {float position[3],inner,outer,rgb[3];uint32_t hash;} CarbonLamp;
 static CarbonLamp *carbon_lamps;
 static size_t carbon_lamps_count,carbon_lamps_capacity;
@@ -35,15 +36,20 @@ static void carbon_lamplight_refresh(void) {
             if(M8(r+7)!=1 || M8(r+4)!=2)continue;
             char name[35];
             for(unsigned j=0;j<34;j++) {unsigned c=M8(r+0x3eu+j);name[j]=(c>='A'&&c<='Z')?c+('a'-'A'):c;}
-            name[34]=0;if(!strstr(name,"street"))continue;
+            name[34]=0;
+            int tunnel=!strncmp(name,"x360_tunnel_",12);
+            if(!tunnel && !strstr(name,"street"))continue;
             CarbonLamp lamp={.position={MF32(r+0x10),MF32(r+0x14),MF32(r+0x18)},
-                .inner=MF32(r+0x30),.outer=MF32(r+0x1c),.hash=M32(r)};
+                .inner=tunnel?-MF32(r+0x2c):MF32(r+0x30),.outer=MF32(r+0x1c),.hash=M32(r)};
             if(!isfinite(lamp.position[0])||!isfinite(lamp.position[1])||!isfinite(lamp.position[2])||
                 !isfinite(lamp.outer)||lamp.outer<1||lamp.outer>100||!isfinite(lamp.inner))continue;
-            lamp.inner=fminf(lamp.outer,fmaxf(0,lamp.inner));
+            if(tunnel && !(lamp.inner<0))continue;
             uint32_t rgb=M32(r+0xc);
             for(unsigned j=0;j<3;j++)lamp.rgb[j]=((rgb>>(j*8))&255)/255.0f;
-            lighting_colour_adapt(lamp.rgb);
+            if(!tunnel) {
+                lamp.inner=fminf(lamp.outer,fmaxf(0,lamp.inner));
+                lighting_colour_adapt(lamp.rgb);
+            }
             if(carbon_lamps_count==carbon_lamps_capacity) {
                 size_t capacity=carbon_lamps_capacity?carbon_lamps_capacity*2:256;
                 CarbonLamp *next=realloc(carbon_lamps,capacity*sizeof *next);
@@ -53,10 +59,12 @@ static void carbon_lamplight_refresh(void) {
         }
     }
     carbon_lamps_signature=signature;
-    if(diag_on)diag_event("lamplight packs=%u street_records=%zu",packs,carbon_lamps_count);
+    if(diag_on)diag_event("lamplight packs=%u records=%zu",packs,carbon_lamps_count);
 }
 #define CARBON_LAMPLIGHT_GAIN 0.8f
-/* Three aligned vectors per lamp; rgb.w holds the squared inner radius. */
+/* Main-view scene flare (0074D330): linear fade in squared camera distance. */
+static const float carbon_lamp_fade_start2=30000.f,carbon_lamp_fade_end2=40000.f;
+/* rgb.w holds the squared inner radius; range.x holds tunnel intensity. */
 typedef struct {float position[4],rgb[4],range[4];} CarbonLampGPU;
 typedef struct {float proj[4],size[4],rect[4],bounds[4],tune[4];CarbonLampGPU lamps[24];} CarbonLampParams;
 static unsigned carbon_lamplight_select(uint32_t platform,float level,CarbonLampParams *k,unsigned *overflow) {
@@ -66,8 +74,9 @@ static unsigned carbon_lamplight_select(uint32_t platform,float level,CarbonLamp
     for(unsigned j=0;j<3;j++)camera[j]=-(m[12]*m[j*4]+m[13]*m[j*4+1]+m[14]*m[j*4+2]);
     for(size_t i=0;i<carbon_lamps_count;i++) {
         const CarbonLamp *lamp=&carbon_lamps[i];float d2=0;
+        if(!(level>0) && lamp->inner>=0)continue;
         for(unsigned j=0;j<3;j++){float d=lamp->position[j]-camera[j];d2+=d*d;}
-        if(d2>=150*150)continue;
+        if(d2>=carbon_lamp_fade_end2)continue;
         ++candidates;
         unsigned at=count;
         if(at==24){if(d2>=distances[23])continue;at=23;}
@@ -78,13 +87,18 @@ static unsigned carbon_lamplight_select(uint32_t platform,float level,CarbonLamp
     *overflow=candidates-count;
     for(unsigned i=0;i<count;i++) {
         const CarbonLamp *lamp=&carbon_lamps[indices[i]];CarbonLampGPU *out=&k->lamps[i];
-        float fade=fminf(1,(150-sqrtf(distances[i]))/30)*level;
+        int tunnel=lamp->inner<0;
+        float fade=fminf(1,(carbon_lamp_fade_end2-distances[i])/
+                            (carbon_lamp_fade_end2-carbon_lamp_fade_start2));
+        if(!tunnel)fade*=level;
         for(unsigned j=0;j<3;j++) {
             /* The diagnostic control moves only emission, not native flares. */
             out->position[j]=(lamp->position[0]+(shift?40:0))*m[j]+lamp->position[1]*m[4+j]+lamp->position[2]*m[8+j]+m[12+j];
             out->rgb[j]=lamp->rgb[j]*fade;
         }
-        out->position[3]=lamp->outer*lamp->outer;out->rgb[3]=lamp->inner*lamp->inner;
+        out->position[3]=lamp->outer*lamp->outer;
+        out->rgb[3]=tunnel?0:lamp->inner*lamp->inner;
+        out->range[0]=tunnel?-lamp->inner:0;
         if(diag_on && diag_shot_due(diag_current_frame()+1))
             diag_event("lamplight source=%08X xyz=%.4f,%.4f,%.4f camera_distance=%.4f inner=%.3f outer=%.3f rgb=%.4f,%.4f,%.4f",lamp->hash,lamp->position[0],lamp->position[1],lamp->position[2],sqrtf(distances[i]),lamp->inner,lamp->outer,lamp->rgb[0],lamp->rgb[1],lamp->rgb[2]);
     }
@@ -102,8 +116,12 @@ static const char *carbon_lamplight_shader =
 "float3 p=ao_point(i.uv,raw,c.k),n=ao_normal(z,i.uv,c.k),energy=float3(0);"
 "for(uint j=0;j<uint(c.k.tune.x);++j){Lamp light=c.lamps[j];float3 delta=light.position.xyz-p;float d2=dot(delta,delta);"
 "if(d2>=light.position.w)continue;"
+"float incidence=max(dot(n,delta)*rsqrt(max(d2,1e-6)),0.0);"
+// X360 09C0DE10 diffuse lobe. The overlay stores its authored radius and
+// intensity, and these highway contexts all use the same first-light gain.
+"if(light.range.x>0.0){energy+=light.rgb.xyz*float3(1.0,0.65,0.15)*incidence*(3.0*light.range.x/(2.0*d2+light.range.x));continue;}"
 "float fade=d2<=light.rgb.w?1.0:clamp((light.position.w-d2)/max(light.position.w-light.rgb.w,1e-6),0.0,1.0);"
-"energy+=light.rgb.xyz*c.k.tune.y*fade*max(dot(n,delta)*rsqrt(max(d2,1e-6)),0.0)*(36.0/max(d2,36.0));}"
+"energy+=light.rgb.xyz*c.k.tune.y*fade*incidence*(36.0/max(d2,36.0));}"
 "return float4(energy*cover,0);}\n";
 static id<MTLLibrary> carbon_lamplight_library;
 static id<MTLRenderPipelineState> carbon_lamplight_pso[3][9];
@@ -179,7 +197,7 @@ static void carbon_lamplight_apply(void) {
     if(!carbon_lamplight_on)return;
     if(diag_on && postfx_look_variant("lamplightoff"))return;
     if(M32(0x00A99BBCu)!=6)return;
-    float level=carbon_dn_lamps_level();if(!(level>0))return;
+    float level=carbon_dn_lamps_level();
     uint32_t platform=M32(0x00B4AF90u);if(!platform)return;
     float px=MF32(platform+0x40),py=MF32(platform+0x54),a=MF32(platform+0x68),b=MF32(platform+0x78);
     float zn=-b/a,zf=-b/(a-1);

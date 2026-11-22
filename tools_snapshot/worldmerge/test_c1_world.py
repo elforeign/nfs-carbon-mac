@@ -3,7 +3,7 @@
 Valid: 1,433 unique records, 780 identities/rows, largest row 71, 641/704
 active/serialized drivable; 8,988/12,328/1,524/2,148 roads; 60,955 slots,
 4,165 occupied; 853 packs; duplicate/new-unresolved IDs 0. Actual row 1319
-is 70,481,632 / 71,680,000 bytes. Exact-offset grounded 2,522 + 2,319;
+is 69,774,568 / 71,680,000 bytes. Exact-offset grounded 2,522 + 2,319;
 serialized float32 road queries give 2,510, reported separately.
 Nearby shift (4096,-8192): 192 x 194 = 37,248 slots, 4,171 occupied,
 1,433 records, 951/962 native payloads exact; exact grounded 2,522/4,385,
@@ -18,9 +18,8 @@ Required broken files: unshifted geometry 0/4,385 grounded (valid 2,522);
 (valid 48); 512/512 drivable (valid 641/704); rectangle width 159
 (valid 365). All five must fail the full pair checker, 0/5 accepted.
 Synthetic checks always run. Missing private archives exits 3; no game runs.
-Sky scenery submissions: exclusion bit present 0, removed 1; broken flags rejected.
-Sky texture sentinel lookups: valid 0/1, import dropped 1/1; broken pair rejected.
-Sky source LOD aliases: valid 0, one unchanged LOD 1; broken pair rejected 1/1.
+Sky imported solids/cloud providers/scenery references: 0/0/0; one unchanged
+native global solid. Restoring the old imported key must fail the pair checker.
 Global tables: off 442/155/1238 -> on 1147/483/2614. Added broken pairs:
 unmapped IDs 57 collisions (valid 0), unshifted source zones 705 (valid 0),
 source-first markers 1 (valid 0), split bucket ranges 1 (valid 0), barriers
@@ -41,7 +40,6 @@ HERE = Path(__file__).resolve().parent
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(HERE))
 import c1_world as w
-import dome
 import zones as z
 from formats import Chunk, FormatError, Section, TrackIndex, chunks
 
@@ -287,13 +285,50 @@ class Synthetic(unittest.TestCase):
                         patch.object(w, 'check', return_value={'ok':True}) as checker:
                     w.build(root/'mw', root/'carbon', root/str(shift), shift=shift)
                     self.assertEqual(writer.call_args.kwargs, {'zones':False,'shift':shift})
-                    self.assertEqual(checker.call_args.kwargs, {'shift':shift})
+                    self.assertEqual(checker.call_args.kwargs, {'shift':shift,'street_lamps':False})
             for options, expected in (([], w.DEFAULT_SHIFT),
                                       (['--shift','4096','-8192'], [4096.,-8192.])):
                 with patch.object(w, 'build', return_value={}) as build, \
                         patch.object(w.Path, 'is_file', return_value=True):
                     self.assertEqual(w.main(['--out',str(root/'cli'),*options]), 0)
                     self.assertEqual(build.call_args.kwargs['shift'], expected)
+
+    def test_street_lamps_default_off_and_explicit_builder_cli(self):
+        import street_lamps
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for enabled in (False, True):
+                with patch.object(w, '_write_pair'), patch.object(w, 'check', return_value={}) as check, \
+                        patch.object(street_lamps, 'apply') as apply:
+                    w.build(root/'mw', root/'carbon', root/str(enabled), street_lamps=enabled)
+                    self.assertEqual(apply.call_count, int(enabled))
+                    self.assertEqual(check.call_args.kwargs['street_lamps'], enabled)
+                with patch.object(w, 'build', return_value={}) as build, \
+                        patch.object(w.Path, 'is_file', return_value=True):
+                    w.main(['--out',str(root/'cli'), *(['--street-lamps'] if enabled else [])])
+                    self.assertEqual(build.call_args.kwargs['street_lamps'], enabled)
+
+    def test_precull_rows_follow_a_32_m_placement(self):
+        # Camera cell (y=3, x=5) culls; moved by render (+64, -32) the same camera spot is cell (2, 7).
+        row = bytearray(128)
+        row[(3*32+5) >> 3] |= 1 << ((3*32+5) & 7)
+        moved = w.rotate_precull(bytes(row)*2, (64., -32.))
+        expected = bytearray(128)
+        expected[(2*32+7) >> 3] |= 1 << ((2*32+7) & 7)
+        self.assertEqual(moved, bytes(expected)*2)
+        # Wraps on the 1,024 m torus; 1,024 m multiples leave rows unchanged.
+        corner = w.rotate_precull(bytes(row), (-6*32., 29*32.))
+        k = ((3+29) % 32)*32 + (5-6) % 32
+        self.assertEqual(corner, bytes(b if i != k >> 3 else 1 << (k & 7) for i, b in enumerate(bytes(128))))
+        rows = bytes(range(256))*2
+        for shift in ((8192., 0.), (-1024., 2048.)):
+            self.assertEqual(w.rotate_precull(rows, shift), rows)
+        # Writer and the checker's independent oracle agree; an unrotated row is rejected by the oracle.
+        for shift in ((-1728., -5056.), (32., 0.), (0., -32.)):
+            self.assertEqual(w.rotate_precull(rows, shift), w._moved_precull(rows, shift))
+            self.assertNotEqual(rows, w._moved_precull(rows, shift))
+        with self.assertRaises(FormatError):
+            w.rotate_precull(rows, (16., 0.))
 
     def test_placement_period_polygon_contacts_grid_limit_and_cell_clearance(self):
         for bad in ((4095,0), (4096,-8191), (float('nan'),0), (0,float('inf')), (0,), 'XZ'):
@@ -321,7 +356,7 @@ class Synthetic(unittest.TestCase):
             w._placement_grid(native,city(96.*65536),(0.,0.))
         with tempfile.TemporaryDirectory() as tmp:
             out = Path(tmp)/'invalid'
-            with self.assertRaisesRegex(FormatError,'X=1 m must be a multiple of 4096 m'):
+            with self.assertRaisesRegex(FormatError,'X=1 m must be a multiple of 32 m'):
                 w.build(Path(tmp),Path(tmp),out,shift=(1,0))
             self.assertFalse(out.exists())
             self.assertFalse(list(Path(tmp).glob('.c1-world-*')))
@@ -389,136 +424,48 @@ class Private(unittest.TestCase):
         cls.merged = cls.root/'zones'
         cls.zones_report = w.build(w.DEFAULT_MW,w.DEFAULT_CARBON,cls.merged,zones=True)
 
-    def test_sky_texture_import_and_dropped_provider_control(self):
-        index, stream, _ = w.load_index(self.directory/'TRACKS', 'L5RA')
-        resident = next(s for s in index.sections if s.number == 2100)
-        roots = chunks(w.read_section(stream, resident))
-        # Decode the written solid independently, including every directory slot.
-        keys = set()
-        for root in roots:
-            if root.kind != 0x80134000:
-                continue
-            for solid in chunks(root.payload, root.offset+8):
-                if solid.kind != 0x80134010:
-                    continue
-                parts = chunks(solid.payload, solid.offset+8)
-                header = next(c for c in parts if c.kind == 0x134011)
-                if w.u32(w.convert.aligned_payload(header),16) == 0x1f389568:
-                    table = next(c.payload for c in parts if c.kind == 0x134012)
-                    keys.update(k for k, _ in struct.iter_unpack('<II',table))
-        self.assertEqual(keys,{0x4a31e2a3})
-        report = w.dome.check(index,stream,w.DEFAULT_MW)
-        self.assertEqual(report,dict(textures=['4A31E2A3'],sentinel_lookups=0,section=2100))
-        imports = []
-        for root in roots:
-            if root.kind != 0xb3300000:
-                continue
-            hp = next(c for c in chunks(root.payload,root.offset+8) if c.kind == 0xb3310000)
-            table = next(c.payload for c in chunks(hp.payload,hp.offset+8) if c.kind == 0x33310002)
-            if keys & {k for k, _ in struct.iter_unpack('<II',table)}:
-                imports.append(root.offset)
-        self.assertEqual(len(imports),1)
-        offset = resident.offset+imports[0]
+    def test_native_sky_only_and_imported_key_control(self):
+        self.assertFalse((w.ROOT/'tools_snapshot/worldmerge/dome.py').exists())
+        index, stream, _ = w.load_index(self.directory/'TRACKS','L5RA')
+        native, native_stream, _ = w.load_index(w.DEFAULT_CARBON,'L5RA')
+        self.assertEqual(w.check_sky(index,stream,native,native_stream),
+                         dict(native_solids=1,imported_solids=0,imported_clouds=0))
+        native_headers = []
+        for section in index.sections:
+            for root in chunks(w.read_section(stream,section)):
+                if root.kind == 0x80134000:
+                    for solid in chunks(root.payload,root.offset+8):
+                        if solid.kind != 0x80134010:
+                            continue
+                        parts = chunks(solid.payload,solid.offset+8)
+                        header = next(c for c in parts if c.kind == 0x134011)
+                        key = w.u32(w.convert.aligned_payload(header),16)
+                        self.assertNotEqual(key,0x1f389568)
+                        if key == 0xed85ba82:
+                            native_headers.append(section.offset+header.offset+8+(-(header.offset+8)%16)+16)
+                            mesh = next(c for c in parts if c.kind == 0x80134100)
+                            buffers = [len(w.convert.aligned_payload(c)) for c in chunks(mesh.payload,mesh.offset+8)
+                                       if c.kind == 0x134b01]
+                            self.assertEqual(buffers,[7304])
+                elif root.kind == w.SCENE:
+                    scene = w.scene_data(root)
+                    for p in range(0,len(scene.models),72):
+                        self.assertNotIn(0x1f389568,[w.u32(scene.models,p+off) for off in (24,28,32,36)])
+        self.assertEqual(len(native_headers),1)
+        # The old selection requires an imported provider. Reintroducing its
+        # identity in serialized bytes is rejected independently of the writer.
+        offset, = native_headers
         with stream.open('r+b') as f:
-            f.seek(offset); saved=f.read(4)
-            f.seek(offset); f.write(bytes(4)) # Drop the pack without moving any record.
+            f.seek(offset); saved=f.read(4); f.seek(offset); f.write(struct.pack('<I',0x1f389568))
         try:
-            with self.assertRaisesRegex(FormatError,'sky sentinel lookups: 4A31E2A3'):
-                w.dome.check(index,stream,w.DEFAULT_MW)
-            with self.assertRaisesRegex(FormatError,'sky sentinel lookups: 4A31E2A3'):
+            with self.assertRaisesRegex(FormatError,'imported sky solid remains'):
+                w.check_sky(index,stream,native,native_stream)
+            with self.assertRaisesRegex(FormatError,'imported sky solid remains'):
                 w.check(self.directory)
         finally:
             with stream.open('r+b') as f:
                 f.seek(offset);f.write(saved)
-        print('SKY sentinel lookups valid=0/1 import-dropped=1/1; broken pair rejected')
-
-    def test_sky_has_one_global_owner_not_a_scenery_submission(self):
-        index, stream, _ = w.load_index(self.directory/'TRACKS','L5RA')
-        selected = []
-        for section in index.sections:
-            for root in chunks(w.read_section(stream,section)):
-                if root.kind != w.SCENE:
-                    continue
-                scene = w.scene_data(root)
-                inst = next(c for c in chunks(root.payload,root.offset+8) if c.kind == w.INSTANCES)
-                for p in range(0,len(scene.instances),96):
-                    model = struct.unpack_from('<h',scene.instances,p+84)[0]
-                    if w.u32(scene.models,model*72+24) == 0x1f389568:
-                        offset = section.offset+inst.offset+8+(-(inst.offset+8)%16)+p+12
-                        selected.append((offset,w.u32(scene.instances,p+12)))
-        self.assertEqual(len(selected),1)
-        offset,flags = selected[0]
-        self.assertEqual(flags,0xc8200)
-        # Exact predicates from 0079AFA0; both possible sky-gate states.
-        submits = lambda f,g: (not f&0x80000 or not g) and (not f&0x40000 or g or f&0x100)
-        self.assertEqual([bool(submits(flags,g)) for g in (0,1)],[False,False])
-        broken = flags & ~0x40000
-        self.assertEqual(bool(submits(broken,0)),True)
-        with stream.open('r+b') as f:
-            f.seek(offset);f.write(struct.pack('<I',broken))
-        try:
-            with self.assertRaisesRegex(FormatError,'source identity unresolved|instance translation/selector/provenance'):
-                w.check(self.directory)
-        finally:
-            with stream.open('r+b') as f:
-                f.seek(offset);f.write(struct.pack('<I',flags))
-        print('SKY scenery submissions valid=0 exclusion-dropped=1; broken flags rejected')
-
-    def test_one_source_dome_lod_left_on_native_key_is_rejected(self):
-        index, stream, _ = w.load_index(self.directory/'TRACKS', 'L5RA')
-        references, old_references, at = 0, 0, None
-        domes = {}
-        for section in index.sections:
-            for root in w.chunks(w.read_section(stream, section)):
-                if root.kind == 0x80134000:
-                    for solid in w.chunks(root.payload,root.offset+8):
-                        if solid.kind != 0x80134010:
-                            continue
-                        parts = w.chunks(solid.payload,solid.offset+8)
-                        header = next(c for c in parts if c.kind == 0x134011)
-                        key = w.u32(w.convert.aligned_payload(header),16)
-                        if key in (0xed85ba82,0x1f389568):
-                            mesh = next(c for c in parts if c.kind == 0x80134100)
-                            buffers = [len(w.convert.aligned_payload(c)) for c in
-                                       w.chunks(mesh.payload,mesh.offset+8) if c.kind == 0x134b01]
-                            self.assertNotIn(key,domes)
-                            domes[key] = (solid.encode(),buffers)
-                if root.kind != w.SCENE:
-                    continue
-                table = next(c for c in w.chunks(root.payload, root.offset+8) if c.kind == w.MODELS)
-                for p in range(0,len(table.payload),72):
-                    for off in (24,28,32,36):
-                        key = w.u32(table.payload,p+off)
-                        old_references += key == 0xed85ba82
-                        if key == 0x1f389568:
-                            references += 1
-                            at = section.offset+table.offset+8+p+off
-        self.assertEqual(references, 3)
-        self.assertGreater(old_references, 0)
-        self.assertEqual(domes[0x1f389568][1],[6204])
-        self.assertEqual(domes[0xed85ba82][1],[7304])
-        native, native_stream, _ = w.load_index(w.DEFAULT_CARBON,'L5RA')
-        native_x00 = next(s for s in native.sections if s.number == 2400)
-        for root in w.chunks(w.read_section(native_stream,native_x00)):
-            if root.kind == 0x80134000:
-                for solid in w.chunks(root.payload,root.offset+8):
-                    if solid.kind == 0x80134010:
-                        header = next(c for c in w.chunks(solid.payload,solid.offset+8) if c.kind == 0x134011)
-                        if w.u32(w.convert.aligned_payload(header),16) == 0xed85ba82:
-                            self.assertEqual(domes[0xed85ba82][0],solid.encode())
-        with stream.open('r+b') as file:
-            file.seek(at)
-            original = file.read(4)
-            file.seek(at)
-            file.write(struct.pack('<I',0xed85ba82))
-        try:
-            with self.assertRaisesRegex(FormatError,'scenery 2600: translated source identity unresolved/ambiguous'):
-                w.check(self.directory)
-        finally:
-            with stream.open('r+b') as file:
-                file.seek(at)
-                file.write(original)
-        print(f'DOME valid aliases=0; broken aliases=1 rejected; source LODs={references}; native LODs={old_references}')
+        print('SKY native solids=1 (166 vertices); imported solids/clouds/references=0/0/0; old-key control rejected')
 
     def test_combined_attributes_overlay(self):
         for output in (self.directory, self.merged):
@@ -532,11 +479,11 @@ class Private(unittest.TestCase):
 
     def test_default_hashes_and_complete_global_merge_without_writer_or_plan(self):
         self.assertEqual(self.report['files']['L5RA.BUN']['sha256'],
-                         'c910f1278bcc3cdff202b13d88b49b04da5c2bd28ab3ddc154cd62f77acee4cc')
+                         'cc154fc5746163678b855231301857105de67c50644527171228973172fa3b7e')
         self.assertEqual(self.report['files']['STREAML5RA.BUN']['sha256'],
-                         '15810118ff076c9aa08a649648291d9816e80a0d60908763f52405a531eef525')
+                         '0ccd820a2d83a1a6c95b3393f26d59cd030644e244cf06c2c7e0f419de9148b7')
         self.assertEqual(self.zones_report['files']['L5RA.BUN']['sha256'],
-                         'ae114f50e5e346ef92bc8783a2e86d8f399cf9a3a4d9d6ae2358af2457786b03')
+                         'b32d7c45a83176d464bf8f1d5518c9bebacfc8ffec3a5667d933beb4c9c48aa6')
         self.assertEqual(self.zones_report['files']['STREAML5RA.BUN'],self.report['files']['STREAML5RA.BUN'])
         self.assertEqual(self.report['zones']['mode'],'off')
         (self.merged/'proof.json').write_text('{"zones": "forged"}\n')
@@ -613,7 +560,7 @@ class Private(unittest.TestCase):
         self.assertEqual((v['zones'],v['zone_identities'],v['rows'],v['boundaries']),(775,780,780,930))
         self.assertEqual((v['largest_row'],v['bitmap_extent'],v['polygon_max']),(71,2601,28))
         self.assertEqual((v['drivable'],v['drivable_slots']),(641,704))
-        self.assertEqual((v['worst_row'],v['worst_row_bytes'],v['row_byte_margin']),(1319,70482144,1197856))
+        self.assertEqual((v['worst_row'],v['worst_row_bytes'],v['row_byte_margin']),(1319,69774568,1905432))
         self.assertEqual(report['roads']['counts'],dict(nodes=8988,segments=12328,profiles=1524,roads=2148))
         g = report['grid']
         self.assertEqual((g['rows'],g['columns'],g['slots'],g['occupied'],g['packs']),(167,365,60955,4165,853))
@@ -622,12 +569,12 @@ class Private(unittest.TestCase):
         for city,expected in (('palmont',2319),('rockport',2522)):
             self.assertEqual(report['grounded'][city],dict(before=expected,after=expected,same_nodes=True,max_height_difference_m=0.))
         self.assertEqual(report['grounded']['rockport_serialized_float32']['grounded'],2510)
-        self.assertEqual(report['palmont_bytes']['metadata_changed_bytes'],2863)
+        self.assertEqual(report['palmont_bytes']['metadata_changed_bytes'],2860)
         self.assertEqual(report['palmont_bytes']['payload_array_and_kind_changed_bytes'],29)
-        self.assertEqual(report['palmont_bytes']['payload_prefix_changed_bytes'],8011553)
-        self.assertEqual(report['palmont_bytes']['payload_added_bytes'],111931292)
+        self.assertEqual(report['palmont_bytes']['payload_prefix_changed_bytes'],7951781)
+        self.assertEqual(report['palmont_bytes']['payload_added_bytes'],111931036)
         self.assertEqual(report['palmont_bytes']['records_with_changed_payload'],11)
-        print('ACCEPT 1 pair; 1433 records; zones/rows 780; row 1319=70482144/71680000; grounded 2522+2319; duplicates/unresolved 0')
+        print('ACCEPT 1 pair; 1433 records; zones/rows 780; row 1319=69774568/71680000; grounded 2522+2319; duplicates/unresolved 0')
 
     def test_nearby_pairs_and_one_old_collision_section(self):
         shift = (4096.,-8192.)
@@ -772,7 +719,7 @@ class Private(unittest.TestCase):
         finally:
             with stream.open('r+b') as f:
                 f.truncate(size)
-        print('BROKEN actual row: 71680001 > 71680000; valid 70482144; rejected')
+        print('BROKEN actual row: 71680001 > 71680000; valid 69774568; rejected')
 
 
 if __name__ == '__main__':

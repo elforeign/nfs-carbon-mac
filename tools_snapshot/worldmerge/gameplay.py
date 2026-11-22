@@ -32,7 +32,7 @@ TEMPLATES = {0x73049919: 3, 0x4698966B: 8, 0x326427BB: 4, 0xB05871D3: 39}
 # destination's own safehouses carry (their icons follow other native rules).
 CARBON_VALUE = 32
 SHOP = 0x4698966B
-SHIFT = 8192.0
+SHIFT = (8192.0, 0.0)  # Rockport's render (x, y) offset in the combined world
 SAFEHOUSE = 0x326427BB
 CARLOT = 0x73049919
 PREMISES_SAFEHOUSE = 0x874B96D6
@@ -322,7 +322,7 @@ def startup_companion(raw):
     return b'RAWW\x01\x10\0\0' + struct.pack('<II', len(raw), len(raw)+16) + raw
 
 
-def convert(source, destination):
+def convert(source, destination, shift=SHIFT):
     mw, carbon = Pack(source), Pack(destination)
     src, dst = mw.core(False), carbon.core(True)
     records = src.triggers()
@@ -405,7 +405,7 @@ def convert(source, destination):
                 if key == POSITION:
                     xyz = struct.unpack('<3f', payload)
                     require(all(math.isfinite(x) for x in xyz), 'nonfinite trigger position')
-                    payload = struct.pack('<3f', xyz[0]+SHIFT, *xyz[1:])
+                    payload = struct.pack('<3f', xyz[0]+shift[0], xyz[1]+shift[1], xyz[2])
                 binary += payload
                 fixes.append((off+len(body)+4, 3, 1, value))
                 value = 0
@@ -425,7 +425,7 @@ def convert(source, destination):
     result = carbon.replace_core(binary, out)
     report = {'records': len(records), 'templates': {f'{k:08X}': n for k, n in TEMPLATES.items()},
               'premises': len(premises), 'respawn_markers': len(markers),
-              'position_shift': [SHIFT, 0, 0], '6CE23062': CARBON_VALUE, '6CE23062_shop': top_bin,
+              'position_shift': [shift[0], shift[1], 0], '6CE23062': CARBON_VALUE, '6CE23062_shop': top_bin,
               'source_sha256': hashlib.sha256(source).hexdigest(),
               'loaded_destination_sha256': hashlib.sha256(destination).hexdigest(),
               'output_sha256': hashlib.sha256(result).hexdigest(), 'bytes': len(result)}
@@ -437,12 +437,15 @@ def main():
     ap.add_argument('--mw', type=Path, default=DEFAULT_MW.parent/'GLOBAL/GAMEPLAY.BIN')
     ap.add_argument('--carbon', type=Path, default=DEFAULT_CARBON.parent/'GLOBAL/gameplay.bin')
     ap.add_argument('--out', type=Path, required=True, help='overlay GLOBAL/GAMEPLAY.BIN')
+    ap.add_argument('--shift', default='%g,%g' % SHIFT, help="Rockport's render x,y offset in the pair")
     args = ap.parse_args()
+    shift = tuple(float(v) for v in args.shift.split(','))
+    require(len(shift) == 2 and all(math.isfinite(v) for v in shift), 'shift is x,y')
     require(args.carbon.name.lower() == 'gameplay.bin', 'destination must be the loaded gameplay.bin')
     require(args.out.resolve() not in (args.mw.resolve(), args.carbon.resolve()), 'output would replace an input')
     if not args.mw.is_file() or not args.carbon.is_file():
         print('SKIP: private gameplay inputs absent'); return 3
-    result, report = convert(args.mw.read_bytes(), args.carbon.read_bytes())
+    result, report = convert(args.mw.read_bytes(), args.carbon.read_bytes(), shift)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_bytes(result)
     args.out.with_suffix('.LZC').write_bytes(startup_companion(result))

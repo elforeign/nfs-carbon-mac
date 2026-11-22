@@ -136,7 +136,7 @@ class Archives(unittest.TestCase):
         with patch.object(p,'Import',side_effect=AssertionError('checker used writer')), \
              patch.object(p,'models',side_effect=AssertionError('checker used model writer')):
             return p.check(index,stream,self.source,self.ms,self.native,self.cs,
-                           mapping=mapping or self.mapping,shift=w.c3_crossing.SHIFT)
+                           mapping=mapping or self.mapping,shift=w.c3_crossing.SHIFT,omit_sky=True)
 
     def target(self):
         index,stream,_ = load_index(self.stage/'TRACKS','L5RA')

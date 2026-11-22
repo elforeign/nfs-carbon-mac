@@ -24,6 +24,7 @@ REPORT = ROOT / 'runtime/report.m'
 SOURCE = r'''
 #include "host.h"
 #include "game_select.h"
+#include "present_image_diag.h"
 #include <math.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -37,6 +38,7 @@ static unsigned diag_events;
 static unsigned recorder_clock_calls;
 static uint64_t fake_ns;
 uint64_t host_ticks(void) { return fake_ns; }
+void present_image_diag_tick(uint32_t ticks, uint32_t flow) { (void)ticks; (void)flow; }
 void diag_event(const char *fmt, ...) {
     va_list ap; va_start(ap, fmt); ++diag_events; printf("EVENT "); vprintf(fmt, ap); printf("\n"); va_end(ap);
 }

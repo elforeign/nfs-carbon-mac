@@ -30,7 +30,6 @@ import c1_zones
 import c3_crossing
 import classify
 import convert
-import dome
 import emitters
 import events
 import ground
@@ -50,6 +49,9 @@ RESIDENT = 2600
 DEFAULT_SHIFT = (20480., 0.)
 RENDER_SHIFT = (DEFAULT_SHIFT[1], -DEFAULT_SHIFT[0])
 POOL_BYTES = 71680000
+# Precull rows: 1024 bits, one per 32 m camera cell of a 1,024 m torus. 007A4C9x sets the view's bit to
+# ((int)y >> 5 & 31)*32 + ((int)x >> 5 & 31) (render x, y); 0079FA60 skips an instance whose row has it set.
+PRECULL_CELL = 32
 
 
 def _physics_shift(value):
@@ -57,8 +59,8 @@ def _physics_shift(value):
             all(isinstance(v, (int, float)) and math.isfinite(v) for v in value),
             'shift must contain two finite physics components (X Z)')
     for axis, component in zip(('X', 'Z'), value):
-        require(component % 4096 == 0,
-                f'shift {axis}={component:g} m must be a multiple of 4096 m')
+        require(component % PRECULL_CELL == 0,
+                f'shift {axis}={component:g} m must be a multiple of {PRECULL_CELL} m')
     return tuple(float(v) for v in value)
 
 
@@ -189,7 +191,115 @@ def mapped_provider(root, target):
     return root
 
 
-def converted_scene(source_root, target_root, number):
+def rotate_precull(rows, shift):
+    """Move each row with its city: a camera at p + shift sees what p saw (render shift, 32 m multiples).
+
+    Row word y (4 bytes, bit x) is camera cell (y, x); the new word y+ky is the old word y rotated left kx.
+    """
+    kx, ky = (round(v/PRECULL_CELL) % 32 for v in shift)
+    require(all(v % PRECULL_CELL == 0 for v in shift), 'precull shift must be a multiple of 32 m')
+    require(len(rows) % 128 == 0, 'precull row stride')
+    if not kx and not ky:
+        return bytes(rows)
+    out = bytearray(len(rows))
+    for base in range(0, len(rows), 128):
+        words = struct.unpack_from('<32I', rows, base)
+        struct.pack_into('<32I', out, base, *(
+            ((w << kx) | (w >> (32-kx))) & 0xffffffff if kx else w
+            for w in (words[(y-ky) % 32] for y in range(32))))
+    return bytes(out)
+
+
+def without_source_sky(scene, *, native=False):
+    """Remove Z00's first model/instance, rebasing its existing two-node tree."""
+    key = 0x1f389568 if native else 0xed85ba82
+    selected = [p//72 for p in range(0,len(scene.models),72) if u32(scene.models,p+24) == key]
+    if not selected:
+        return scene
+    width, selector, tree_width, count_at, child_at = (96,84,48,12,28) if native else (64,62,36,24,26)
+    require(selected == [0] and scene.number in (2100,2600), 'source sky scenery identity differs')
+    model_ids = [struct.unpack_from('<h',scene.instances,p+selector)[0] for p in range(0,len(scene.instances),width)]
+    require(model_ids == list(range(7)) and len(scene.tree) == 2*tree_width, 'source sky scenery layout differs')
+    instances = bytearray(scene.instances[width:])
+    for p in range(0,len(instances),width):
+        struct.pack_into('<h',instances,p+selector,struct.unpack_from('<h',instances,p+selector)[0]-1)
+    tree = bytearray(scene.tree)
+    for p in range(0,len(tree),tree_width):
+        count = u32(tree,p+count_at) if native else struct.unpack_from('<H',tree,p+count_at)[0]
+        children = struct.unpack_from(f'<{count}h',tree,p+child_at)
+        kept = [v-1 if v>0 else v for v in children if v != 0]
+        require(kept, 'sky removal would empty a tree node')
+        struct.pack_into('<I' if native else '<H',tree,p+count_at,len(kept))
+        struct.pack_into('<5h',tree,p+child_at,*(kept+[0]*(5-len(kept))))
+    return replace(scene,models=scene.models[72:],instances=bytes(instances),tree=bytes(tree))
+
+
+def convert_source(data, *args, **kwargs):
+    """Use the standalone converter, excluding the combined world's source dome."""
+    data, stats = convert.convert_section(data,*args,**kwargs)
+    out = convert.Builder(0)
+    for root in chunks(data):
+        if root.kind == 0x80134000:
+            parts = region.children(root)
+            header = region.one(parts,0x80134001)
+            hp = region.children(header)
+            directory = region.one(hp,0x134003)
+            rows = list(struct.iter_unpack('<II',directory.payload))
+            if any(k == 0x1f389568 for k,_ in rows):
+                solids = [c for c in parts if c.kind == 0x80134010]
+                require(len(rows) == len(solids), 'sky removal solid directory mismatch')
+                kept = [(r,c) for r,c in zip(rows,solids) if r[0] != 0x1f389568]
+                updated = []
+                for c in hp:
+                    raw = c.payload
+                    if c.kind == 0x134003:
+                        raw = b''.join(struct.pack('<II',*r) for r,_ in kept)
+                    elif c.kind == 0x134002:
+                        raw = bytearray(raw);struct.pack_into('<I',raw,12,len(kept))
+                    updated.append(Chunk(c.kind,bytes(raw)))
+                body = convert.Builder(root.offset+8)
+                body.pad(16)
+                body.add(header.kind,convert.encode_chunks(updated))
+                for _,solid in kept:
+                    append_at_residue(body,solid)
+                root = Chunk(root.kind,bytes(body.data),root.offset)
+        append_at_residue(out,root)
+    return bytes(out.data),stats
+
+
+def check_sky(index, stream, native, native_stream):
+    """Independently require the unchanged native dome and no imported provider."""
+    def inventory(idx,path):
+        result = []
+        for section in idx.sections:
+            for root in chunks(read_section(path,section)):
+                if root.kind == 0x80134000:
+                    for solid in region.children(root):
+                        if solid.kind != 0x80134010:
+                            continue
+                        header = region.one(region.children(solid),0x134011)
+                        key = u32(convert.aligned_payload(header),16)
+                        require(key != 0x1f389568, 'imported sky solid remains')
+                        if key == 0xed85ba82:
+                            result.append(solid.encode())
+                elif root.kind == SCENE:
+                    scene = scene_data(root)
+                    require(all(u32(scene.models,p+off) != 0x1f389568
+                                for p in range(0,len(scene.models),72) for off in (24,28,32,36)),
+                            'imported sky scenery remains')
+                elif root.kind == 0xb3300000 and section.number == 2100:
+                    hp = region.one(region.children(root),0xb3310000)
+                    table = region.one(region.children(hp),0x33310002)
+                    require(all(k != 0x4a31e2a3 for k,_ in struct.iter_unpack('<II',table.payload)),
+                            'imported sky cloud remains')
+        return result
+    expected = inventory(native,native_stream)
+    actual = inventory(index,stream)
+    require(len(expected) == 1 and actual == expected, 'native global sky bytes differ')
+    return dict(native_solids=1,imported_solids=0,imported_clouds=0)
+
+
+def converted_scene(source_root, target_root, number, shift=(0., 0.)):
     """Carry the decoded short precull selector omitted by the base converter.
 
     Instance +0x1c is a signed short in the native 0079FA60 consumer. The
@@ -201,15 +311,8 @@ def converted_scene(source_root, target_root, number):
     require(len(before.instances)//64 == len(instances)//96, 'converted instance count')
     for i in range(len(instances)//96):
         instances[i*96+28:i*96+30] = before.instances[i*64+28:i*64+30]
-        model = struct.unpack_from('<h', instances, i*96+84)[0]
-        if u32(before.models, model*72+24) == 0xed85ba82:
-            # 0079AFA0 excludes 80000 with a nonzero sky gate and 40000
-            # with a zero gate (unless 100 is set). The global sky owns this
-            # instance; retain its lookup/transform but never submit scenery.
-            flags = u32(instances, i*96+12)
-            require(flags & 0x80000 and not flags & 0x100, 'sky scenery flags differ')
-            struct.pack_into('<I', instances, i*96+12, flags | 0x40000)
-    return Scene(bytes(header), props.models(after.models), bytes(instances), after.tree, after.precull)
+    return without_source_sky(Scene(bytes(header), props.models(after.models), bytes(instances), after.tree,
+                                    rotate_precull(after.precull, shift)), native=True)
 
 
 def combine_scenes(contributions, number, position):
@@ -372,6 +475,8 @@ def _output_path(out, roots):
 
 def _write_pair(mw_root, carbon_root, stage, *, zones=False, shift=DEFAULT_SHIFT, _link=True):
     shift = _physics_shift(shift)
+    coast = _link and shift == c3_crossing.COAST_SHIFT
+    require(not (coast and zones), 'the coast link imports only traffic districts; omit --zones')
     render = (shift[1], -shift[0])
     carbon, cs, _ = load_index(carbon_root, 'L5RA')
     source, ms, _ = load_index(mw_root, 'L2RA')
@@ -379,7 +484,11 @@ def _write_pair(mw_root, carbon_root, stage, *, zones=False, shift=DEFAULT_SHIFT
     require('composition' in document, 'combined source needs the composition schedule')
     schedule, mapping = document['composition'], document['numbers']['rockport']
     _check_placement(carbon, cs, source, ms, schedule['groups'], shift)
-    globals_ = {c.kind: c for c in _merge_globals(carbon, source, mapping, shift)} if zones else {}
+    if coast:
+        district_chunk = c1_zones.merge_districts(carbon, source, shift, carbon_root)
+        globals_ = {district_chunk.kind: district_chunk}
+    else:
+        globals_ = {c.kind: c for c in _merge_globals(carbon, source, mapping, shift)} if zones else {}
     component = grid.merge(carbon, cs, source, ms,
                            pack_ids={int(k): v for k, v in document['packs']['rockport'].items()},
                            cell_section=RESIDENT, tile_section=RESIDENT, shift=shift)
@@ -397,8 +506,11 @@ def _write_pair(mw_root, carbon_root, stage, *, zones=False, shift=DEFAULT_SHIFT
     converted.mkdir()
     for section in source.sections:
         raw = read_section(ms, section)
-        data, _ = convert.convert_section(raw, section.number, source_number=section.number,
-                    shift=render, providers=providers, animation_inventory=animations)
+        # The converter keeps precull rows only on its 4096 m period; converted_scene rotates them instead.
+        # (Their 4096 m exception list, TRACKS/PrecullerBooBooScript.hoo, is not shipped with Carbon.)
+        data, _ = convert_source(raw, section.number, source_number=section.number,
+                    shift=render, providers=providers, animation_inventory=animations,
+                    allow_precull_mismatch=True)
         originals = iter(c for c in chunks(raw) if c.kind == SCENE)
         out = convert.Builder(0)
         for root in chunks(data):
@@ -406,11 +518,9 @@ def _write_pair(mw_root, carbon_root, stage, *, zones=False, shift=DEFAULT_SHIFT
                 original = next(originals)
                 old_number = scene_data(original, native=False).number
                 target = mapping[str(old_number)]
-                scenes[target].append(converted_scene(original, root, target))
+                scenes[target].append(converted_scene(original, root, target, render))
             elif root.kind:
                 append_at_residue(out, mapped_provider(root, mapping[str(section.number)]))
-        if section.number == 2400:
-            dome.append(out, mw_root)
         (converted/str(section.number)).write_bytes(out.data)
     # Common residents share a logical scenery identity too. Native arrays lead.
     native_common = {}
@@ -503,10 +613,13 @@ def _write_pair(mw_root, carbon_root, stage, *, zones=False, shift=DEFAULT_SHIFT
     if _link and shift == c3_crossing.SHIFT:
         import c3_link
         c3_link.apply(tracks)
+    elif coast:
+        import c3_coast_link
+        c3_coast_link.apply(tracks)
     prop_attributes.write_overlay(mw_root, carbon_root, stage)
 
 
-def build(mw_root, carbon_root, out, *, zones=False, shift=DEFAULT_SHIFT):
+def build(mw_root, carbon_root, out, *, zones=False, shift=DEFAULT_SHIFT, street_lamps=False):
     """Atomically write a new pair, publishing it only after independent check."""
     shift = _physics_shift(shift)
     out = _output_path(out, (mw_root, carbon_root))
@@ -514,7 +627,10 @@ def build(mw_root, carbon_root, out, *, zones=False, shift=DEFAULT_SHIFT):
     stage = Path(tempfile.mkdtemp(prefix='.c1-world-', dir=out.parent))
     try:
         _write_pair(mw_root, carbon_root, stage, zones=zones, shift=shift)
-        report = check(stage, mw_root, carbon_root, shift=shift)
+        if street_lamps:
+            import street_lamps as lamps
+            lamps.apply(stage, mw_root, shift=shift)
+        report = check(stage, mw_root, carbon_root, shift=shift, street_lamps=street_lamps)
         (stage/'proof.json').write_text(json.dumps(report, indent=2, sort_keys=True)+'\n')
         os.rename(stage, out)
         return report
@@ -586,6 +702,21 @@ def _check_scene_tree(scene):
             'scenery tree lost/duplicated instances or nodes')
 
 
+def _moved_precull(rows, shift):
+    """Independent oracle: camera bit i at the new place reads the old bit of the cell shift/32 cells back."""
+    cx, cy = (int(v // PRECULL_CELL) for v in shift)
+    if not cx % 32 and not cy % 32:
+        return bytes(rows)
+    out = bytearray(len(rows))
+    for i in range(1024):
+        y, x = divmod(i, 32)
+        j = ((y-cy) % 32)*32 + (x-cx) % 32
+        for base in range(0, len(rows), 128):
+            if rows[base + (j >> 3)] >> (j & 7) & 1:
+                out[base + (i >> 3)] |= 1 << (i & 7)
+    return bytes(out)
+
+
 def _check_scene_sources(actual, sources, target, shift=RENDER_SHIFT):
     """Undo concatenation offsets, comparing every original array byte."""
     require(len(sources) <= 5, 'too many source scenery roots')
@@ -599,21 +730,14 @@ def _check_scene_sources(actual, sources, target, shift=RENDER_SHIFT):
         expected_models = bytearray(scene.models)
         if not native:
             for p in range(0,len(expected_models),72):
-                for off in (24,28,32,36):
-                    key = u32(expected_models,p+off)
-                    struct.pack_into('<I',expected_models,p+off,
-                                     0x1f389568 if key == 0xed85ba82 else key)
                 key = u32(expected_models,p+64)
                 struct.pack_into('<I',expected_models,p+64,props.HIERARCHY_KEYS.get(key,key))
         require(actual.models[mo*72:(mo+nm)*72] == expected_models, 'scenery model bytes/provenance differ')
-        require(actual.precull[po*128:(po+np)*128] == scene.precull, 'scenery precull bytes/provenance differ')
+        require(actual.precull[po*128:(po+np)*128] == (scene.precull if native else _moved_precull(scene.precull, shift)),
+                'scenery precull bytes/provenance differ')
         for i in range(ni):
             original = scene.instances[i*width:(i+1)*width]
             expected = bytearray(_source_instance(original, native, shift))
-            if not native:
-                model = struct.unpack_from('<h', expected, 84)[0]
-                if u32(scene.models, model*72+24) == 0xed85ba82:
-                    struct.pack_into('<I', expected, 12, u32(expected,12) | 0x40000)
             struct.pack_into('<h', expected, 84, struct.unpack_from('<h', expected, 84)[0]+mo)
             struct.pack_into('<h', expected, 28, struct.unpack_from('<h', expected, 28)[0]+po)
             row = actual.instances[(io+i)*96:(io+i+1)*96]
@@ -679,18 +803,11 @@ def _recover_mapping(source, stream, actual_scenes, native_numbers, shift=RENDER
         for root in chunks(read_section(stream, section)):
             if root.kind != SCENE:
                 continue
-            scene = scene_data(root, native=False)
+            scene = without_source_sky(scene_data(root, native=False))
             models = bytearray(scene.models)
-            for m in range(0,len(models),72):
-                for off in (24,28,32,36):
-                    if u32(models,m+off) == 0xed85ba82:
-                        struct.pack_into('<I',models,m+off,0x1f389568)
             possibilities = None
             for p in range(0, len(scene.instances), 64):
                 row = bytearray(_source_instance(scene.instances[p:p+64], False, shift))
-                model = struct.unpack_from('<h',row,84)[0]
-                if u32(scene.models,model*72+24) == 0xed85ba82:
-                    struct.pack_into('<I',row,12,u32(row,12) | 0x40000)
                 key = _instance_key(bytes(row), models)
                 candidates = lookup.get(key, set())
                 possibilities = set(candidates) if possibilities is None else possibilities & candidates
@@ -915,12 +1032,9 @@ def _check_records(index, stream, carbon, cs, source, ms, mapping, actual_scenes
                                            for c in chunks(data) if c.kind == TILE)
                 roots = chunks(data)
             else:
-                data,_ = convert.convert_section(data,before.number,source_number=before.number,
-                            shift=shift,providers=providers,animation_inventory=animations)
-                if before.number == 2400:
-                    extra = convert.Builder(len(data))
-                    dome.append(extra, Path(ms).parent)
-                    data += extra.data
+                data,_ = convert_source(data,before.number,source_number=before.number,
+                            shift=shift,providers=providers,animation_inventory=animations,
+                            allow_precull_mismatch=True)
                 roots = [mapped_provider(c,section.number) for c in chunks(data)]
             wanted.extend(_digest(c) for c in roots if c.kind not in (0,SCENE,PACK,TILE,props.SPAWNS))
         actual = []
@@ -1147,16 +1261,42 @@ def _check_globals(index, carbon, source, mapping, shift=DEFAULT_SHIFT):
     return c1_zones.reread(actual, carbon, source, mapping)
 
 
-def check(directory, mw_root=DEFAULT_MW, carbon_root=DEFAULT_CARBON, *, shift=DEFAULT_SHIFT, _link=True):
+def check(directory, mw_root=DEFAULT_MW, carbon_root=DEFAULT_CARBON, *, shift=DEFAULT_SHIFT, _link=True,
+          street_lamps=False):
     """Independently re-read the written pair and original source provenance."""
     shift = _physics_shift(shift)
+    if street_lamps:
+        import street_lamps as lamps
+        with tempfile.TemporaryDirectory(prefix='.street-lamps-', dir=Path(directory).parent) as tmp:
+            lamp_report = lamps.check(directory, mw_root, carbon_root, Path(tmp), shift=shift)
+            report = check(tmp, mw_root, carbon_root, shift=shift, _link=_link)
+        # Bind the ordinary provenance result to the opt-in files after
+        # validating and stripping the lamp additions.
+        report['files'] = {}
+        for path in (Path(directory)/'TRACKS').glob('*.BUN'):
+            digest = hashlib.sha256()
+            with path.open('rb') as handle:
+                for block in iter(lambda: handle.read(4 << 20), b''):
+                    digest.update(block)
+            report['files'][path.name] = dict(bytes=path.stat().st_size, sha256=digest.hexdigest())
+        report['street_lamps'] = lamp_report
+        return report
     if _link and shift == c3_crossing.SHIFT:
         import c3_link
         report = c3_link.check(directory, mw_root, carbon_root)
         index,stream,_ = load_index(Path(directory)/'TRACKS','L5RA')
         native,cs,_ = load_index(carbon_root,'L5RA')
-        report['sky_dome'] = dome.check(index, stream, mw_root)
+        report['sky_dome'] = check_sky(index,stream,native,cs)
         report['props'].update(props.check_native(index,stream,native,cs,removed=(18842,)))
+        return report
+    if _link and shift == c3_crossing.COAST_SHIFT:
+        import c3_coast_link
+        index, _, _ = load_index(Path(directory)/'TRACKS', 'L5RA')
+        carbon, _, _ = load_index(carbon_root, 'L5RA')
+        source, _, _ = load_index(mw_root, 'L2RA')
+        zone_report = c1_zones.reread_districts(zone_tables.select(index), carbon, source, shift, carbon_root)
+        report = c3_coast_link.check(directory, mw_root, carbon_root)
+        report['zones'] = zone_report
         return report
     render = (shift[1], -shift[0])
     tracks = Path(directory)/'TRACKS'
@@ -1189,11 +1329,11 @@ def check(directory, mw_root=DEFAULT_MW, carbon_root=DEFAULT_CARBON, *, shift=DE
                 packs.append(pack)
     require(position == stream.stat().st_size, 'unindexed stream tail')
     require(len(tiles) == 1, 'expected one merged collision tile')
-    dome_report = dome.check(index, stream, mw_root)
+    dome_report = check_sky(index,stream,carbon,cs)
     native_inventory = numbers.inventory((carbon,cs),True)
     native_numbers = numbers.source_numbers(native_inventory)
     mapping,groups,source_scenes = _recover_mapping(source,ms,scenes,native_numbers,render)
-    prop_report = props.check(index,stream,source,ms,carbon,cs,mapping=mapping,shift=shift)
+    prop_report = props.check(index,stream,source,ms,carbon,cs,mapping=mapping,shift=shift,omit_sky=True)
     zone_report = _check_globals(index,carbon,source,mapping,shift)
     visibility_report = _check_visibility(index,carbon,source,mapping,groups,render)
     native_changes = _check_records(index,stream,carbon,cs,source,ms,mapping,scenes,source_scenes,pack_homes,render)
@@ -1260,14 +1400,17 @@ def main(argv=None):
     parser.add_argument('--out',type=Path,required=True,help='new directory outside all checkouts')
     parser.add_argument('--shift', nargs=2, type=float, default=DEFAULT_SHIFT, metavar=('X', 'Z'),
                         help='physics translation in metres (default: 20480 0)')
-    parser.add_argument('--zones',action='store_true',help='append translated Rockport global tables')
+    parser.add_argument('--zones',action='store_true',help='append translated Rockport global tables (outside the coast link)')
+    parser.add_argument('--street-lamps', action='store_true',
+                        help='add imported bulb markers and available coast tunnel lights (default: off)')
     args = parser.parse_args(argv)
     if not all((root/name).is_file() for root,base in ((args.mw_root,'L2RA'),(args.carbon_root,'L5RA'))
                for name in (base+'.BUN','STREAM'+base+'.BUN')) or not all(
                    (root.parent/'GLOBAL/attributes.bin').is_file() for root in (args.mw_root,args.carbon_root)):
         print('SKIP: private track archives absent')
         return 3
-    report = build(args.mw_root,args.carbon_root,args.out,zones=args.zones,shift=args.shift)
+    report = build(args.mw_root,args.carbon_root,args.out,zones=args.zones,shift=args.shift,
+                   street_lamps=args.street_lamps)
     print(json.dumps(report,sort_keys=True))
     return 0
 

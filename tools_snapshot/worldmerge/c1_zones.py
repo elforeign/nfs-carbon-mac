@@ -1,7 +1,7 @@
 """Merge global tables while preserving native bucket and list prefixes.
 
 The independent reader checks original record bytes with only decoded spatial,
-track-selector and boundary-identity fields changed. Hashes remain untouched.
+track-selector, boundary-identity and traffic pattern fields changed.
 """
 from collections import Counter
 from dataclasses import replace
@@ -12,8 +12,58 @@ import sys
 HERE = Path(__file__).resolve().parent
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(HERE))
+import districts
 import zones
 from formats import require, u32
+
+
+def merge_districts(carbon_index, source_index, shift, carbon_root):
+    """Add Rockport traffic polygons to Carbon's existing type-9 bucket."""
+    native = zones.read(zones.select(carbon_index))
+    keys = districts.key_map(source_index, carbon_root)
+    moved = zones.read(zones.convert(source_index, shift=shift, key_map=keys))
+    added = (zone for zone in moved.zones if zone.kind == 9)
+    merged = tuple(sorted((*native.zones, *added), key=lambda zone: zone.kind))
+    return next(c for c in replace(native, zones=merged).encode() if c.kind == zones.ZONES)
+
+
+def reread_districts(chunks, carbon_index, source_index, shift, carbon_root):
+    """Prove the final coast archive against both sources and Carbon's vault."""
+    measured = zones.check(chunks)
+    actual = zones.read(chunks)
+    native = zones.read(zones.select(carbon_index))
+    source = zones.read(zones.select(source_index))
+    require(tuple(c.kind for c in actual.parts) == tuple(c.kind for c in native.parts),
+            'native global chunk order changed')
+    require([(c.kind, None if c.kind == zones.POLYGONS else c.payload) for c in actual.children] ==
+            [(c.kind, None if c.kind == zones.POLYGONS else c.payload) for c in native.children],
+            'native polygon container children changed')
+    require(actual.markers == native.markers and actual.marker_padding == native.marker_padding,
+            'native markers changed')
+    require(actual.barriers == native.barriers, 'native barriers changed')
+    originals = [zone for zone in source.zones if zone.kind == 9]
+    start = sum(zone.kind <= 9 for zone in native.zones)
+    end = start + len(originals)
+    appended = actual.zones[start:end]
+    require(actual.zones[:start] + actual.zones[end:] == native.zones and
+            len(appended) == len(originals) and all(zone.kind == 9 for zone in appended),
+            'expected only a complete Rockport type-9 suffix in the native zone table')
+    patterns = districts.traffic_patterns(carbon_root)
+    resolved = sum(zone.key in patterns for zone in appended)
+    require(resolved == len(originals), f'Rockport traffic patterns resolve {resolved}/{len(originals)}')
+    targets = {districts.bstring_hash(name): target for name, target in districts.ROCKPORT_TO_CARBON.items()}
+    for original, written in zip(originals, appended):
+        require(patterns[written.key] == targets.get(original.key), 'wrong Rockport traffic pattern')
+        expected = bytearray(original.encode())
+        struct.pack_into('<I', expected, 48, written.key)
+        for first in (4, 32, 40, *range(68, len(expected), 8)):
+            for offset, delta in ((first, shift[1]), (first + 4, -shift[0])):
+                if delta:
+                    coordinate = struct.unpack_from('<f', expected, offset)[0]
+                    struct.pack_into('<f', expected, offset, coordinate + delta)
+        require(written.encode() == expected, 'Rockport district translation/source bytes differ')
+    return dict(**measured, mode='districts', rockport_districts=len(originals),
+                resolved_rockport_districts=resolved)
 
 
 def merge(carbon_index, source_index, mapping):

@@ -51,11 +51,10 @@ static uint32_t *carbon_dn_grade_variant(const uint32_t *tokens, uint32_t count,
     return out;
 }
 
-/* Day weight of the grade: the converted-material day weight, only while the
- * imported Rockport dome (1F389568) is selected with an overlay, as the sky. */
+/* The camera visibility row identifies converted scenery independently of sky. */
 static float carbon_dn_grade_weight(void) {
     const char *overlay = getenv("NFS_CARBON_TRACK_OVERLAY");
-    if (!overlay || !*overlay || !M32(0x00A73358u) || M32(0x00B77918u) != 0x1F389568u) return 0;
+    if (!overlay || !*overlay || !M32(0x00A73358u) || M32(0x00B77918u) != 0xED85BA82u || !carbon_dn_imported_view) return 0;
     return carbon_compat_day();
 }
 

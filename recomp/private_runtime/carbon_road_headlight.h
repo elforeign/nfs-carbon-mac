@@ -1,5 +1,5 @@
-/* Converted reflective roads pass local positions to world-space headlights.
- * Only the converter's origin translation opts in; native draws stay retail. */
+/* Converted reflective roads pass local vertex and eye positions to world-space headlights.
+ * The converted material selects the transform at draw time; native draws stay retail. */
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -17,21 +17,38 @@ uint32_t *carbon_road_headlight_shader(const uint32_t *original, uint32_t count,
         default: return NULL;
     }
     if (!current_count || current[current_count-1] != 0xffffu) return NULL;
-    uint32_t *out = (uint32_t *)malloc((size_t)(current_count + 16) * sizeof *out);
-    if (!out) return NULL;
-    memcpy(out, current, (size_t)(current_count-1) * sizeof *out);
+    const int sm3 = original[0] == 0xfffe0300u;
     /* c244..246 = world columns; c247.w = converted road, c247.z = zero.
      * The original mov supplies W and all four components on identity draws.
      * Both reviewed programs leave these constants unused. */
-    const uint32_t tail[] = {
+    const uint32_t position[] = {
         0x02010029u, 0xa0ff00f7u, 0xa0aa00f7u, /* if_gt c247.w,c247.z */
         0x03000009u, output | 0x10000u, 0x90e40000u, 0xa0e400f4u,
         0x03000009u, output | 0x20000u, 0x90e40000u, 0xa0e400f5u,
-        0x03000009u, output | 0x40000u, 0x90e40000u, 0xa0e400f6u,
-        0x0000002bu, 0x0000ffffu
+        0x03000009u, output | 0x40000u, 0x90e40000u, 0xa0e400f6u
     };
-    memcpy(out + current_count-1, tail, sizeof tail);
-    *patched_count = current_count + 16;
+    /* The native SM3 shader exports c6 (cvLocalEyePos) in o8.xyz.
+     * r0 is dead here, and the shader defines c8.w as 1.0. */
+    const uint32_t eye[] = {
+        0x02000001u, 0x80070000u, 0xa0e40006u, /* mov r0.xyz,c6 */
+        0x02000001u, 0x80080000u, 0xa0ff0008u, /* mov r0.w,c8.w */
+        0x03000009u, 0xe0010008u, 0x80e40000u, 0xa0e400f4u,
+        0x03000009u, 0xe0020008u, 0x80e40000u, 0xa0e400f5u,
+        0x03000009u, 0xe0040008u, 0x80e40000u, 0xa0e400f6u
+    };
+    const uint32_t footer[] = {0x0000002bu, 0x0000ffffu}; /* endif, end */
+    const size_t size = (size_t)(current_count - 1) * sizeof(uint32_t);
+    const size_t eye_size = sm3 ? sizeof eye : 0;
+    uint32_t *out = (uint32_t *)malloc(size + sizeof position + eye_size + sizeof footer);
+    if (!out) return NULL;
+    memcpy(out, current, size);
+    uint32_t *tail = out + current_count - 1;
+    memcpy(tail, position, sizeof position);
+    tail += sizeof position / sizeof *tail;
+    memcpy(tail, eye, eye_size);
+    tail += eye_size / sizeof *tail;
+    memcpy(tail, footer, sizeof footer);
+    *patched_count = (uint32_t)(tail - out) + sizeof footer / sizeof *tail;
     return out;
 }
 
@@ -44,16 +61,12 @@ void carbon_road_headlight_world(Cpu *c, void (*original)(Cpu *)) {
     uint32_t address = M32(c->esp + 4);
     float world[16], constants[4][4] = {{0}};
     memcpy(world, G + address, sizeof world);
-    int translated = 1;
     for (unsigned row = 0; row < 4; ++row)
         for (unsigned col = 0; col < 4; ++col) {
-            /* Native props can also use this program with nonidentity worlds.
-             * Match the converted road placement exactly, without an epsilon. */
-            float expected = row == col ? 1.0f : row == 3 && col == 0 ? 8192.0f : 0.0f;
-            if (world[row*4+col] != expected) translated = 0;
             if (col < 3) constants[col][row] = world[row*4+col];
         }
-    constants[3][3] = translated;
+    /* The final material draw sets c247.w. Reset here as well, so no world
+     * change can inherit a previous converted draw's selector. */
     original(c);
     uint32_t device = M32(0x00AB0ABCu), vt = device ? M32(device) : 0;
     if (!vt) return;

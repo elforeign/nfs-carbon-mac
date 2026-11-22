@@ -780,7 +780,7 @@ class Private(unittest.TestCase):
         self.assertEqual(row.spare,original.spare)
         self.assertEqual([r.encode() for r in actual.rows if r.number != 326],
                          [r.encode() for r in before.rows if r.number != 326])
-        self.assertEqual(self.proof['rows'],{326:51832628,220:55218232})
+        self.assertEqual(self.proof['rows'],{326:51125052,220:55217976})
         for i in (24,25):
             self.assertEqual(list(self.world.packs[134].faces(i)),
                              list(self.base_world.packs[134].faces(i)))

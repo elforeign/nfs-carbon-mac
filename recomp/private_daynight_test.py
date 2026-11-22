@@ -225,7 +225,8 @@ static unsigned uploads, original_calls, checks;
 uint64_t host_ticks(void) { return 0; }
 void diag_event(const char *format,...) {(void)format;}
 uint32_t call_guest(Cpu *c,uint32_t fn,int n,const uint32_t *args) {
-    assert(n==4 && args[0]==0x3000 && args[3]==(fn==0xf1005678u?6u:3u));
+    /* Both native world and current sky callbacks upload three float4 registers. */
+    assert(n==4 && args[0]==0x3000 && args[3]==3u);
     if (fn==0xf1005678u) { assert(args[1]==14); }
     else { assert(fn==0xf1001234u && args[1]==240);
         memcpy(uploaded,G+args[2],sizeof uploaded); ++uploads; }

@@ -8,6 +8,10 @@ not presented-frame game proof. Faint flare glow (receiver mask 250, alpha 2%): 
 flare quads into the lamp pools) gives 0, rejected (exit 1).
 not presented-frame game proof. Authored colour: adapted xy (.290067899,.313228432),
 no-adaptation dxy .004602300 (rejected at .003). No Metal or private image: exit 3.
+At 150 m the old cull gives 0 against stock's 1. Reach samples at
+150/175/195/200 m now match stock: 1/.9375/.1975/0.
+At noon the tunnel fixture gains 9.1324 code values (1x and 4x);
+the ordinary street record control gains 0.
 """
 from pathlib import Path
 import ast
@@ -123,10 +127,34 @@ int main(int argc,char **argv){@autoreleasepool{
   cmd=[queue commandBuffer];clear_targets();carbon_lamplight_apply();read_pixels();
   double faint=(luma(128)-base[0])-(luma(208)-base[1]);printf("samples=%u faint_glow_gain=%.6f\n",samples,faint);CHECK(faint>=measured[0]-2);
   memset(coverage,255,sizeof coverage);[mask replaceRegion:MTLRegionMake2D(0,0,256,128) mipmapLevel:0 withBytes:coverage bytesPerRow:256];
+  lamp_level=0;
+  cmd=[queue commandBuffer];clear_targets();carbon_lamplight_apply();read_pixels();
+  double day_control=luma(128)-base[0];CHECK(day_control==0);
+  strcpy((char *)guest+0x203e,"x360_tunnel_fixture");
+  M32(0x200c)=222|(249<<8)|(255<<16);MF32(0x201c)=10;MF32(0x202c)=10;
+  carbon_lamps_signature=0;
+  cmd=[queue commandBuffer];clear_targets();carbon_lamplight_apply();read_pixels();
+  double tunnel=luma(128)-base[0];
+  printf("samples=%u tunnel_day_gain=%.6f street_day_control=%.6f\n",samples,tunnel,day_control);
+  CHECK(tunnel>=4&&luma(208)==base[1]);
+  strcpy((char *)guest+0x203e,"Street_Fixture");
+  M32(0x200c)=0xffffff;MF32(0x201c)=25;carbon_lamps_signature=0;lamp_level=1;
  }
  // Authored linear record; independent double-precision XYZ reference.
  M32(0x200c)=158|(204<<8)|(240<<16);carbon_lamps_signature=0;
  CarbonLampParams colour={0};unsigned colour_overflow=0;
+ CHECK(carbon_lamplight_select(0x3000,1,&colour,&colour_overflow)==1);
+ float near_red=colour.lamps[0].rgb[0];
+ MF32(0x3038)=-8;
+ static const float distances[]={150,175,195,200}, stock_fade[]={1,.9375f,.1975f,0};
+ for(unsigned i=0;i<4;i++){
+  MF32(0x3030)=-distances[i];
+  unsigned selected=carbon_lamplight_select(0x3000,1,&colour,&colour_overflow);
+  float fade=selected?colour.lamps[0].rgb[0]/near_red:0;
+  printf("LAMP reach %.0f m: %.4f (stock %.4f)\n",distances[i],fade,stock_fade[i]);
+  CHECK(selected==(stock_fade[i]>0)&&fabsf(fade-stock_fade[i])<.00001f);
+ }
+ MF32(0x3030)=MF32(0x3038)=0;
  CHECK(carbon_lamplight_select(0x3000,1,&colour,&colour_overflow)==1);
  double authored[]={158.0/255,204.0/255,240.0/255};
  double Y=.2126*authored[0]+.7152*authored[1]+.0722*authored[2];

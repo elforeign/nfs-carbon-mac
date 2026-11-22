@@ -8,6 +8,7 @@
 #include <string.h>
 
 typedef struct { uint32_t target, row; } CarKitMap;
+enum { CAR_KIT_BODY_LODS = 5 };
 
 static uint32_t car_kit_hash(const char *s) {
     uint32_t h = UINT32_MAX;
@@ -37,7 +38,8 @@ static int car_kit_present(const uint32_t *rows, unsigned count, uint32_t hash) 
 // Returns the repaired row count, or -1 when this is not a decoded output pack.
 // Read only indexed model headers, never meshes. Commit changes only after all
 // ranges validate; compressed/foreign packs retain their existing mapping.
-static int car_kit_fallback(FILE *f, const char *space, uint32_t *map, unsigned count) {
+static int car_kit_fallback(FILE *f, const char *space, uint32_t *map, unsigned count,
+                            uint32_t stock_body[CAR_KIT_BODY_LODS]) {
     uint32_t h[2], end, table = 0, table_size = 0;
     if (!count || count > 8192 || !car_kit_read(f, 0, h, 8, 512u << 20) ||
         h[0] != 0x80134000u || h[1] > (512u << 20) - 8) return -1;
@@ -63,6 +65,7 @@ static int car_kit_fallback(FILE *f, const char *space, uint32_t *map, unsigned 
     unsigned solids = table_size / 24;
     uint32_t *rows = malloc(table_size), *resolved = malloc(count * sizeof *resolved);
     CarKitMap *sorted = malloc(count * sizeof *sorted);
+    uint32_t verified_body[CAR_KIT_BODY_LODS] = {0};
     int result = -1;
     if (!rows || !resolved || !sorted || !car_kit_read(f, table, rows, table_size, end)) goto done;
     for (unsigned i = 0; i < count; ++i) {
@@ -97,6 +100,16 @@ static int car_kit_fallback(FILE *f, const char *space, uint32_t *map, unsigned 
                     !memchr(name, 0, size) || hash != r[0] || car_kit_hash(name) != hash) goto done;
                 if (strncmp(name, stock_prefix, (size_t)prefix_size)) break;
                 const char *suffix = name + prefix_size;
+                if (!strncmp(suffix, "BODY_", 5) && suffix[5] >= 'A' &&
+                    suffix[5] < 'A' + CAR_KIT_BODY_LODS && !suffix[6])
+                    verified_body[suffix[5] - 'A'] = hash;
+                // Some packs end their separate hood geometry at LOD C.
+                // Keep the hood visible at D using that pack's own stock hood.
+                int alias_hood_d = 0;
+                if (!strcmp(suffix, "HOOD_C")) {
+                    snprintf(candidate, sizeof candidate, "%sHOOD_D", stock_prefix);
+                    alias_hood_d = !car_kit_present(rows, solids, car_kit_hash(candidate));
+                }
                 // Random donor parts also request STYLE models. Preserve the
                 // entire slot/LOD suffix, including multiword slots; authored
                 // targets win over the pack's own stock model.
@@ -105,15 +118,18 @@ static int car_kit_fallback(FILE *f, const char *space, uint32_t *map, unsigned 
                     int length = snprintf(candidate, sizeof candidate, "%s_%s%02u_%s", space,
                                           kind, kit, suffix);
                     if (length < 0 || (unsigned)length >= sizeof candidate) goto done;
-                    uint32_t missing = car_kit_hash(candidate);
-                    if (car_kit_present(rows, solids, missing)) continue;
-                    unsigned lo = 0, hi = count;
-                    while (lo < hi) {
-                        unsigned mid = lo + (hi - lo) / 2;
-                        if (sorted[mid].target < missing) lo = mid + 1; else hi = mid;
+                    for (int alias = 0; alias <= alias_hood_d; ++alias) {
+                        if (alias) candidate[length - 1] = 'D';
+                        uint32_t missing = car_kit_hash(candidate);
+                        if (car_kit_present(rows, solids, missing)) continue;
+                        unsigned lo = 0, hi = count;
+                        while (lo < hi) {
+                            unsigned mid = lo + (hi - lo) / 2;
+                            if (sorted[mid].target < missing) lo = mid + 1; else hi = mid;
+                        }
+                        for (; lo < count && sorted[lo].target == missing; ++lo)
+                            resolved[sorted[lo].row] = hash;
                     }
-                    for (; lo < count && sorted[lo].target == missing; ++lo)
-                        resolved[sorted[lo].row] = hash;
                 }
                 break;
             }
@@ -125,6 +141,7 @@ static int car_kit_fallback(FILE *f, const char *space, uint32_t *map, unsigned 
     for (unsigned i = 0; i < count; ++i) if (map[2*i+1] != resolved[i]) {
         map[2*i+1] = resolved[i]; ++result;
     }
+    memcpy(stock_body, verified_body, sizeof verified_body);
 done:
     free(rows); free(resolved); free(sorted);
     return result;

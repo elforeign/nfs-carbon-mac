@@ -33,6 +33,17 @@
       },
       "provider": "carbon_mirror_projection",
       "job": "cc-cmirror2"
+    },
+    {
+      "address": "0079AE80",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "0079AE80",
+        "length": 16,
+        "sha256": "7109219833ea44c4a9a38797eff6d838ee7d1c9b55d2fedf8365e8fa0bdd50ac"
+      },
+      "provider": "carbon_mirror_register_scenery",
+      "job": "carbon-mirror-lod"
     }
   ]
 }

@@ -17,6 +17,23 @@ static unsigned carbon_c3drive_count, carbon_c3drive_index;
 static double carbon_c3drive_best, carbon_c3drive_progress_time, carbon_c3drive_recover_time;
 static double carbon_c3drive_reverse_until = -1.;
 static const char *carbon_c3drive_reason;
+static int carbon_c3drive_launched;
+
+/* One diagnostic launch after settling on four wheels. Needed for a fast crossing
+ * from a short approach; afterwards every velocity update is native physics. */
+static void carbon_c3drive_launch(uint32_t state, float velocity[3], int wheels) {
+    if (!diag_on || carbon_c3drive_launched || wheels != 4 || MF32(0x00B4CFD8u)<2.f) return;
+    const char *value=getenv("NFS_TEST_C3_VELOCITY");
+    float v[3];char extra;
+    if (!value || sscanf(value,"%f,%f,%f%c",v,v+1,v+2,&extra)!=3 ||
+        !isfinite(v[0]) || !isfinite(v[1]) || !isfinite(v[2]) ||
+        hypot(hypot(v[0],v[2]),v[1])>80.) return;
+    memcpy(gptr(state+0x20),v,sizeof v);
+    memcpy(velocity,v,sizeof v);
+    carbon_c3drive_launched=1;
+    diag_event("c3_launch: time=%.6f velocity=%.6f,%.6f,%.6f wheels=4 once=1",
+               MF32(0x00B4CFD8u),v[0],v[1],v[2]);
+}
 
 static int carbon_c3drive_direction(void) {
     const char *route = getenv("NFS_CARBON_C3_ROUTE");
@@ -25,6 +42,8 @@ static int carbon_c3drive_direction(void) {
     const char *skip = getenv("NFS_CARBON_SKIPFE"), *start = getenv("NFS_CARBON_SKIPFE_START");
     if (!ai || strcmp(ai,"1") || !pad || strcmp(pad,"sim") ||
         !skip || strcmp(skip,"1") || !start || !*start) return 0;
+    if (diag_on && !strcmp(route,"coast-forward")) return 2;
+    if (diag_on && !strcmp(route,"coast-reverse")) return -2;
     return !strcmp(route,"forward") ? 1 : !strcmp(route,"reverse") ? -1 : 0;
 }
 
@@ -52,8 +71,18 @@ int carbon_c3drive_pad(int idx, float *lx, float *rt, float *lt) {
     return carbon_c3drive_done ? 2 : 1;
 }
 
+static unsigned carbon_c3drive_segments(int direction) {
+    return abs(direction) == 2 ? 28 : 51;
+}
+
 static unsigned carbon_c3drive_node(unsigned i, int direction) {
-    if (direction < 0) i = 51-i;
+    if (direction < 0) i = carbon_c3drive_segments(direction)-i;
+    if (abs(direction) == 2) {
+        /* Native approach roads and the appended 20-node coast chain. */
+        if (i < 5) return 1018-i;
+        if (i < 25) return 8988+i-5;
+        return 5387-(i-25);
+    }
     return i < 16 ? 8739+i : i < 51 ? 8988+i-16 : 1534;
 }
 
@@ -61,7 +90,7 @@ static unsigned carbon_c3drive_node(unsigned i, int direction) {
  * limit from its curvature: 8 m/s2 sideways, 5 m/s2 braking for what is ahead. */
 static void carbon_c3drive_build(uint32_t nodes, uint32_t segments, int direction) {
     unsigned n = 0;
-    for (unsigned i=0;i<51;++i) {
+    for (unsigned i=0;i<carbon_c3drive_segments(direction);++i) {
         unsigned a=carbon_c3drive_node(i,direction), b=carbon_c3drive_node(i+1,direction);
         double pa[3],pb[3],c1[3],c2[3];
         for (unsigned k=0;k<3;++k) {
@@ -110,7 +139,7 @@ static void carbon_c3drive_build(uint32_t nodes, uint32_t segments, int directio
     carbon_c3drive_reverse_until=-1.;
 }
 
-/* Log-only trace: every tick within 60 m of either lip, else every 30 ticks.
+/* Log-only trace: every tick, including crossings outside the original route.
  * Course direction comes from the velocity along the lip axis. */
 static void carbon_c3drive_trace(const float *position, const float *velocity, float line[52][3]) {
     double along=(position[0]+2635.271)*.5383-(position[2]-7214.961)*.8428;
@@ -118,7 +147,7 @@ static void carbon_c3drive_trace(const float *position, const float *velocity, f
     double course=.5383*velocity[0]-.8428*velocity[2];
     int direction=course<0 ? -1 : 1;
     uint32_t tick=M32(0x00B4CFD4u);
-    if (!diag_on || ((along<-60. || along>94.05) && tick%30)) return;
+    if (!diag_on) return;
     if (carbon_c3drive_logged && tick==carbon_c3drive_tick) return;
     carbon_c3drive_logged=1;carbon_c3drive_tick=tick;
     double nearest=1e30;
@@ -139,6 +168,9 @@ static int carbon_c3drive_frame(uint32_t sim, uint64_t now) {
     if (!direction && !logging) return 0;
     carbon_c3drive_active = 0;
     uint32_t nodes = M32(0x00B77EC8u), segments = M32(0x00B77ECCu);
+    int coast = abs(direction) == 2;
+    if (coast && (!segments || M32(0x00B77E84u) != 12349)) return 1;
+    unsigned last_node = carbon_c3drive_segments(direction);
     uint32_t vt = M32(sim), body = M32(sim+0x4C), bv = body ? M32(body) : 0;
     if (!nodes || !vt || M32(vt+0x60) != 0x006D7EA0u ||
         !bv || M32(bv+0x20) != 0x006C6FF0u) return 1;
@@ -151,12 +183,13 @@ static int carbon_c3drive_frame(uint32_t sim, uint64_t now) {
     memcpy(forward,gptr(state+0x90),sizeof forward);
     for (unsigned k=0;k<3;++k)
         if (!isfinite(position[k]) || !isfinite(velocity[k])) return 1;
-    for (unsigned i=0;i<52;++i) {
+    for (unsigned i=0;i<=last_node;++i) {
         uint32_t node = nodes+32*carbon_c3drive_node(i,logging ? 1 : direction);
         memcpy(line[i],gptr(node),sizeof line[i]);
         for (unsigned k=0;k<3;++k) if (!isfinite(line[i][k])) return 1;
     }
     if (logging) {
+        carbon_c3drive_launch(state,velocity,carbon_census_wheels());
         carbon_c3drive_trace(position,velocity,line);
         return 1;
     }
@@ -166,7 +199,7 @@ static int carbon_c3drive_frame(uint32_t sim, uint64_t now) {
     /* The checker's own measure: distance to the node polyline. */
     double nearest = 1e30, fraction = 0;
     unsigned segment = 0;
-    for (unsigned i=0;i<51;++i) {
+    for (unsigned i=0;i<last_node;++i) {
         double dx=line[i+1][0]-line[i][0],dz=line[i+1][2]-line[i][2];
         double length2=dx*dx+dz*dz;
         if (length2 < .001) continue;
@@ -207,13 +240,15 @@ static int carbon_c3drive_frame(uint32_t sim, uint64_t now) {
         planar=hypot(hx,hz);
     }
     if (planar<.001) return 1;
-    /* Fixed decoded lip axis, shared by both directions. */
-    double along=(position[0]+2635.271)*.5383-(position[2]-7214.961)*.8428;
-    double lateral=(position[0]+2635.271)*.8428+(position[2]-7214.961)*.5383;
+    /* The coast has its own axis and uses the road graph without a jump sprint. */
+    double ux=coast ? .339272508 : .5383, uz=coast ? -.940688134 : -.8428;
+    double dx=position[0]+(coast ? -1668.689331 : 2635.271);
+    double dz=position[2]-(coast ? 3167.139648 : 7214.961);
+    double along=dx*ux+dz*uz, lateral=-dx*uz+dz*ux;
     double progress=direction>0 ? along : 34.05-along;
     double crossing=direction>0 ? 34.05 : 33.85;
     int wheels=carbon_census_wheels();
-    if (progress>=-130. && progress<=0.) carbon_c3drive_straight=1;
+    if (!coast && progress>=-130. && progress<=0.) carbon_c3drive_straight=1;
     if (carbon_c3drive_straight && wheels==0) carbon_c3drive_airborne=1;
     if (progress>=crossing && wheels>0 && carbon_c3drive_airborne) carbon_c3drive_landed=1;
     int lip_aim=carbon_c3drive_straight && !carbon_c3drive_landed;
@@ -239,8 +274,13 @@ static int carbon_c3drive_frame(uint32_t sim, uint64_t now) {
     }
     unsigned native=carbon_c3drive_node(segment,direction);
     double target=carbon_c3drive_vmax[here];
+    /* The Palmont approach turns almost 90 degrees from the native road
+     * onto the deck. Keep the turn and its exit below the steering law's
+     * switch to velocity heading, so the car can straighten before accelerating. */
+    if (coast && direction>0 && along<38.)
+        target=fmin(target,sqrt(36.+10.*fmax(0.,-along-30.)));
     /* Full throttle for the last 130 m; on the far side the road speed again. */
-    int bridge=progress>=-130. && !carbon_c3drive_landed;
+    int bridge=!coast && progress>=-130. && !carbon_c3drive_landed;
     if (bridge) target=45.;
     carbon_c3drive_rt=(float)fmax(0.,fmin(1.,.25+.18*(target-speed)));
     carbon_c3drive_lt=(float)fmax(0.,fmin(1.,.12*(speed-target-1.)));
@@ -250,8 +290,8 @@ static int carbon_c3drive_frame(uint32_t sim, uint64_t now) {
     double sim_time=MF32(0x00B4CFD8u);
     uint32_t tick=M32(0x00B4CFD4u);
     if (progress>=0. && carbon_c3drive_lip_time<0.) carbon_c3drive_lip_time=sim_time;
-    double end_distance=hypot(position[0]-line[51][0],position[2]-line[51][2]);
-    if (end_distance<=40. && segment>=49) {
+    double end_distance=hypot(position[0]-line[last_node][0],position[2]-line[last_node][2]);
+    if (end_distance<=40. && segment>=last_node-2) {
         if (!carbon_c3drive_arrived) carbon_c3drive_arrived=now;
         carbon_c3drive_rt=0;carbon_c3drive_lt=1;
     }
@@ -286,14 +326,14 @@ static int carbon_c3drive_frame(uint32_t sim, uint64_t now) {
                                 carbon_c3drive_reason,position[0],position[1],position[2],
                                 carbon_c3drive_best,carbon_c3drive_arc[count-1]);
     }
-    int bridge_trace=progress>=-60. &&
-        (carbon_c3drive_lip_time<0. || sim_time-carbon_c3drive_lip_time<=10.);
+    int bridge_trace=coast || (progress>=-60. &&
+        (carbon_c3drive_lip_time<0. || sim_time-carbon_c3drive_lip_time<=10.));
     if (diag_on && (bridge_trace || tick%30==0) &&
         (!carbon_c3drive_logged || tick!=carbon_c3drive_tick)) {
         carbon_c3drive_logged=1;carbon_c3drive_tick=tick;
         /* Heading is the measured velocity course. */
-        double error=atan2(direction*(.5383*velocity[2]+.8428*velocity[0]),
-                           direction*(.5383*velocity[0]-.8428*velocity[2]))*57.29577951308232;
+        double error=atan2(direction*(ux*velocity[2]-uz*velocity[0]),
+                           direction*(ux*velocity[0]+uz*velocity[2]))*57.29577951308232;
         diag_event("c3tick: tick=%u time=%.6f position=%.6f,%.6f,%.6f velocity=%.6f,%.6f,%.6f s=%.6f lateral=%.6f heading=%.6f wheels=%d point=%u graph_lateral=%.6f aim=%.6f,%.6f target=%.6f lx=%.6f rt=%.6f lt=%.6f lip_aim=%d forward=%.4f,%.4f index=%u path_lateral=%.3f",
                    tick,sim_time,position[0],position[1],position[2],velocity[0],velocity[1],velocity[2],
                    along,lateral,error,wheels,segment,nearest,tx,tz,target,

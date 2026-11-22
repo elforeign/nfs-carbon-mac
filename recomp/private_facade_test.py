@@ -129,9 +129,9 @@ def run(command, expected=0):
     return r.stdout.strip()
 
 
-def main():
-    effects = list((HERE/'out/carbon/effects').glob('*IDI_GLASSREFLECTSHADER_FX_*.bin'))
-    if not effects:
+def main(effects=HERE/'out/carbon/effects'):
+    files = sorted(effects.glob('*IDI_GLASSREFLECTSHADER_FX_*.bin'))
+    if not files:
         print('SKIP: private glass effect corpus absent'); return 3
     out = ignored_output(HERE/'out/carbon/facade_check')
     variant = (HERE/'private_runtime/carbon_daynight_shader.h').read_text()
@@ -144,7 +144,7 @@ def main():
         (out/'variant.inc').write_text(text)
         binary = out/label
         run(['clang++','-std=c++17','-O1','-fobjc-arc','-I',shaders,'-I',out,fixture,shaders/'tests/sm_interp.cpp',shaders/'build/libsmtranslate.a','-framework','Foundation','-framework','Metal','-o',binary])
-        proof.append(label+': '+run([binary,effects[0],*(['old-control'] if label=='old-path' else [])], 0 if label=='good' else 1))
+        proof.append(label+': '+run([binary,files[0],*(['old-control'] if label=='old-path' else [])], 0 if label=='good' else 1))
         print(proof[-1])
     source = (HERE/'private_runtime/carbon_daynight.h').read_text()
     hook = json.loads((HERE/'private_runtime/hooks/facade.json').read_text())

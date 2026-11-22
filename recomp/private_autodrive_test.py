@@ -210,6 +210,23 @@ static void log_only(void) {
  replay_state(20.,(double[]){-2635.271+10*.5383,212.,7214.961-10*.8428},(double[]){40*.5383,0,-40*.8428});
  CHECK(c3ticks==before+1&&strstr(line,"log_only=1")&&strstr(line,"s=10.0"));
  CHECK(carbon_c3drive_lx==.25f&&carbon_c3drive_rt==.25f&&carbon_c3drive_lt==.25f&&!carbon_c3drive_active);
+ /* A different crossing must retain every physics tick: the old lip-only trace
+  * drops this non-multiple-of-30 tick and cannot count airborne frames there. */
+ MF32(0xF010)=1800;MF32(0xF018)=2800;M32(0xB4CFD4)++;
+ carbon_c3drive_frame(0x5000,++now);CHECK(c3ticks==before+2);
+ /* The optional impulse is inert without diagnostics, settling or four contacts;
+  * the accepted launch changes only velocity, exactly once. */
+ float launch[3]={1,2,3};MF32(0xB4CFD8)=3.f;
+ setenv("NFS_TEST_C3_VELOCITY","20,1,-56",1);
+ diag_on=0;carbon_c3drive_launch(0xF000,launch,4);CHECK(launch[0]==1);
+ diag_on=1;carbon_c3drive_launch(0xF000,launch,0);CHECK(launch[0]==1);
+ MF32(0xB4CFD8)=1.f;carbon_c3drive_launch(0xF000,launch,4);CHECK(launch[0]==1);
+ MF32(0xB4CFD8)=3.f;setenv("NFS_TEST_C3_VELOCITY","nan,0,0",1);
+ carbon_c3drive_launch(0xF000,launch,4);CHECK(launch[0]==1);
+ setenv("NFS_TEST_C3_VELOCITY","20,1,-56",1);carbon_c3drive_launch(0xF000,launch,4);
+ CHECK(launch[0]==20&&launch[1]==1&&launch[2]==-56&&MF32(0xF020)==20);
+ launch[0]=7;carbon_c3drive_launch(0xF000,launch,4);CHECK(launch[0]==7);
+ unsetenv("NFS_TEST_C3_VELOCITY");carbon_c3drive_launched=0;
  float lx=0,rt=0,lt=0;CHECK(!carbon_c3drive_pad(0,&lx,&rt,&lt));
  printf("C3 LOG-ONLY PASS controls=untouched pad=0 trace=1\n");
  setenv("BOOT_PAD","sim",1);setenv("BOOT_AUTODRIVE","1",1);
@@ -256,6 +273,15 @@ int main(void) {
  setenv("BOOT_PAD","sim",1);setenv("NFS_CARBON_SKIPFE","1",1);
  setenv("NFS_CARBON_SKIPFE_START","0,0,0",1);
  CHECK(carbon_c3drive_direction()==1);
+ setenv("NFS_CARBON_C3_ROUTE","coast-forward",1);
+ CHECK(carbon_c3drive_direction()==2&&carbon_c3drive_segments(2)==28);
+ CHECK(carbon_c3drive_node(4,2)==1014&&carbon_c3drive_node(5,2)==8988);
+ CHECK(carbon_c3drive_node(24,2)==9007&&carbon_c3drive_node(25,2)==5387);
+ setenv("NFS_CARBON_C3_ROUTE","coast-reverse",1);
+ CHECK(carbon_c3drive_direction()==-2&&carbon_c3drive_node(0,-2)==5384&&carbon_c3drive_node(28,-2)==1018);
+ CHECK(carbon_c3drive_frame(0x5000,now)&&!carbon_c3drive_active);
+ diag_on=0;CHECK(carbon_c3drive_direction()==0);diag_on=1;
+ setenv("NFS_CARBON_C3_ROUTE","forward",1);
  M32(0xB77EC8)=0x400000;
  for(unsigned i=0;i<52;++i) {
    uint32_t node=0x400000+32*carbon_c3drive_node(i,1);

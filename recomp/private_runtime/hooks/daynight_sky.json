@@ -11,6 +11,17 @@
       },
       "provider": "carbon_daynight_fog",
       "job": "J5"
+    },
+    {
+      "address": "007AFB70",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "007AFB70",
+        "length": 16,
+        "sha256": "a1f6e1e805804b42206d656cea762b17be8d0d9ac38cd441216c34a5741a64d6"
+      },
+      "provider": "carbon_daynight_view",
+      "job": "B2"
     }
   ]
 }

@@ -1,11 +1,14 @@
 """Oversized Y00 backing through the production CRT and extent allocator.
 
-Good: 141 checks; two reloads share one reservation with zero bad frees, despite >600 MiB
+Good: 197 checks; two reloads share one reservation with zero bad frees, despite >600 MiB
 free in resource extents too small for the 180,113,988-byte backing request.
 Pinned old malloc path: exit 1 at the fragmented-resource allocation check.
 Broken matching free / clearing: exit 1 at the wrong-heap / reload-zero check.
-Overlap returning 0 (80e5b20d line 45): exit 1 at check 94 (good: 141); a grow without
+Overlap returning 0 (80e5b20d line 45): exit 1 at check 147 (good: 197); a grow without
 the memset: exit 1 at the grown-zero check.
+Full pool 7: a section's compacted copy (return 006ADC36) is retried in the main heap;
+without the retry: exit 1 at check 56 (the copy comes back 0, as in the game run where
+section 2100 then lost its base).
 Uses synthetic pool calls, no game assets or emulation.
 """
 import hashlib
@@ -38,7 +41,9 @@ def main():
     live = 'if (carbon_y00_live) return gmalloc(size);'
     grow = '        memset(G + carbon_y00_backing, 0, size);\n    } else {'
     free = 'if (block && block == carbon_y00_backing) {'
-    for fragment, source in ((current, crt), (clear, backing), (free, backing), (live, backing), (grow, backing)):
+    copy = 'if (!c->eax && ret == 0x006ADC36u && (flags & 0xFu) == 7u) {'
+    for fragment, source in ((current, crt), (clear, backing), (free, backing), (live, backing), (grow, backing),
+                             (copy, backing)):
         assert source.count(fragment) == 1, fragment
     cases = (
         ('good', crt, backing, ''),
@@ -52,6 +57,8 @@ def main():
          'overlap takes resource heap'),
         ('stale-grow', crt, backing.replace(grow, '    } else {'),
          'grown backing is zeroed'),
+        ('no-copy-retry', crt, backing.replace(copy, 'if (0) {'),
+         'section copy leaves a full pool 7 for the main heap'),
     )
     with tempfile.TemporaryDirectory(prefix='private-y00-heap-') as td:
         tmp = Path(td)

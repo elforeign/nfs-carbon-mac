@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "hooks": [
+    {
+      "address": "007BE170",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "007BE170",
+        "length": 16,
+        "sha256": "5df1abe77abc83a45cf5ea59124bd49f4afe58ef4185d027c0bb75e77c42ad5a"
+      },
+      "provider": "carbon_daynight_lamps_traffic_quad",
+      "job": "J7"
+    }
+  ]
+}

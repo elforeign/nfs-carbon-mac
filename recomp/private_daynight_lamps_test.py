@@ -1,20 +1,28 @@
 """Scoped street-flare curve, car flares, cone parking, queued diagnostics and
 exact stack restoration.
 
-Good: 246 checks / 0 failures (exit 0). Factor always one: 251 checks /
-56 failures. Wrong scope (the original missed scene path): 250 / 29.
-All scene kinds scaled: 244 / 15. Dusk-gain=1: 246 / 24.
-Missing restoration: 246 / 4. Cones always native (old code): 243 / 17.
-Car flares always native (old code): 250 / 16.
+Good: 281 checks / 0 failures (exit 0). Factor always one: 287 checks /
+59 failures. Wrong scope (the original missed scene path): 286 / 32.
+All scene kinds scaled: 279 / 15. Dusk-gain=1: 281 / 26.
+Missing restoration: 281 / 4. Cones always native (old code): 278 / 17.
+Car flares always native (old code): 285 / 16.
 Every broken variant and the original provider exit 1.
 The native scene batch executes; the flare callee models queue rejection and native
 in-place intensity attenuation. Pinned translated fragments establish the ABI
-and actual queue counter. Missing private inputs: exit 3. No game is launched.
+and actual queue counter. The native C-LOD marker producer, iterator and scene
+allocator now execute before the clock walk: midnight/dusk/transition submit
+1/1/1 street flare; noon submits 0. Native capacity 300 rejects allocation 301.
+Submitting the densest imported row's 365-marker upper bound retains 300 and
+counts 65 overflow rejections. The native eligibility function returns 0 with
+the original source hash, 2 with its low cache bits cleared.
+The stock main-view glow uses squared-distance fade 30000..40000 (173.205..200 m).
+Missing private inputs: exit 3. No game is launched.
 """
 from pathlib import Path
 import hashlib
 import json
 import re
+import struct
 import subprocess
 import sys
 
@@ -28,10 +36,19 @@ import private_hooks
 
 PINS = (
     ('0074D330: push ebp', '0074D333:', 'c38481cd2c53768063231a35a680a8617cf97b5618d8ef14ae1c8f81bf12cca0'),
+    ('0074D846:', '0074D902:', '4fcc9c11d43c9339ea1dbfb09db348212b493b1c5711f4fae1d08c39e7dbacc1'),
     ('0074DB4F:', '0074DB57:', '668c00e448a586e164de01887bed31686d4d7347fa141322363f4e799da28979'),
     ('00750A78:', '00750AAF:', 'b6004dfc14f51fa935dce7f4d9ecb4004280a87be23965eef36385e48c8a2a60'),
     ('0074E0FB:', '0074E105:', '7dacbf0ba79134ae3ae398e17611d1d326366a55350fe735572ce5ac2754532c'),
     ('00749D2D:', '00749D33:', 'e6fab4b7c02f3aeb74da13219db907efc205fdcffb3e7f7b494534713d4e613e'),
+)
+
+NATIVE_PINS = (
+    ('43', '0079A910', 'a847d98e7b574e524c75b96cf86661557b20c4789c323ddb5375988cefa4e0b9'),
+    ('43', '0079A960', '2c071ae6b8aae80bd4569c74696b88a150826c1af12faf9d33abde1d94170351'),
+    ('17', '0055C0F0', '26380f2a12a4d4100833cdcecb475c56d8b8e646ace459d1ad0efcc66fa146ee'),
+    ('39', '0073A120', '37d697ad4a2276d2fe107bcac9bcc879acc7e844038eb60216d5613c7cf34105'),
+    ('39', '0073A160', '35978ce3e4a187f6a91befab9146afded7008f9e84e73eb91f7aa996d044d6f3'),
 )
 
 
@@ -75,6 +92,21 @@ void f_0055A750(Cpu *c) { x87_push(c,1);c->esp+=4; }
 void f_0047AA00(Cpu *c) { c->eax=0;c->esp+=4; }
 void f_0061AAF0(Cpu *c) { c->eax=0;c->esp+=4; }
 void f_004A0490(Cpu *c) { c->esp+=4; }
+void f_0073A2F0(Cpu *c) { c->eax=0;c->esp+=4; }
+void f_0046CAD0(Cpu *c) { c->eax=0;c->esp+=4; }
+void f_0046F690(Cpu *c) { CHECK(0);c->esp+=4; }
+void f_0070E060(Cpu *c) {
+    uint32_t in=M32(c->esp+4),matrix=M32(c->esp+8),out=M32(c->esp+12);
+    float v[3];
+    for(unsigned a=0;a<3;++a)
+        v[a]=MF32(matrix+48+4*a)+MF32(in)*MF32(matrix+4*a)+
+             MF32(in+4)*MF32(matrix+16+4*a)+MF32(in+8)*MF32(matrix+32+4*a);
+    memcpy(G+out,v,sizeof v);c->esp+=4;
+}
+void f_0055C0F0(Cpu *c);
+void f_0073A120(Cpu *c);
+void f_0073A160(Cpu *c);
+#include "producer.inc"
 #include "walker.inc"
 static void native_flare(Cpu *c) {
     ++flares;
@@ -177,6 +209,52 @@ int main(void) {
             CHECK(M32(0x7140+4*k)==(i==1?0xC61C4000u:0x11111111u));
         }
     }
+    /* Run the translated native marker iterator, C-LOD producer and allocator,
+     * then feed their scene record through the existing translated clock walk. */
+    memset(G,0,0xC00000);diag_on=0;visible=1;attenuate=0;
+    M32(0x00A6C088u)=1;M32(0x00A99BBCu)=6;
+    M32(0x4000)=0x30000;M32(0x30008)=1;M32(0x4040)=0x5000;
+    M32(0x23030)=0x22000;M32(0x2200c)=0x21000;
+    M32(0x21080)=0x20000;M8(0x2101b)=1;
+    M32(0x20000)=11;M32(0x20004)=6;
+    const float pivot[3]={100,200,300},bulb[3]={.5f,-2,9},origin[3]={10,20,3};
+    for(unsigned a=0;a<3;++a) {
+        MF32(0x21070+4*a)=pivot[a];MF32(0x20040+4*a)=pivot[a]+bulb[a];
+        MF32(0x24020+4*a)=origin[a];MF32(0x2402c+16*a)=1;
+    }
+    MF32(0x009C2478u)=1;MF32(0x009CD824u)=1;
+    /* Serialized source hash 925F2389 falsely says the eligibility cache is
+     * already computed and false. Clearing only its two cache bits repairs it. */
+    M32(0x2303c)=0x925F2389u;
+    Cpu eligibility=initial(1);M32(eligibility.esp+4)=0x23000;
+    f_0079A910(&eligibility);CHECK(eligibility.eax==0);
+    M32(0x2303c)&=~3u;
+    eligibility=initial(1);M32(eligibility.esp+4)=0x23000;
+    f_0079A910(&eligibility);CHECK(eligibility.eax==2);
+    static const float levels[]={1,0,0.5f,0.125f};
+    for(unsigned k=0;k<4;++k) {
+        M32(0x00B42EFCu)=0;M32(0x00B42F1Cu)=0;
+        Cpu c=initial(1);M32(c.esp+8)=0x23000;M32(c.esp+12)=0x24000;
+        f_0079A960(&c);
+        CHECK(c.esp==0x10004&&M32(0x00B42EFCu)==1);
+        CHECK(M8(0x00B43830u+0x2c)==13&&M8(0x00B43830u+0x2d)==2);
+        for(unsigned a=0;a<3;++a) CHECK(MF32(0x00B43840u+4*a)==origin[a]+bulb[a]);
+        night=levels[k];expected_intensity=fminf(1,2*night);
+        unsigned before=street_calls;
+        c=initial(1);carbon_daynight_lamps_world(&c,carbon_orig_007507D0);
+        CHECK(street_calls-before==(night>0?1u:0u));
+        CHECK(c.esp==0x10004);
+    }
+    M32(0x00B42EFCu)=0;M32(0x00B42EF8u)=0;
+    for(unsigned k=0;k<365;++k) {
+        Cpu c=initial(1);M32(c.esp+8)=0x23000;M32(c.esp+12)=0x24000;
+        f_0079A960(&c);
+    }
+    CHECK(M32(0x00B42EFCu)==300&&M32(0x00B42EF8u)==65);
+    /* The real allocator rejects the 301st scene flare and records overflow. */
+    M32(0x00B42EFCu)=300;M32(0x00B42EF8u)=0;
+    Cpu cap=initial(1);f_0073A120(&cap);
+    CHECK(cap.eax==0&&M32(0x00B42EF8u)==1&&M32(0x00B42EFCu)==300);
     printf("LAMPS checks=%u failures=%u walks=%u flares=%u events=%u\n",checks,failures,walks,flares,events);
     free(G);return failures?1:0;
 }
@@ -203,6 +281,9 @@ def main():
         b = source.index('    /* '+end, a)
         assert hashlib.sha256(source[a:b].encode()).hexdigest() == digest, start
     pe = PE(image['exe'], expected_sha256=image['sha256'])
+    fade_start2, fade_end2 = struct.unpack('<2f', pe.read(0x009EA4D8, 8))
+    assert (fade_start2, fade_end2) == (30000, 40000)
+    print(f'STOCK scene glow fade {fade_start2**.5:.3f}..{fade_end2**.5:.3f} m')
     out = ignored_output(HERE/'out/carbon/daynight_lamps_check')
     registry = out/'hooks';registry.mkdir(exist_ok=True)
     record = HERE/'private_runtime/hooks/daynight_lamps.json'
@@ -219,6 +300,13 @@ def main():
         if address==0x7507D0:
             (out/'walker.inc').write_text(private_hooks.wrap(address,body,hooks[address]))
     production = (HERE/'private_runtime/carbon_daynight_lamps.h').read_text()
+    native = []
+    for unit, address, digest in NATIVE_PINS:
+        translated = (base/f'NFSC_{unit}.c').read_text()
+        body = re.search(rf'void f_{address}\(.*?\n}}', translated, re.S)[0]
+        assert hashlib.sha256(body.encode()).hexdigest() == digest, address
+        native.append(body)
+    (out/'producer.inc').write_text('\n'.join(native))
     feature = json.loads((HERE/'private_runtime/features/daynight_lamps.json').read_text())
     assert feature['bindings']['carbon_daynight_lamps.c']['sha256']==hashlib.sha256(production.encode()).hexdigest()
     (out/'fixture.c').write_text(HARNESS)

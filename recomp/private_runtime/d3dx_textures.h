@@ -192,18 +192,54 @@ static int px_buf_query(Cpu*c){uint32_t self=arg(c,0),iid=arg(c,1),out=arg(c,2);
 static int px_buf_pointer(Cpu*c){RET(M32(arg(c,0)+8),1);}
 static int px_buf_size(Cpu*c){RET(M32(arg(c,0)+12),1);}
 static uint32_t px_buffer(const uint8_t *bytes,size_t size){static uint32_t vt;if(size>UINT32_MAX)return 0;if(!vt){vt=galloc(20);HostFn fn[]={px_buf_query,px_buf_add,px_buf_release,px_buf_pointer,px_buf_size};const char *names[]={"QueryInterface","AddRef","Release","GetBufferPointer","GetBufferSize"};for(unsigned i=0;i<5;i++)M32(vt+4*i)=host_fn(fn[i],names[i]);}uint32_t p=gmalloc(16),data=gmalloc((uint32_t)size);if(!p||!data){gfree(p);gfree(data);return 0;}M32(p)=vt;M32(p+4)=1;M32(p+8)=data;M32(p+12)=size;memcpy(G+data,bytes,size);return p;}
-static int px_save_file(const char *guest,const uint8_t *bytes,size_t size){
-    const char *scratch=getenv("NFS_GAME_SCRATCH");if(!scratch||!*scratch)scratch=getenv("BOOT_USERDATA");if(!scratch||!*scratch)return 0;
-    char root[4096],path[4096],rel[4096];if(!realpath(scratch,root))return 0;
+static uint32_t px_save_file(const char *guest,uint32_t surface,uint32_t palette,uint32_t rect,unsigned format){
+    const uint32_t denied=0x80070005u;
+    const char *scratch=getenv("NFS_GAME_SCRATCH");if(!scratch||!*scratch)scratch=getenv("BOOT_USERDATA");if(!scratch||!*scratch)return denied;
+    char root[4096],path[4096],rel[4096];if(!realpath(scratch,root))return denied;
     if(guest[0]=='/')snprintf(path,sizeof path,"%s",guest);else if(strchr(guest,':')||!strncasecmp(guest,"USERDATA",8))private_resolve(guest,path,sizeof path);else{snprintf(rel,sizeof rel,"%s",guest);for(char*p=rel;*p;p++)if(*p=='\\')*p='/';snprintf(path,sizeof path,"%s/%s",root,rel);}
-    size_t n=strlen(root);if(strncmp(path,root,n)||path[n]!='/'||strlen(path+n+1)>=sizeof rel)return 0;strcpy(rel,path+n+1);
-    int dir=open(root,O_RDONLY|O_DIRECTORY|O_NOFOLLOW);if(dir<0)return 0;char *state=NULL,*part=strtok_r(rel,"/",&state);int ok=0;
-    while(part){if(!strcmp(part,".")||!strcmp(part,".."))break;char *next=strtok_r(NULL,"/",&state);if(next){int fd=openat(dir,part,O_RDONLY|O_DIRECTORY|O_NOFOLLOW);close(dir);dir=fd;if(dir<0)return 0;part=next;continue;}
-        // A fresh inode also prevents a pre-existing hard link from modifying
-        // bytes outside scratch. Publish only after a complete successful save.
-        char temp[80];int fd=-1;for(int k=0;k<10&&fd<0;k++){snprintf(temp,sizeof temp,".d3dx-save-%08x-%08x",arc4random(),arc4random());fd=openat(dir,temp,O_WRONLY|O_CREAT|O_EXCL|O_NOFOLLOW,0600);if(fd<0&&errno!=EEXIST)break;}if(fd<0)break;
-        ok=1;while(size){ssize_t w=write(fd,bytes,size);if(w<0&&errno==EINTR)continue;if(w<=0){ok=0;break;}bytes+=w;size-=w;}if(close(fd))ok=0;if(ok&&renameat(dir,temp,dir,part))ok=0;if(!ok)unlinkat(dir,temp,0);break;
-    }close(dir);return ok;
+    size_t n=strlen(root);if(strncmp(path,root,n)||path[n]!='/'||strlen(path+n+1)>=sizeof rel)return denied;strcpy(rel,path+n+1);
+    int dir=open(root,O_RDONLY|O_DIRECTORY|O_NOFOLLOW);if(dir<0)return denied;
+    char *state=NULL,*part=strtok_r(rel,"/",&state);
+    uint32_t hr=denied;
+    while(part){
+        if(!strcmp(part,".")||!strcmp(part,".."))break;
+        char *next=strtok_r(NULL,"/",&state);
+        if(next){
+            int sub=openat(dir,part,O_RDONLY|O_DIRECTORY|O_NOFOLLOW);
+            close(dir);
+            if(sub<0)return denied;
+            dir=sub;
+            part=next;
+            continue;
+        }
+        // Reserve a fresh inode before synchronous readback. It also protects
+        // any existing hard link until the complete image can replace it.
+        char temp[80];
+        int fd=-1;
+        for(int k=0;k<10&&fd<0;k++){
+            snprintf(temp,sizeof temp,".d3dx-save-%08x-%08x",arc4random(),arc4random());
+            fd=openat(dir,temp,O_WRONLY|O_CREAT|O_EXCL|O_NOFOLLOW,0600);
+            if(fd<0&&errno!=EEXIST)break;
+        }
+        if(fd<0)break;
+
+        uint8_t *bytes=NULL;
+        size_t size=0;
+        hr=px_serialize(surface,palette,rect,format,&bytes,&size);
+        for(size_t offset=0;!hr&&offset<size;){
+            ssize_t w=write(fd,bytes+offset,size-offset);
+            if(w<0&&errno==EINTR)continue;
+            if(w<=0){hr=denied;break;}
+            offset+=(size_t)w;
+        }
+        free(bytes);
+        if(close(fd)&&!hr)hr=denied;
+        if(!hr&&renameat(dir,temp,dir,part))hr=denied;
+        if(hr)unlinkat(dir,temp,0);
+        break;
+    }
+    close(dir);
+    return hr;
 }
 int private_d3dx_textures(Cpu *c,const char *fn){
     if(!strcmp(fn,"D3DXCreateVolumeTextureFromFileInMemory"))RET(px_create(arg(c,0),arg(c,1),arg(c,2),arg(c,3),0),4);
@@ -211,8 +247,10 @@ int private_d3dx_textures(Cpu *c,const char *fn){
     if(!strcmp(fn,"D3DXFillVolumeTexture"))RET(px_fill(c,arg(c,0),arg(c,1),arg(c,2)),3);
     if(!strcmp(fn,"D3DXLoadSurfaceFromSurface"))RET(px_load(arg(c,0),arg(c,1),arg(c,2),arg(c,3),arg(c,4),arg(c,5),arg(c,6),arg(c,7)),8);
     if(!strcmp(fn,"D3DXSaveSurfaceToFileInMemory")||!strcmp(fn,"D3DXSaveSurfaceToFileA")){
-        int memory=!strcmp(fn,"D3DXSaveSurfaceToFileInMemory");uint32_t output=arg(c,0);if(!output||!px_range(output,memory?4:1))RET(PX_INVALID,5);if(memory)M32(output)=0;
+        int memory=!strcmp(fn,"D3DXSaveSurfaceToFileInMemory");uint32_t output=arg(c,0);if(!output||!px_range(output,memory?4:1))RET(PX_INVALID,5);
+        if(!memory)RET(px_save_file((const char*)G+output,arg(c,2),arg(c,3),arg(c,4),arg(c,1)),5);
+        M32(output)=0;
         uint8_t *bytes=NULL;size_t size=0;uint32_t hr=px_serialize(arg(c,2),arg(c,3),arg(c,4),arg(c,1),&bytes,&size);
-        if(!hr){if(memory){M32(output)=px_buffer(bytes,size);if(!M32(output))hr=0x8007000e;}else if(!px_save_file((const char*)G+output,bytes,size))hr=0x80070005;}free(bytes);RET(hr,5);
+        if(!hr){M32(output)=px_buffer(bytes,size);if(!M32(output))hr=0x8007000e;}free(bytes);RET(hr,5);
     }return 0;
 }

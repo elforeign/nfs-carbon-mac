@@ -490,6 +490,33 @@
       "generated_data": null,
       "required_providers": []
     },
+    "car_performance.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "car_performance.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "car_performance_attrib_impl.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": "mw",
+      "required_providers": []
+    },
     "car_physics.c": {
       "class": "mw",
       "kind": "unit",
@@ -1786,6 +1813,32 @@
       "constructors": "forbidden",
       "generated_data": null,
       "required_providers": []
+    },
+    "present_image_diag.h": {
+      "class": "shared",
+      "kind": "include",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "review": "Host-only presenter diagnostics using simulation tick deltas supplied by the report."
+    },
+    "present_image_diag_impl.h": {
+      "class": "shared",
+      "kind": "include",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "review": "Host-only fingerprint of the Metal drawable with no guest access."
     },
     "private_cars.c": {
       "class": "mw",

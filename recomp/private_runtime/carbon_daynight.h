@@ -142,6 +142,14 @@ static int carbon_reflect_draw(Cpu *c, void (*original)(Cpu *)) {
     float day=CARBON_WORLDREFLECT && M32(mesh+0x30)==0x00010001u ? carbon_compat_day() : 0;
     uint32_t device=M32(0x00AB0ABCu), vt=device?M32(device):0;
     if (vt) {
+        /* SetWorld retained c244..246 even when the effect omitted cmWorldMat.
+         * Classification belongs to this material, independent of placement,
+         * clock and day weight. Reset on native reflective draws too. */
+        float road[4]={0,0,0,M32(mesh+0x30)==0x00010001u ? 1.f : 0.f};
+        Cpu road_upload=*c; road_upload.esp-=sizeof road;
+        memcpy(G+road_upload.esp,road,sizeof road);
+        uint32_t road_args[]={device,247,road_upload.esp,1};
+        call_guest(&road_upload,M32(vt+94*4),4,road_args);
         /* c31.y blends the source transport over the native result. */
         float selector[4]={0,day,0,0};
         Cpu upload=*c; upload.esp-=128;
@@ -215,8 +223,15 @@ static int carbon_tree_draw(Cpu *c, void (*original)(Cpu *)) {
     return 1;
 }
 
+#if __has_include("carbon_c3fog.h")
+#include "carbon_c3fog.h"
+#endif
+
 void carbon_facade_draw(Cpu *c, void (*original)(Cpu *)) {
     if (carbon_reflect_draw(c,original)) return;
+#if __has_include("carbon_c3fog.h")
+    if (carbon_c3fog_draw(c,original)) return;
+#endif
     if (carbon_tree_draw(c,original)) return;
     uint32_t draw = M32(c->esp+16), mesh = draw ? M32(draw+0x1c) : 0;
     if (!mesh || (M32(mesh+0x30) & 0xffffu) != 25 || M32(c->ecx+4) != 25) {

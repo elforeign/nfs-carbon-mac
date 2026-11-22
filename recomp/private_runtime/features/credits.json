@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_credits.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_accesses": {},
+      "guest_layouts": {
+        "fe_input": "00600C90 thiscall: ECX is FEng. +04 input records (stride 0x88, prior/current bits at +00/+04, Back bit 5), +D0 input count, +E4 control-order package list, +524C global package input block. Packages: name +0C, next +08, block exemption +18, control mask +20, input enable +28.",
+        "credits": "00A97A7C FE root, live child +B0; vtable 009F9200 identifies Credits. Mode +04 (0 menu, 1 career), phase +18 (0 active, -1 detached). 005A52F0 closes the credits manager in ECX."
+      }
+    }
+  },
+  "staged_sources": {
+    "carbon_credits.c": "carbon_credits.c"
+  },
+  "bindings": {
+    "carbon_credits.c": {
+      "source": "carbon_credits.c",
+      "sha256": "07f6784a4e0963546fdad6b4adb862718f87d71ee98f71a9fa16d06a78b5a6b7",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

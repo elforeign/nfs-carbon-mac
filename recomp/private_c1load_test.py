@@ -222,7 +222,14 @@ def c3_tests():
     print('C3 CHECK PASS good loading/missing/skipped=0/0/0; controls=1/0/0,0/1/0,0/0/1 FAIL; incomplete FAIL')
 
 
-def main():
+# Default shift, zones off. These are the converter's independently verified pins.
+GENERATED_PAIR = {
+    'L5RA.BUN': 'cc154fc5746163678b855231301857105de67c50644527171228973172fa3b7e',
+    'STREAML5RA.BUN': '0ccd820a2d83a1a6c95b3393f26d59cd030644e244cf06c2c7e0f419de9148b7',
+}
+
+
+def main(tracks=None):
     rejected = checker_tests()
     c3_tests()
     private = HERE / 'private_runtime'
@@ -232,14 +239,20 @@ def main():
     assert binding['sha256'] == hashlib.sha256((private / binding['source']).read_bytes()).hexdigest()
     assert {h['address'] for h in hooks['hooks']} == {'00813850', '00813920'}
     headers = HERE / 'out/carbon-base'
-    tracks = HERE / 'out/c1load-overlay/TRACKS'
-    if (not all((tracks / name).is_file() for name in check.PAIR_SHA256)
+    if tracks is None:
+        tracks = HERE / 'out/c1load-overlay/TRACKS'
+        hashes, expected_bytes = check.PAIR_SHA256, 69774568
+    else:
+        hashes, expected_bytes = GENERATED_PAIR, 69774568
+    if (not all((tracks / name).is_file() for name in hashes)
             or not (headers / 'funcs.h').is_file()):
         print('C1LOAD TEST SKIP: private pair/generated headers unavailable')
         return 3
-    rows, sizes = check.world_rows(tracks)
+    check.verify_pair(tracks, hashes)
+    rows, sizes = check.world_rows(tracks, pinned=False)
     assert len(rows) == 780 and len(sizes) == 1433
-    assert sum(sizes[n] for n in rows[1319] | {2400, 2600} if n != 2500) == 69781872
+    row_bytes = sum(sizes[n] for n in rows[1319] | {2400, 2600} if n != 2500)
+    assert row_bytes == expected_bytes <= check.WORLD_SHARE
     with tempfile.TemporaryDirectory(prefix='c1load-') as temporary:
         root = Path(temporary)
         (root / 'test.c').write_text(HARNESS)
@@ -250,19 +263,19 @@ def main():
         for mode in ('off', 'zero', 'diag-off', 'on', 'broken'):
             result = subprocess.run([str(root / 'test'), mode], capture_output=True, text=True)
             assert result.returncode == 0, (mode, result.stderr)
-        broken = check.broken_index(tracks, root / 'TRACKS')
+        broken = check.broken_index(tracks, root / 'TRACKS', hashes=hashes)
         original = (tracks / 'L5RA.BUN').read_bytes()
         changed = (broken / 'L5RA.BUN').read_bytes()
         assert len(original) == len(changed)
         assert sum(a != b for a, b in zip(original, changed)) == 2
         assert check.world_rows(broken, pinned=False) == (rows, sizes)
         try:
-            check.verify_pair(broken)
+            check.verify_pair(broken, hashes)
         except ValueError:
             pass
         else:
             raise AssertionError('broken pair digest accepted')
-    print(f'C1LOAD TEST PASS: rows={len(rows)} records={len(sizes)} checker_mutants={rejected} '
+    print(f'C1LOAD TEST PASS: rows={len(rows)} records={len(sizes)} row_1319_bytes={row_bytes} checker_mutants={rejected} '
           'native_modes=5 guest_writes=0 broken_width=159')
     return 0
 

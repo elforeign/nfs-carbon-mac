@@ -2,6 +2,8 @@
  * car flares and the headlight cones follow it at their own callers. */
 #include "host.h"
 #include <math.h>
+#include <stdlib.h>
+#include <strings.h>
 
 extern float carbon_daynight_night(void);
 extern uint64_t diag_current_frame(void);
@@ -119,4 +121,19 @@ void carbon_daynight_lamps_cones(Cpu *c, void (*original)(Cpu *)) {
         for (unsigned i = 0; i < 3; ++i) M32(light + 0x40 + 4 * i) = 0xC61C4000u;
     }
     c->esp += 4; /* Native void return; no arguments. */
+}
+
+void carbon_daynight_lamps_traffic_quad(Cpu *c, void (*original)(Cpu *)) {
+    static int enabled = -1;
+    if (enabled < 0) {
+        const char *setting = getenv("NFS_DAYNIGHT_DAYLAMPS");
+        enabled = !setting || !(!strcmp(setting, "0") || !strcasecmp(setting, "off"));
+    }
+    if (enabled && carbon_dn_lamps_level() == 0) {
+        /* 007BE170 emits the 2PLAYERHEADLIGHT1 ground quad. Its void
+         * ret 0xC pops three arguments as well as the return address. */
+        c->esp += 0x10;
+        return;
+    }
+    original(c);
 }

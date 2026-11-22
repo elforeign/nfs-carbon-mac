@@ -1,20 +1,15 @@
-"""C4: traffic and police in both cities, a pursuit over the C3 jump.
+"""Check both directions of the Carbon coast link using guarded drive logs.
 
-Reads one Carbon events.log with the census `vehicles:` lines (NFS_CARBON_CENSUS=1),
-`carbon_pursuit:` samples and the follower's `c3tick:` lines. City of a car = the
-crossing pair's zone polygon at its physics position: zone numbers in the retail
-Carbon L5RA are Palmont, added ones Rockport, none = outside. PASS needs all of:
-traffic >= 1 and police >= 1 seen in each city; the player's landing (c3_landing);
-the pursuit live at the last sample before the landing; after it, end=bust|evade or
-a pursuit cop seen within 100 m before the take-off lip and, within 3 samples, past
-the landing lip at deck - 3 m or higher (`landed`). A cop next seen below deck - 10 m
-between the lips is printed as `fell`, not judged.
-Exit 0 PASS, 1 FAIL, 3 without the private pair or retail tracks (live mode).
-Live, forward from the Rockport ramp (SKIPFE_TRAFFIC=50, PURSUIT=5,1): PASS traffic
-Rockport 5 / Palmont 9, police 2 / 1, landing 214.44 m, live 1, end=evade after the
-landing. Broken control (traffic 0, cops off): FAIL traffic 0/0, police 0/0, live 0.
+Each drive must reach the two native approaches in order through the coast
+corridor. Its vehicle census must see traffic on each approach. The same
+nonzero local pursuit must have live cops at every pursuit sample from the
+source mouth to the destination mouth. Cop IDs in that pursuit at both mouths
+are reported separately from destination reinforcements.
+Exit 0 PASS, 1 FAIL, 3 without the private coast pair or retail Carbon tracks.
 """
 import argparse
+from bisect import bisect_right
+import math
 import re
 import sys
 from pathlib import Path
@@ -22,20 +17,45 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import private_c1load
-import private_pursuit
 
-FRAME = re.compile(r'^f(\d+) ')
+COAST_PAIR_SHA256 = {
+    'L5RA.BUN': '1dff6d0bf0da21c468e746f9d590a699faee83d827e43389ccc19978855b77e0',
+    'STREAML5RA.BUN': 'aa2e88e2180a1f614baf71e774b2128b583601f9b94e23c8daba4a4e2636d6fb',
+}
+# Physics XZ of road nodes 1014 and 5387 in the pinned coast pair. The first
+# deck node lies 8 m beyond 1014. Rockport ties into 5387 at the asphalt cut.
+PALMONT = (1668.6893310546875, 3167.1396484375)
+ROCKPORT = (1921.6982421875, 2465.630126953125)
+DX, DZ = (b - a for a, b in zip(PALMONT, ROCKPORT))
+LENGTH = math.hypot(DX, DZ)
+PALMONT_CUT = 8.
+DECK_HALF_WIDTH = 17.
+MOUTH_RADIUS = 160.
+DIRECTIONS = {'forward': ('palmont', 'rockport'), 'reverse': ('rockport', 'palmont')}
+MOUTHS = {'palmont': PALMONT, 'rockport': ROCKPORT}
+
 CAR = re.compile(r'^([0-9a-f]{8})@(-?[\d.]+),(-?[\d.]+),(-?[\d.]+)(\*?)$')
-# c3_landing's lip axis: forward take-off lip near along 0, landing lip 34.05.
-LIPS = {'forward': (0., 34.05, 213.22), 'reverse': (34.05, .2, 213.27)}
+PURSUIT_ID = re.compile(r'[0-9a-f]{8}')
+OVERLAY = re.compile(r'PRIVATE TRACK OPEN TRACKS/(\w+\.BUN) status=ok -> (.+)')
 
 
-def along(x, z):
-    return (x + 2635.271) * .5383 - (z - 7214.961) * .8428
+def station(position):
+    x, _, z = position
+    x, z = x - PALMONT[0], z - PALMONT[1]
+    return (x * DX + z * DZ) / LENGTH, (x * DZ - z * DX) / LENGTH
 
 
-def across(x, z):
-    return (x + 2635.271) * .8428 + (z - 7214.961) * .5383
+def near_mouth(position, city):
+    x, _, z = position
+    mx, mz = MOUTHS[city]
+    return math.hypot(x - mx, z - mz) <= MOUTH_RADIUS
+
+
+def on_approach(position, city, include_shore_roads=False):
+    s, lateral = station(position)
+    shore = s <= PALMONT_CUT if city == 'palmont' else s >= LENGTH
+    return near_mouth(position, city) and (
+        shore or (include_shore_roads and abs(lateral) > DECK_HALF_WIDTH))
 
 
 def cars(field):
@@ -43,7 +63,7 @@ def cars(field):
         return []
     result = []
     for item in field.split(';'):
-        match = CAR.match(item)
+        match = CAR.fullmatch(item)
         if not match:
             raise ValueError(f'malformed vehicle {item!r}')
         result.append(dict(id=match[1], position=tuple(map(float, match.groups()[1:4])),
@@ -51,107 +71,196 @@ def cars(field):
     return result
 
 
-def check(lines, city, direction):
-    lines = list(lines)
-    vehicles, pursuit = [], []
+def evidence(lines):
+    tick_lines, vehicles, pursuits, opened = [], [], [], set()
     for number, line in enumerate(lines, 1):
-        frame = FRAME.match(line)
+        if 'c3tick:' in line:
+            tick_lines.append(line)
+            continue
+        if 'PRIVATE TRACK OPEN ' in line:
+            match = OVERLAY.search(line.rstrip())
+            if match:
+                opened.add((match[1], Path(match[2]).resolve()))
+            continue
         if 'vehicles:' in line:
-            fields = dict(re.findall(r'(\w+)=(\S+)', line.split('vehicles:', 1)[1]))
-            if not frame or not {'traffic', 'cops', 'T', 'C'} <= fields.keys():
-                raise ValueError(f'line {number}: malformed vehicles line')
-            vehicles.append(dict(frame=int(frame[1]), traffic=cars(fields['T']), cops=cars(fields['C'])))
-        elif 'carbon_pursuit:' in line and ' live=' in line and frame:
-            pursuit.append((int(frame[1]), number, int(re.search(r' live=(\d+)', line)[1])))
-    counts = {}
-    for kind in ('traffic', 'cops'):
-        for name in ('rockport', 'palmont'):
-            counts[f'{kind}_{name}'] = max((sum(city(c['position']) == name for c in v[kind])
-                                            for v in vehicles), default=0)
-    failures = [f'{key} 0' for key, value in counts.items() if value < 1]
-    data = private_c1load.parse(lines)
-    landing, landing_failure = private_c1load.c3_landing(data, direction)
-    if landing_failure:
-        failures.append(landing_failure)
-    land = landing.get('frame')
-    before = [p for p in pursuit if land is not None and p[0] <= land]
-    live = before[-1][2] if before else 0
-    if land is not None and live < 1:
-        failures.append(f'pursuit live {live} at the landing')
-    _, summary = private_pursuit.check(lines)
-    end = re.search(r'\bend=(\w+)', summary)[1]
-    end_line = re.search(r'\bend_line=(\w+)', summary)[1]
-    end_frame = None
-    if end_line != 'na':
-        match = FRAME.match(lines[int(end_line) - 1])
-        end_frame = int(match[1]) if match else None
-    ended = end in ('bust', 'evade') and land is not None and end_frame is not None and end_frame >= land
-    takeoff, landed_lip, deck = LIPS[direction]
-    sign = 1 if direction == 'forward' else -1
-    landed, fell = set(), set()
-    for index, sample in enumerate(vehicles):
-        for cop in sample['cops']:
-            x, y, z = cop['position']
-            s = along(x, z)
-            if not cop['chased'] or abs(across(x, z)) > 30 or not 0 <= sign * (takeoff - s) <= 100:
+            tag = 'vehicles:'
+        elif 'carbon_pursuit:' in line and ' live=' in line:
+            tag = 'carbon_pursuit:'
+        else:
+            continue
+        frame = private_c1load.FRAME.match(line)
+        if not frame:
+            raise ValueError(f'line {number}: {tag} frame missing')
+        fields = dict(re.findall(r'(\w+)=(\S+)', line.split(tag, 1)[1]))
+        try:
+            if tag == 'vehicles:':
+                vehicles.append((int(frame[1]), cars(fields['T']), cars(fields['C'])))
+            else:
+                # The diagnostic's player field is the player's native Pursuit pointer.
+                ident = fields['player']
+                if not PURSUIT_ID.fullmatch(ident):
+                    raise ValueError('invalid pursuit ID')
+                pursuits.append((int(frame[1]), ident, int(fields['live']),
+                                 int(fields['pursuits'])))
+        except (KeyError, ValueError) as error:
+            raise ValueError(f'line {number}: malformed {tag} {error}') from error
+    try:
+        ticks = private_c1load.parse(tick_lines)['ticks']
+    except KeyError as error:
+        raise ValueError(f'malformed c3tick: missing {error}') from error
+    for frames in ([tick['frame'] for tick in ticks], [v[0] for v in vehicles], [p[0] for p in pursuits]):
+        if any(a > b for a, b in zip(frames, frames[1:])):
+            raise ValueError('coast evidence frames out of order')
+    return ticks, vehicles, pursuits, opened
+
+
+def crossing(ticks, source, destination):
+    """Return the approach tick indices bounding a continuous deck drive."""
+    start = None
+    previous = None
+    middle = False
+    for index, tick in enumerate(ticks):
+        position = tick['position']
+        if tick['wheels'] > 0 and on_approach(position, source):
+            start, previous, middle = index, position, False
+        elif start is not None:
+            s, lateral = station(position)
+            interior = 40. < s < LENGTH - 40.
+            if (math.dist(previous, position) > 40. or
+                    (interior and (abs(lateral) > DECK_HALF_WIDTH or not 0. < position[1] < 45.))):
+                start = None
                 continue
-            for later in vehicles[index + 1:index + 4]:
-                seen = [c for c in later['cops'] if c['id'] == cop['id']]
-                if not seen:
-                    continue
-                lx, ly, lz = seen[0]['position']
-                ls = along(lx, lz)
-                if sign * (ls - landed_lip) >= 0 and ly >= deck - 3 and abs(across(lx, lz)) <= 30:
-                    landed.add(cop['id'])
-                elif sign * (ls - takeoff) > 0 and sign * (ls - landed_lip) < 0 and ly < deck - 10:
-                    fell.add(cop['id'])
-                break
-    if land is not None and not ended and not landed:
-        failures.append('pursuit neither ended nor a cop landed after the jump')
-    passed = not failures and bool(vehicles)
-    if not vehicles:
-        failures.append('no vehicles lines')
-    text = ' '.join(f'{k}={v}' for k, v in counts.items())
-    return passed, (f'C4 {"PASS" if passed else "FAIL"} {text} samples={len(vehicles)} '
-                    f'landing_m={landing.get("height_m")} live_at_landing={live} end={end} '
-                    f'landed={len(landed)} fell={len(fell)}'
-                    + (f' failures={"; ".join(failures)}' if failures else ''))
+            if tick['wheels'] > 0 and middle and on_approach(position, destination):
+                return start, index
+            middle |= interior and tick['wheels'] > 0
+            previous = position
+    return None
+
+
+def check(lines, city, direction, tracks=None):
+    source, destination = DIRECTIONS[direction]
+    ticks, vehicles, pursuits, opened = evidence(lines)
+    label = f'{source}->{destination}'
+    if tracks is not None and any((name, (tracks / name).resolve()) not in opened
+                                  for name in COAST_PAIR_SHA256):
+        return False, f'C4 FAIL {label} missing coast pair opens'
+    bounds = crossing(ticks, source, destination)
+    if bounds is None:
+        return False, f'C4 FAIL {label} no continuous coast crossing (ticks={len(ticks)})'
+
+    tick_frames = [tick['frame'] for tick in ticks]
+    exit_frame, entry_frame = (tick_frames[i] for i in bounds)
+
+    def mouth_at(frame):
+        i = bisect_right(tick_frames, frame) - 1
+        if i >= 0:
+            position = ticks[i]['position']
+            if frame <= exit_frame and on_approach(position, source):
+                return source
+            if frame >= entry_frame and on_approach(position, destination):
+                return destination
+        return None
+
+    traffic = dict.fromkeys(MOUTHS, 0)
+    for frame, traffic_cars, _ in vehicles:
+        mouth = mouth_at(frame)
+        if mouth:
+            count = sum(on_approach(car['position'], mouth, include_shore_roads=True)
+                        and city(car['position']) == mouth
+                        for car in traffic_cars)
+            traffic[mouth] = max(traffic[mouth], count)
+    failures = [f'no {mouth} approach traffic' for mouth, count in traffic.items() if not count]
+
+    before = [i for i, (frame, *_) in enumerate(pursuits) if mouth_at(frame) == source]
+    after = [i for i, (frame, *_) in enumerate(pursuits) if mouth_at(frame) == destination]
+    origin_id = destination_id = '-'
+    origin_live = destination_live = 0
+    pursuit_samples = minimum_live = 0
+    cops = {mouth: set() for mouth in MOUTHS}
+    if not before or not after:
+        failures.append('missing approach pursuit sample')
+    else:
+        first, last = before[-1], after[0]
+        _, origin_id, origin_live, _ = pursuits[first]
+        _, destination_id, destination_live, _ = pursuits[last]
+        span = pursuits[first:last + 1]
+        pursuit_samples = len(span)
+        minimum_live = min((sample[2] for sample in span), default=0)
+        if pursuit_samples < 3:
+            failures.append('missing pursuit sample on the link')
+        if origin_id == '00000000' or any(p[1] != origin_id for p in span):
+            failures.append('pursuit ID changed or absent')
+        if minimum_live < 1:
+            failures.append('no live pursuit cops in a crossing sample')
+
+        pursuit_frames = [p[0] for p in pursuits]
+        for frame, _, cop_cars in vehicles:
+            mouth = mouth_at(frame)
+            i = bisect_right(pursuit_frames, frame) - 1
+            # The census star means membership in any pursuit. A single
+            # active pursuit identifies those IVehicles with the player.
+            if mouth and i >= 0:
+                _, ident, live, count = pursuits[i]
+                if ident == origin_id and ident != '00000000' and live > 0 and count == 1:
+                    cops[mouth].update(car['id'] for car in cop_cars if car['chased'])
+        if not all(cops.values()):
+            failures.append('missing chased cop IDs at a coast mouth')
+
+    retained = cops[source] & cops[destination]
+    new = cops[destination] - cops[source]
+    def ids(values):
+        return ','.join(sorted(values)) or '-'
+
+    summary = (f'traffic_palmont={traffic["palmont"]} traffic_rockport={traffic["rockport"]} '
+               f'pursuit={origin_id}->{destination_id} live={origin_live}/{destination_live} '
+               f'min_live={minimum_live} pursuit_samples={pursuit_samples} '
+               f'source_cops={ids(cops[source])} destination_cops={ids(cops[destination])} '
+               f'retained={ids(retained)} reinforcements={ids(new)}')
+    return not failures, (f'C4 {"FAIL" if failures else "PASS"} {label} {summary}'
+                          + (f' failures={"; ".join(failures)}' if failures else ''))
 
 
 def zone_city(tracks):
-    """Zone polygons of the pair; the retail Carbon L5RA names the Palmont numbers."""
+    """Authenticate the pair before using its coast windows and zone polygons."""
     import private_rockdrive
-    sys.path.insert(0, str(HERE.parent / 'tools_snapshot/worldmerge'))
     from merge import DEFAULT_CARBON
     retail = DEFAULT_CARBON / 'L5RA.BUN'
-    if not retail.is_file() or not (tracks / 'L5RA.BUN').is_file():
+    if not all((directory / name).is_file() for directory in (retail.parent, tracks)
+               for name in COAST_PAIR_SHA256):
         return None
-    private_c1load.verify_pair(tracks, private_c1load.C3_PAIR_SHA256)
+    private_c1load.verify_pair(tracks, COAST_PAIR_SHA256)
     pair = private_rockdrive.index_rows(tracks / 'L5RA.BUN')
     palmont = {b.number for b in private_rockdrive.index_rows(retail).boundaries}
+
     def city(position):
         number = pair.zone_at(position)
         return None if number is None else 'palmont' if number in palmont else 'rockport'
+
     return city
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('log', type=Path)
-    parser.add_argument('--tracks', type=Path, required=True, help='crossing pair TRACKS directory')
-    parser.add_argument('--direction', choices=sorted(LIPS), required=True)
+    parser.add_argument('--tracks', type=Path, required=True, help='coast pair TRACKS directory')
+    parser.add_argument('--forward', type=Path, required=True, help='Palmont to Rockport events.log')
+    parser.add_argument('--reverse', type=Path, required=True, help='Rockport to Palmont events.log')
     args = parser.parse_args(argv)
-    city = zone_city(args.tracks)
-    if city is None:
-        print('SKIP: private_c4_check needs the crossing pair and retail Carbon tracks')
-        return 3
     try:
-        passed, result = check(args.log.read_text().splitlines(), city, args.direction)
+        city = zone_city(args.tracks)
+        if city is None:
+            print('SKIP: private_c4_check needs the coast pair and retail Carbon tracks')
+            return 3
+        total = 0
+        for direction, log in (('forward', args.forward), ('reverse', args.reverse)):
+            with log.open() as lines:
+                passed, result = check(lines, city, direction, args.tracks)
+            print(result)
+            total += passed
     except (OSError, ValueError) as error:
         print(f'C4 FAIL: {error}')
         return 1
-    print(result)
-    return 0 if passed else 1
+    print(f'C4 {total}/2 directions pass')
+    return 0 if total == 2 else 1
 
 
 if __name__ == '__main__':

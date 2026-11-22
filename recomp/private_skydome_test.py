@@ -1,10 +1,10 @@
-"""Native sky submission and intrusive eModel rebinding; absent-hook control.
+"""Native global dome in both camera rows; pinned former-selector control.
 
-Good: 256 checks / 0 failures (exit 0). Hook absent: 188 checks /
-16 failures (exit 1), with final key ED85BA82 instead of 1F389568.
-The original global model selects ED85BA82 in the imported camera row; the
-hook must submit 1F389568 there and ED85BA82 in native rows. Execute pinned
-translated sky/destroy/construct/link fragments, not a second selector.
+The production view observer only classifies the colour-grade region. The
+translated native submitter must retain ED85BA82 in native and imported rows,
+including repeated crossings; no model destruction or rebinding is allowed.
+Good: 207 checks, 0 failures; previous selector: 249 checks, 18 failures,
+ending on 1F389568 instead of ED85BA82.
 Private image/build absent: exit 3. No game or emulation is launched.
 """
 from pathlib import Path
@@ -27,6 +27,48 @@ PINS = {
     '0055BFB0': ('NFSC_17.c', 'a0fd15e56f9e80c3935adf1d7f18f8d9aad8ec679f09d1882915be8046b19e75'),
     '0055E7E0': ('NFSC_17.c', '2e4655c824cda25098f96ed4caa27550ddf09f335dab7477f8a23efd62481548'),
 }
+
+OLD_SELECTOR = r'''void carbon_skydome_draw(Cpu *c, void (*original)(Cpu *)) {
+    const char *overlay = getenv("NFS_CARBON_TRACK_OVERLAY");
+    uint32_t view = M32(c->esp + 4), mode = M32(c->esp + 8);
+    uint32_t model = 0x00B77910u, current = M32(model + 8);
+    if (overlay && *overlay && M32(0x00A99BBCu) == 6 &&
+        M32(0x00A73358u) && view && mode && mode < 5 &&
+        (current == 0xED85BA82u || current == 0x1F389568u)) {
+        uint32_t camera = M32(view + 0x40);
+        if (camera) {
+            Cpu work = *c;
+            work.esp -= 512;
+            /* Same row lookup as 007A4900: this=B69CD0, camera XYZ at +40.
+             * Rows contain a u16 count at +10 and u16 sections at +12.
+             * The combined writer reserves 2100 for imported resources and
+             * adds it to every imported row; native rows retain their bytes. */
+            work.ecx = 0x00B69CD0u;
+            uint32_t position = camera + 0x40;
+            uint32_t row = call_guest(&work, 0x007A3290u, 1, &position);
+            unsigned count = row ? M16(row + 0x10) : 0, imported = 0;
+            for (unsigned i = 0; i < count && i < 384; ++i)
+                imported |= M16(row + 0x12 + 2*i) == 2100;
+            uint32_t key = imported ? 0x1F389568u : 0xED85BA82u;
+            if (key != current && call_guest(&work, 0x0055DF00u, 1, &key)) {
+                /* Native destruction preserves streaming links; initialization also
+                 * transfers the scenery transform and clears its LOD owners. */
+                work.ecx = model;
+                call_guest(&work, 0x0055BF70u, 0, NULL);
+                uint32_t init[] = {model, 0x00B76EC0u, key};
+                call_guest(&work, 0x007AF7F0u, 3, init);
+            }
+            if (diag_on && render_dump_active())
+                diag_event("skydome: path=global view=%u row=%u imported=%u gate=%08X key=%08X solid=%08X camera=%.6g,%.6g,%.6g",
+                    mode, row ? M16(row + 0x0c) : 0, imported,
+                    M32(0x00AB0A98u), M32(model + 8), M32(model + 12),
+                    (double)MF32(position), (double)MF32(position + 4), (double)MF32(position + 8));
+        }
+    }
+    original(c);
+}
+'''
+OLD_SELECTOR_SHA256 = '46deb442b434b16be276ab310061666a61d7106930511cfd1776c67194d9f364'
 
 HARNESS = r'''
 #include "host.h"
@@ -87,7 +129,11 @@ void f_00729320(Cpu *c) {
     c->eax=0x87654321;c->esp+=28; /* Native 00729639: ret 0x18. */
 }
 #include "native.inc"
+static int carbon_dn_imported_view;
+static int carbon_dn_on(void) { return 1; }
 #include "skydome.inc"
+static float carbon_compat_day(void) { return .75f; }
+#include "grade_weight.inc"
 #include "submit.inc"
 static void reset(void) {
     memset(G,0,0xC00000);queries=binds=destroys=draws=diagnostics=0;
@@ -118,30 +164,27 @@ static void run(uint32_t want) {
 }
 int main(void) {
     G=calloc(1,0xC00000);if(!G)return 2;
-    reset();run(0x1F389568);CHECK(binds==1&&destroys==1);
-    for(unsigned i=0;i<4;++i) CHECK(M32(0xD008+32*i)==0&&M32(0xD00C+32*i)==0);
-    run(0x1F389568);CHECK(binds==1&&destroys==1); /* No per-frame reconstruction. */
-    CHECK(M32(0x8088)==0x8088&&M32(0x808C)==0x8088);
-    M16(0x7014)=2400;run(0xED85BA82);CHECK(binds==2&&destroys==2);
-    CHECK(M32(0x9088)==0x9088&&M32(0x908C)==0x9088);
-    M16(0x7012)=2100;M16(0x7014)=326;run(0x1F389568); /* Marker needn't be last. */
-    row=0;run(0xED85BA82);
+    reset();run(0xED85BA82);CHECK(binds==0&&destroys==0);CHECK(carbon_dn_imported_view==1);CHECK(carbon_dn_grade_weight()==.75f);
+    run(0xED85BA82);CHECK(binds==0&&destroys==0);
+    for(unsigned i=0;i<4;++i) CHECK(M32(0xD008+32*i)==0x1F389568);
+    M16(0x7014)=2400;run(0xED85BA82);CHECK(binds==0&&destroys==0);CHECK(carbon_dn_imported_view==0);CHECK(carbon_dn_grade_weight()==0);
+    M16(0x7012)=2100;run(0xED85BA82);CHECK(carbon_dn_imported_view==1);CHECK(carbon_dn_grade_weight()==.75f);
+    row=0;run(0xED85BA82);CHECK(carbon_dn_imported_view==0);CHECK(carbon_dn_grade_weight()==0);
     reset();unsetenv("NFS_CARBON_TRACK_OVERLAY");run(0xED85BA82);CHECK(queries==0&&binds==0);
     reset();setenv("NFS_CARBON_TRACK_OVERLAY","",1);run(0xED85BA82);CHECK(queries==0&&binds==0);
     reset();imported_ready=0;run(0xED85BA82);CHECK(binds==0&&destroys==0);
     reset();M32(0x4040)=0;run(0xED85BA82);CHECK(queries==0);
     reset();row=0;run(0xED85BA82);CHECK(binds==0);
     reset();M16(0x7010)=0;run(0xED85BA82);CHECK(binds==0);
-    reset();M16(0x7014)=2400;MF32(0x5040)=99999;run(0xED85BA82); /* Coordinates do not select the city. */
-    reset();MF32(0x5040)=-99999;run(0x1F389568);
+    reset();MF32(0x5040)=-99999;run(0xED85BA82);
     reset();M32(0xA99BBC)=3;run(0xED85BA82);CHECK(queries==0);
     reset();
     Cpu alternate={0};alternate.esp=0x30000;alternate.ecx=0xB77910;
     call_guest(&alternate,0x0055BF70,0,NULL);alternate.ecx=0xB77910;
     uint32_t night=0xBE43EDBB;call_guest(&alternate,0x0055E7E0,1,&night);
-    unsigned old_queries=queries;run(0xBE43EDBB);CHECK(queries==old_queries);
-    reset();M32(0xAB0A98)=0x800;run(0x1F389568);CHECK(M32(0xAB0A98)==0x800);
-    reset();diag_on=dump=1;run(0x1F389568);CHECK(diagnostics==1);
+    run(0xBE43EDBB);CHECK(carbon_dn_grade_weight()==0);
+    reset();M32(0xAB0A98)=0x800;run(0xED85BA82);CHECK(M32(0xAB0A98)==0x800);
+    reset();diag_on=dump=1;run(0xED85BA82);CHECK(diagnostics==0);
     printf("checks=%u failures=%u final_key=%08X\n",checks,failures,submitted);
     return failures?1:0;
 }
@@ -172,14 +215,16 @@ def main():
         fragments[address]=body
     pe = PE(image['exe'], expected_sha256=image['sha256'])
     registry = out/'hooks';registry.mkdir(exist_ok=True)
-    record = HERE/'private_runtime/hooks/skydome.json'
+    for stale in registry.glob('*.json'): stale.unlink()
+    record = HERE/'private_runtime/hooks/daynight_sky.json'
     (registry/record.name).write_bytes(record.read_bytes())
-    hooks=private_hooks.load_registry(pe,[(0x7AFB70,0x7AFD68,'')],registry)
-    assert set(hooks)=={0x7AFB70} and hooks[0x7AFB70]['provider']=='carbon_skydome_draw'
+    hooks=private_hooks.load_registry(pe,[(0x7AFB70,0x7AFD68,''),(0x73E890,0x73E8A0,'')],registry)
+    assert hooks[0x7AFB70]['provider']=='carbon_daynight_view'
+    assert not (HERE/'private_runtime/hooks/skydome.json').exists()
     (out/'native.inc').write_text('\n'.join(fragments[a] for a in ('0055BF70','0055BFB0','0055E7E0','007AF7F0')))
-    production=(HERE/'private_runtime/carbon_skydome.h').read_text()
-    feature=json.loads((HERE/'private_runtime/features/skydome.json').read_text())
-    assert feature['bindings']['carbon_skydome.c']['sha256']==hashlib.sha256(production.encode()).hexdigest()
+    production=(HERE/'private_runtime/carbon_daynight_sky.h').read_text()
+    production=re.search(r'void carbon_daynight_view\(.*?\n}',production,re.S)[0]
+    assert hashlib.sha256(OLD_SELECTOR.encode()).hexdigest()==OLD_SELECTOR_SHA256
     # Independently check the native archive's visibility rows have no source marker.
     sys.path.insert(0,str(ROOT/'tools_snapshot/worldmerge'))
     from formats import TrackIndex
@@ -191,12 +236,14 @@ def main():
     assert rows and all(2100 not in r.entries for r in rows)
     print(f'native visibility rows without marker: {len(rows)}')
     (out/'fixture.c').write_text(HARNESS)
-    (out/'skydome.inc').write_text(production)
+    grade=(HERE/'private_runtime/carbon_daynight_grade.h').read_text()
+    (out/'grade_weight.inc').write_text(re.search(r'static float carbon_dn_grade_weight\(.*?\n}',grade,re.S)[0])
     good=private_hooks.wrap(0x7AFB70,fragments['007AFB70'],hooks[0x7AFB70])
-    broken=good.replace('carbon_skydome_draw(c, carbon_orig_007AFB70);','carbon_orig_007AFB70(c);')
+    broken=good.replace('carbon_daynight_view(c, carbon_orig_007AFB70);','carbon_skydome_draw(c, carbon_orig_007AFB70);')
     assert good!=broken
     results=[]
-    for label,code,rc in [('good',good,0),('hook-absent',broken,1)]:
+    for label,code,selector,rc in [('good',good,production,0),('previous-selector',broken,production+'\n'+OLD_SELECTOR,1)]:
+        (out/'skydome.inc').write_text(selector)
         (out/'submit.inc').write_text(code)
         binary=out/label
         command(['clang','-std=c11','-O1','-I',ROOT/'runtime','-I',HERE,'-I',out,
@@ -204,10 +251,6 @@ def main():
         result=command([binary],rc)
         results.append(f'{label}: {result} (exit {rc})')
     (out/'submit.inc').write_text(good)
-    # The source is private-only, including when explicitly preprocessed for MW.
-    mw=command(['clang','-E','-P','-x','c','-I',ROOT/'runtime','-I',HERE,
-                '-DNFS_GAME=NFS_GAME_MW',HERE/'private_runtime/carbon_skydome.h'])
-    assert 'void carbon_skydome_draw(' not in mw
     (out/'proof.txt').write_text('\n'.join(results)+'\n')
     print('\n'.join(results));return 0
 

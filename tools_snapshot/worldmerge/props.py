@@ -233,13 +233,18 @@ class Import:
         return Chunk(kind,bytes(out.data),position)
 
 
-def check(index, stream, source, ms, native, cs=None, *, mapping=None, shift=(0.,0.), removed=()):
+def check(index, stream, source, ms, native, cs=None, *, mapping=None, shift=(0.,0.), removed=(), omit_sky=False):
     """Reread tables and compare each field to its source, without Import/writers.
 
     The mapping comes from the world's independent geometry correspondence.
     Source order and instance counts establish composition offsets, not a plan.
     """
     original, before = inventory(source,ms,native=False)
+    if omit_sky:
+        count, table, refs = original[2600]
+        require(count == 7 and u32(table,24) == 0xed85ba82 and not refs,
+                'source sky prop layout differs')
+        original[2600] = count-1, table[72:], refs
     prefix, native_spawns = inventory(native,cs,native=True) if cs else ({},[])
     actual, written = inventory(index,stream,native=True)
     mapping = mapping or {n:n for n in original}

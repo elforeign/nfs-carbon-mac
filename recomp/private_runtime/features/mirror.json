@@ -13,7 +13,9 @@
       "generated_data": null,
       "required_providers": [],
       "guest_layouts": {
-        "target": "0070DAB0 cdecl, no arguments: retail body first. Size 00A63AD0/00A63AD4 (read, rewritten when scaled, before 0071AD20 copies it to entry 4), formats 00A63AD8 colour / 00A63ADC depth, objects 00AB0914 texture, 00AB0918 its level-0 surface, 00AB091C depth (each released through vtable +8 and made again with device +0x74, +0x5C and texture +0x48, the retail calls and arguments), device 00AB0ABC, back buffer 00AB0AC8/00AB0ACC."
+        "target": "0070DAB0 cdecl, no arguments: retail body first. Size 00A63AD0/00A63AD4 (read, rewritten when scaled, before 0071AD20 copies it to entry 4), formats 00A63AD8 colour / 00A63ADC depth, objects 00AB0914 texture, 00AB0918 its level-0 surface, 00AB091C depth (each released through vtable +8 and made again with device +0x74, +0x5C and texture +0x48, the retail calls and arguments), device 00AB0ABC, back buffer 00AB0AC8/00AB0ACC.",
+        "scenery": "0079AE80 thiscall (manager, view, incoming flags). Mirror registration adds 0x40, retaining 32 px admission and selecting ordinary model slot +0x30 in 0079FA60 when 0x2000 is clear.",
+        "view_setup": "0072E070 cdecl: mirror view 00B4B090, low-detail pass flag 00AB0B98. Property 0x13AF (004A44F0): 00A97A7C profile manager, +0xD4 profile array, player zero byte +0x24209. After the sky flush, when 00AB08F4 names mirror target 00AB0540, clear Z via device 00AB0ABC vtable +0xAC."
       }
     }
   },
@@ -23,7 +25,7 @@
   "bindings": {
     "carbon_mirror.c": {
       "source": "carbon_mirror.c",
-      "sha256": "319e28bc06112ff1e2d5f547e34452efa33328974031cf6d2af1024a050ff6e9",
+      "sha256": "0b22e16b78a7162383234ad3b5a412fd4871f7d701d0b3a4e8da383cf17574c9",
       "functions": {
         "carbon_mirror_allocate": {
           "read": [
