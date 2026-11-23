@@ -1,11 +1,13 @@
 /* In-game cars by day: Most Wanted's sun-relative rig through Carbon's own light builder. */
 #include "host.h"
+#include "lighting_colour.h"
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
 
 extern float carbon_daynight_night(void);
+extern int carbon_daynight_d65_rig(float *sun, float *ambient);
 extern int diag_on;
 extern void diag_event(const char *, ...);
 
@@ -93,6 +95,10 @@ static float carbon_dn_cars_luma(const uint8_t *row) {
 void carbon_daynight_cars(Cpu *c, void (*original)(Cpu *)) {
     uint32_t context = M32(c->esp+4), rig = M32(c->esp+8), tod = M32(0x00B77F34u);
     float d = carbon_dn_cars_on() && tod && context ? 1-carbon_daynight_night() : 0;
+    float sun_ratio, ambient_ratio;
+    int d65 = lighting_mode_d65() && carbon_dn_cars_on() &&
+        carbon_daynight_d65_rig(&sun_ratio,&ambient_ratio);
+    if (d65 && tod && context) d = 1;
     if (!(d > 0) || (rig != 0x00A6CC20u && rig != 0x00A6CCC0u && rig != 0x00A6CD60u)) {
         original(c);
         return;
@@ -102,6 +108,16 @@ void carbon_daynight_cars(Cpu *c, void (*original)(Cpu *)) {
     float sun[3];
     memcpy(sun,G+tod+0x160,sizeof sun);
     if (!carbon_dn_cars_rig(G+own,G+rig,sun)) { original(c); return; }
+    if (d65) {
+        for (unsigned k=0; k<3; ++k) {
+            uint8_t *slot = G+own+4+0x1c*k;
+            float values[4];
+            memcpy(values,slot+0x0c,sizeof values);
+            lighting_colour_d65(values);
+            values[3] *= k ? ambient_ratio : sun_ratio;
+            memcpy(slot+0x0c,values,sizeof values);
+        }
+    }
     Cpu call = *c;
     call.esp = base;
     M32(base) = M32(c->esp);
@@ -113,6 +129,13 @@ void carbon_daynight_cars(Cpu *c, void (*original)(Cpu *)) {
     }
     original(&call);
     carbon_dn_cars_specular(G+(d < 1 ? scratch : context),G+rig);
+    if (d65) {
+        float rgb[3];
+        memcpy(rgb,G+context+0x10,sizeof rgb);
+        lighting_colour_d65(rgb);
+        for (unsigned k=0; k<3; ++k) rgb[k] *= sun_ratio;
+        memcpy(G+context+0x10,rgb,sizeof rgb);
+    }
     if (diag_on) {
         static int recorded;
         if (!recorded) {
@@ -121,6 +144,18 @@ void carbon_daynight_cars(Cpu *c, void (*original)(Cpu *)) {
             diag_event("carbon_daynight: cars day=%.6f rig=%08x sun=%.6f,%.6f,%.6f key=%.6f,%.6f,%.6f colour=%.6f,%.6f,%.6f",
                 d,rig,sun[0],sun[1],sun[2],MF32(out+0x50),MF32(out+0x60),MF32(out+0x70),
                 MF32(out+0x10),MF32(out+0x14),MF32(out+0x18));
+            if (d65) {
+                float slots[3][3];
+                for (unsigned k=0; k<3; ++k) {
+                    float gain;
+                    memcpy(slots[k],G+own+0x10+0x1c*k,sizeof slots[k]);
+                    memcpy(&gain,G+own+0x1c+0x1c*k,sizeof gain);
+                    for (unsigned j=0; j<3; ++j) slots[k][j] *= gain;
+                }
+                diag_event("carbon_daynight: d65 rig key=%.9g,%.9g,%.9g fill1=%.9g,%.9g,%.9g fill2=%.9g,%.9g,%.9g",
+                    slots[0][0],slots[0][1],slots[0][2], slots[1][0],slots[1][1],slots[1][2],
+                    slots[2][0],slots[2][1],slots[2][2]);
+            }
         }
     }
     if (d >= 1) {

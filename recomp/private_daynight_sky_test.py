@@ -68,6 +68,7 @@ SHADER = r'''
 #include <cstdio>
 #include <cstring>
 #include <vector>
+#include "lighting_colour.h"
 #include "carbon_daynight_shader.h"
 #include "baseline.inc"
 #include "variant.inc"
@@ -93,10 +94,35 @@ static void check(float got,float want) {
     ++checks; float e=fabsf(got-want); if (got==want) e=0;
     if (!(e<=0.0001f)) ++failures; worst=fmaxf(worst,e);
 }
+static int neutral_horizon(const std::vector<uint32_t> &tokens) {
+    uint32_t count=0;
+    uint32_t *patched=carbon_dn_sky_variant(tokens.data(),tokens.size(),&count);
+    sm::Shader variant;
+    if(!patched||!sm::parse(patched,count,variant)) return 2;
+    free(patched);
+    float constants[256][4]={}; int integers[16][4]={},booleans[16]={};
+    constants[0][0]=.21f;constants[0][1]=.31f;constants[0][2]=.34f;
+    constants[1][1]=2;
+    for(int k=0;k<3;++k) constants[16][k]=.29f;
+    constants[16][3]=1.f/7000;
+    interp::Texture cloud;cloud.texels={.4f,.8f,.2f,.2f};
+    interp::Context ctx;ctx.c=&constants[0][0];ctx.ci=&integers[0][0];ctx.cb=booleans;
+    ctx.tex[0]=ctx.tex[1]=&cloud;
+    interp::PSIn input={};input.tex[0]={.3f,.6f,0,1};input.tex[1]={5000,6000,3500,1};
+    for(float n:{0.f,.5f,1.f}) {
+        constants[14][3]=n;
+        interp::PSOut out={};std::string error;
+        if(!interp::run_ps(variant,ctx,input,out,&error))return 2;
+        for(int k=0;k<3;++k) check(out.oc[0][k],.29f);
+    }
+    printf("D65 dome horizon checks=%u failures=%u max_error=%.9g\n",checks,failures,worst);
+    return failures?1:0;
+}
 int main(int argc,char **argv) { @autoreleasepool {
     if (argc!=2) return 2;
     FILE *f=fopen(argv[1],"rb"); if(!f)return 2;
     std::vector<uint32_t> tokens(441); if(fread(tokens.data(),4,441,f)!=441)return 2; fclose(f);
+    if(lighting_mode_d65())return neutral_horizon(tokens);
     for(bool active:{false,true}) {
         submit_on=active;compiled=0;ShaderEntry e={tokens.data(),441};shader_submit(&e);
         if(compiled!=1||e.tokens!=tokens.data()||e.ntokens!=441)return 1;
@@ -224,6 +250,53 @@ int main(int argc,char **argv) { @autoreleasepool {
         for(int k=0;k<4;++k)check(native_dome.oc[0][k],scaled.oc[0][k]);
         printf("SKY NIGHT CLOUD UV native_error=%.7f reserved_constants_gap=%.7f\n",worst_night,scaled_gap);
     }
+    // Independent control: replay the native program with the three literal
+    // constants changed in place, instead of substituting their operands.
+    {
+        auto *disc_tokens = (uint32_t *)malloc(count*sizeof(uint32_t));
+        memcpy(disc_tokens,patched,count*sizeof *disc_tokens);
+        uint32_t disc_count=count;
+        disc_tokens=carbon_dn_moon_variant(disc_tokens,&disc_count);
+        sm::Shader disc, relocated;
+        if (disc_count!=count+10 || !sm::parse(disc_tokens,disc_count,disc)) return 2;
+        SmResult result={};
+        if (sm_translate(disc_tokens,disc_count,&opt,&result) || result.float_max!=19) return 2;
+        sm_result_free(&result);
+        free(disc_tokens);
+        float constants[224][4] = {}; int integers[16][4]={}, booleans[16]={};
+        constants[1][1]=1; constants[14][3]=1;
+        float centre[3]={16000,-43000,70000}, white[3]={.992098f,.992098f,.992098f};
+        auto fixed=tokens;
+        for (unsigned i=0;i<3;++i) {
+            float opposite=-centre[i];
+            memcpy(&fixed[108+i],centre+i,4);
+            memcpy(&fixed[126+i],&opposite,4);
+            memcpy(&fixed[144+i],white+i,4);
+            constants[17][i]=centre[i];
+            constants[18][i]=white[i];
+        }
+        if (!sm::parse(fixed.data(),fixed.size(),relocated)) return 2;
+        interp::Texture clouds, moon;
+        clouds.texels={0,0,0,0}; moon.texels={0,.85f,0,1};
+        interp::Context ctx;ctx.c=&constants[0][0];ctx.ci=&integers[0][0];ctx.cb=booleans;
+        ctx.opt=opt;ctx.tex[0]=&clouds;ctx.tex[1]=&moon;
+        float control=0;
+        for (auto point : {interp::V4{16600,-42500,70000,1}, interp::V4{-49000,60000,30000,1}}) {
+            interp::PSIn in={}; in.tex[0]={.3f,.6f,0,1}; in.tex[1]=point; in.fog={1,0,0,0};
+            interp::PSOut native={}, got={}, expected={}; std::string error;
+            constants[17][3]=0;
+            if (!interp::run_ps(original,ctx,in,native,&error) || !interp::run_ps(disc,ctx,in,got,&error)) return 2;
+            for (int i=0;i<4;++i) check(got.oc[0][i],native.oc[0][i]);
+            constants[17][3]=1;
+            if (!interp::run_ps(relocated,ctx,in,expected,&error) || !interp::run_ps(disc,ctx,in,got,&error)) return 2;
+            for (int i=0;i<4;++i) {
+                check(got.oc[0][i],expected.oc[0][i]);
+                control=fmaxf(control,fabsf(got.oc[0][i]-native.oc[0][i]));
+            }
+        }
+        if (!(control>.01f)) return 2;
+        printf("SKY D65 relocated disc control gap=%.7f\n",control);
+    }
     printf("SKY SHADER checks=%u GPU=%u protected_GPU=%u failures=%u max_error=%.9g\n",checks,gpu_checks,protected_checks,failures,worst);
     sm_result_free(&result);free(prior_tokens);free(patched);return failures?1:0;
 } }
@@ -235,6 +308,7 @@ NATIVE = r'''
 #include <math.h>
 uint8_t *G;int diag_on;
 uint64_t host_ticks(void) { return 0; }
+uint64_t diag_current_frame(void) { return 0; }
 void diag_event(const char *format,...) {(void)format;}
 static float pixels[3][4];static unsigned pixel_uploads,calls,checks;
 uint32_t call_guest(Cpu *c,uint32_t fn,int n,const uint32_t *args) {
@@ -261,6 +335,27 @@ int main(int argc,char **argv) {
     CHECK(carbon_daynight_night()==1);
     if(argc>1){carbon_daynight_advance(&c,native);CHECK(carbon_daynight_night()==1);carbon_daynight_blend(&c,native);}
     CHECK(carbon_daynight_night()==n);
+    if(lighting_mode_d65()) {
+        for(unsigned city=0;city<2;++city) {
+            M32(0xB77918)=city?0xED85BA82u:0xBE43EDBBu;
+            setenv("NFS_CARBON_TRACK_OVERLAY",city?"fixture":"",1);
+            M32(c.esp+8)=0x5000;
+            Cpu expected=c;fog_original(&expected);
+            float original[10];memcpy(original,G+0x5000,sizeof original);
+            float y=0;
+            const float weights[]={.2126f,.7152f,.0722f};
+            for(int k=0;k<3;++k)y+=weights[k]*(haze[k]+n*(original[k]-haze[k]));
+            carbon_daynight_fog(&c,fog_original);
+            CHECK(memcmp(G+0x500c,original+3,7*sizeof(float))==0);
+            carbon_dn_sky_constants(&c);
+            for(int k=0;k<3;++k) {
+                CHECK(fabsf(carbon_dn_float(0x5000+4*k)-y)<1e-7f);
+                CHECK(fabsf(pixels[1][k]-y)<1e-7f&&fabsf(pixels[2][k]-y)<1e-7f);
+                CHECK(pixels[0][k]==(n<1?sky[k]:0));
+            }
+        }
+        printf("D65 native fog n=%.1f checks=%u\n",n,checks);free(G);return 0;
+    }
     for(int repeat=0;repeat<2;++repeat) {
         M32(c.esp+8)=0x5000;Cpu expected=c;fog_original(&expected);unsigned before=calls;
         float original[10];memcpy(original,G+0x5000,sizeof original);
@@ -310,16 +405,22 @@ def fixtures(out, tokens):
     (out/'carbon_daynight_grade.h').write_bytes((HERE/'private_runtime/carbon_daynight_grade.h').read_bytes())
     shaders = ROOT/'host/shaders'
     assert hashlib.sha256(OLD_GRADIENT.encode()).hexdigest() == OLD_GRADIENT_SHA256
-    for name, text in [('good', variant), ('no-lerp', variant.replace('0x04000012u, 0x80070800u, 0xa0ff000eu, 0x80e4000bu, 0x80e4000au', '0x02000001u, 0x80070800u, 0x80e4000bu, 0x00000000u, 0x00000000u'))]:
+    for name, text in [('good', variant), ('no-lerp', variant.replace('0x04000012u, 0x80070800u, 0xa0ff000eu, 0x80e4000bu, 0x80e4000au', '0x02000001u, 0x80070800u, 0x80e4000bu, 0x00000000u, 0x00000000u')),
+                       ('native-horizon', variant.replace('unsigned extra = neutral ?', 'unsigned extra = 0 && neutral ?'))]:
         assert name == 'good' or text != variant
         (out/'variant.inc').write_text(text)
         binary = out/('shader-'+name)
-        run(['clang++', '-std=c++17', '-O1', '-fobjc-arc', '-I', shaders, '-I', out,
+        run(['clang++', '-std=c++17', '-O1', '-fobjc-arc', '-I', shaders, '-I', ROOT/'runtime', '-I', out,
              out/'shader.mm', shaders/'tests/sm_interp.cpp', shaders/'build/libsmtranslate.a',
              '-framework', 'Foundation', '-framework', 'Metal', '-o', binary])
-        print(name+': '+run([binary, out/'tokens.bin'], 0 if name == 'good' else 1))
+        if name != 'native-horizon':
+            print(name+': '+run([binary, out/'tokens.bin'], 0 if name == 'good' else 1))
+        if name != 'no-lerp':
+            print(name+' D65: '+run([binary, out/'tokens.bin'], 0 if name == 'good' else 1,
+                                   env={**os.environ, 'NFS_WORLD_LIGHTING': 'neutral-d65'}))
     env = dict(os.environ)
     env.pop('NFS_DAYNIGHT', None)
+    env.pop('NFS_WORLD_LIGHTING', None)
     for name, text in [('good', source), ('fog-night-ignored', source.replace('haze+n*(native-haze)', 'haze+0*(native-haze)').replace('fog && tod && n < 1', 'fog && tod'))]:
         assert name == 'good' or text != source
         (out/'carbon_daynight_sky.h').write_text(text)
@@ -331,6 +432,8 @@ def fixtures(out, tokens):
         for hour, n in [(12, 0), (18, 0.5), (0, 1)]:
             active = {**env, 'NFS_DAYNIGHT': 'on', 'NFS_TEST_DAYNIGHT_HOUR': str(hour)}
             print(name+f' hour={hour}: '+run([binary, n], 0 if name == 'good' else 1, active))
+            if name == 'good':
+                print(run([binary, n], env={**active, 'NFS_WORLD_LIGHTING': 'neutral-d65'}))
 
 
 def main():

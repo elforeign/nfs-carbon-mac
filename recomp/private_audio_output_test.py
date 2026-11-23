@@ -125,6 +125,7 @@ int movies_playing(void){return 0;}
 static uint32_t bump=0x70000;
 uint32_t galloc(uint32_t n){uint32_t a=bump;bump+=(n+63)&~63u;return a;}
 uint32_t gmalloc(uint32_t n){return galloc(n);}
+uint32_t gmalloc_try(uint32_t n){return gmalloc(n);}
 void gfree(uint32_t a){(void)a;}
 void diag_event(const char *f,...){(void)f;}
 uint32_t diag_thread_id(void){return 0;}

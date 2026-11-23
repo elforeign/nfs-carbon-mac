@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_blackbox_cinematics.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_layouts": {
+        "movie": "0057F3B0 reads A97BB4/+120, playing 3/4/5; 0059528F sets +120/+124, 005952CE uses inline +1C.",
+        "nis": "0076D780 sets INIS +40 vtable 009EC6E8; 00766933 reads interface +2E0, 0076310C reads +390; 00763491 uses root +3D0; 0045D740/0045D750 read track +20/+28. Other classes not decoded yet."
+      }
+    }
+  },
+  "staged_sources": {
+    "carbon_blackbox_cinematics.c": "carbon_blackbox_cinematics.c"
+  },
+  "bindings": {
+    "carbon_blackbox_cinematics.c": {
+      "source": "carbon_blackbox_cinematics.c",
+      "sha256": "6caf4080401b26e5347e1440bfe6f12f08232cf3b3d82edda6095a605e312f2c",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

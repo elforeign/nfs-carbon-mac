@@ -584,6 +584,12 @@ static int on(void) {
 #endif
             a->grip=car->grip;
             a->performance=car->performance;
+            if (a->performance.version==1) {
+                if (!strcmp(car->source,"prostreet") || !strncmp(car->source,"P/",2))
+                    a->performance.source=CAR_PERFORMANCE_PROSTREET;
+                if (!strcmp(car->source,"undercover") || !strncmp(car->source,"U/",2))
+                    a->performance.source=CAR_PERFORMANCE_UNDERCOVER;
+            }
             ++i;
         }
         if (traffic_pilot_enabled()) {
@@ -1483,6 +1489,7 @@ static void apply_render_fit(uint32_t lay, Addition *a, unsigned kind) {
 
 void f_006794E0_orig(Cpu *c);
 void f_00683EB0_orig(Cpu *c);
+void f_00678CE0_orig(Cpu *c);
 #include "car_performance_attrib_impl.h"
 
 static void append_collection_as(Cpu *c, Source *s, uint32_t layout_size, int vehicle, Addition *a,

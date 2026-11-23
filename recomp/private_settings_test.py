@@ -1,11 +1,11 @@
 """Selected menu/settings contract: good=0; each of five broken policies=1.
 
-Independent seven base rows plus four later rows (11 rows / 13 callbacks), initialized six-slot outputs,
+Independent eight base rows plus four later rows (12 rows / 14 callbacks), initialized six-slot outputs,
 43 private includes used once and one selected support unit, image/source provenance and actual compiler
 MW-access rejection. Missing Carbon runtime outputs: exit 3.
 Feature dependencies: picture_01.json picture_02.json picture_03.json picture_04.json
 picture_05.json picture_06.json picture_07.json picture_08.json (feature).
-Baseline rows=0; accepted base rows=7, total rows=11; unwritten mode outputs=0 -> initialized outputs=2.
+Baseline rows=0; accepted base rows=8, total rows=12; unwritten mode outputs=0 -> initialized outputs=2.
 """
 from pathlib import Path
 import ast
@@ -33,11 +33,13 @@ EXPECTED = {
     'diag.full_logging': {},
     'diag.logs_open': {'apply': 'private_logs_open'},
     'diag.quit_game': {'apply': 'app_quit_game'},
+    'display.notch': {'apply': 'private_notch_apply'},
 }
 PROVIDERS = {
     'private_window_apply': 'game_settings.h',
     'private_window_get': 'game_settings.h',
     'private_fullscreen_apply': 'game_settings.h',
+    'private_notch_apply': 'game_settings.h',
     'private_hdr_status': 'game_settings.h',
     'private_logs_open': 'game_settings.h',
     'app_quit_game': 'app.m',
@@ -157,12 +159,13 @@ HARNESS = r'''
 void osk_pass(Cpu *c) { (void)c; }
 #include "game_menu_hold.h"
 static Setting *registered[128]; static unsigned count;
-static int fullscreen, mode_changes, quits; static const char *opened;
+static int fullscreen, mode_changes, notch_changes, quits; static const char *opened;
 int diag_on; const char *diag_dir;
 void diag_event(const char *format, ...) { (void)format; }
 int user32_fullscreen(void) { return fullscreen; }
 void user32_toggle_fullscreen(void) { fullscreen=!fullscreen; }
 void user32_fullscreen_mode_changed(void) { ++mode_changes; }
+void user32_notch_fill_changed(void) { ++notch_changes; }
 void app_quit_game(int v) { (void)v; ++quits; }
 void portmenu_open_folder(const char *p) { opened=p; }
 const char *log_dir(void) { return "log-fixture"; }
@@ -174,8 +177,8 @@ const char *settings_text(const char *id) { (void)id; return ""; }
 int settings_get(const char *id) { for(unsigned i=0;i<count;i++) if(!strcmp(id,registered[i]->id)) return registered[i]->value; return -1; }
 #define CHECK(v) do { if (!(v)) { fprintf(stderr,"SETTINGS CHECK line=%d: %s\n",__LINE__,#v); return 1; } } while(0)
 int main(void) {
-    CHECK(count==0); private_settings_init(); CHECK(count==7);
-    const char *expected[]={"display.window","display.fullscreen","graphics.hdr_output","graphics.hdr_status","diag.full_logging","diag.logs_open","diag.quit_game"};
+    CHECK(count==0); private_settings_init(); CHECK(count==8);
+    const char *expected[]={"display.window","display.fullscreen","graphics.hdr_output","graphics.hdr_status","diag.full_logging","diag.logs_open","diag.quit_game","display.notch"};
     for(unsigned i=0;i<count;i++)CHECK(!strcmp(registered[i]->id,expected[i]));
     CHECK(registered[0]->get()==1); registered[0]->apply(0); CHECK(fullscreen==1);
     registered[0]->apply(0); CHECK(fullscreen==1); registered[0]->apply(1); CHECK(fullscreen==0);
@@ -184,9 +187,10 @@ int main(void) {
     registered[5]->apply(0); CHECK(!strcmp(opened,"log-fixture"));
     diag_on=1;diag_dir="diag-fixture";registered[5]->apply(0);CHECK(opened==diag_dir);
     registered[6]->apply(0);CHECK(quits==1);
+    registered[7]->apply(1);CHECK(notch_changes==1);
     for(int i=-1;i<8;i++){uint32_t w=0xdeadbeef,h=0xdeadbeef;widescreen_mode(i,&w,&h);CHECK(w!=0xdeadbeef&&h!=0xdeadbeef);CHECK((w==0)==(h==0));if(i<0||i>=6)CHECK(w==0&&h==0);}
     CHECK(portmenu_hold()==0);Cpu cpu={0};portmenu_pass(&cpu);
-    puts("PRIVATE SETTINGS PASS rows=7 callbacks=6 mode_outputs=18 native_hold=0"); return 0;
+    puts("PRIVATE SETTINGS PASS rows=8 callbacks=7 mode_outputs=18 native_hold=0"); return 0;
 }
 '''
 
@@ -211,7 +215,7 @@ def main():
                 target = canonical / original; target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(PRIVATE / original, target)
         features = canonical / 'features'; shutil.copytree(PRIVATE / 'features', features)
-        harness = HARNESS.replace('CHECK(count==7)', f'CHECK(count=={len(expected)})')
+        harness = HARNESS.replace('CHECK(count==8)', f'CHECK(count=={len(expected)})')
         harness = re.sub(r'const char \*expected\[\]=\{[^;]+;',
                          lambda match: 'const char *expected[]={' + ','.join(json.dumps(row) for row in expected) + '};', harness)
         callbacks_table = 'Setting expected_callbacks[]={' + ','.join(
@@ -222,7 +226,7 @@ def main():
             'CHECK(registered[i]->apply==expected_callbacks[i].apply);'
             'CHECK(registered[i]->get==expected_callbacks[i].get);'
             'CHECK(registered[i]->value_text==expected_callbacks[i].value_text);}')
-        harness = harness.replace('rows=7 callbacks=6', f'rows={len(expected)} callbacks={len(providers)}')
+        harness = harness.replace('rows=8 callbacks=7', f'rows={len(expected)} callbacks={len(providers)}')
         harness = harness.replace('#include \"game_mode_provider.h\"', fixture + '\n#include \"game_mode_provider.h\"')
         (tmp / 'harness.c').write_text(harness)
         binary = tmp / 'settings'

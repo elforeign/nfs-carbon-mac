@@ -54,6 +54,7 @@ uint8_t *G;
 int diag_on;
 const char *game_dir;
 uint64_t host_ticks(void) { return 0; }
+uint64_t diag_current_frame(void) { return 0; }
 void diag_event(const char *fmt, ...) { (void)fmt; }
 int private_carbon_player_position(float *p) { (void)p; return 0; }
 #include "carbon_minimap.h"
@@ -177,6 +178,7 @@ DAYLIGHT = r'''
 uint8_t *G;
 int diag_on;
 uint64_t host_ticks(void) { return 0; }
+uint64_t diag_current_frame(void) { return 0; }
 void diag_event(const char *fmt, ...) { (void)fmt; }
 static float uploaded[3][4];
 uint32_t call_guest(Cpu *c, uint32_t fn, int n, const uint32_t *args) {

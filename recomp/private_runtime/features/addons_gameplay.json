@@ -57,7 +57,7 @@
   "bindings": {
     "carbon_addons_gameplay.c": {
       "source": "carbon_addons_gameplay.c",
-      "sha256": "0962e49ad409c82fef14555f5658480d59827be770a15f0fc3ad00781503ba5b",
+      "sha256": "7f0e226215badfc4176d641cd3852aa6b92888438216f547a6118fca81e92bb9",
       "functions": {}
     },
     "carbon_addons_gameplay_language.c": {

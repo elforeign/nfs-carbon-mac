@@ -13,7 +13,7 @@
       "generated_data": null,
       "required_providers": [],
       "guest_layouts": {
-        "cars": "00746A00(context, rig, position, local, view matrix, view) is cdecl and returns 1. Rig slot k at +4+1C*k: kind, azimuth, elevation, RGB, intensity; 0xA0 bytes; in-game rigs A6CC20/A6CCC0/A6CD60. Kinds 2/3 are zeroed natively. Context +10..3B light colours, +50/+60/+70 light x/y/z, +130..1CF harmonics. B77F34 time-of-day +160 normalized light vector."
+        "cars": "00746A00(context, rig, position, local, view matrix, view) is cdecl and returns 1. Rig slot k at +4+1C*k: kind, azimuth, elevation, RGB, intensity; 0xA0 bytes; in-game rigs A6CC20/A6CCC0/A6CD60. Kinds 2/3 are zeroed natively. Context +10..3B light colours, +50/+60/+70 light x/y/z, +130..1CF harmonics. B77F34 time-of-day +160 normalized light vector. Neutral D65 scales the three input rig slots from the live key and ambient gains before the native builder."
       }
     }
   },
@@ -23,7 +23,7 @@
   "bindings": {
     "carbon_daynight_cars.c": {
       "source": "carbon_daynight_cars.h",
-      "sha256": "5b794d72266fb7a8373e104522db3f8e3a3ab773faffa3cce7f52f74c83a0cb3",
+      "sha256": "03601bb79d4327b30c56362083927cdadce8b0984324b2a9e8caef323e7ae0d1",
       "functions": {}
     }
   },

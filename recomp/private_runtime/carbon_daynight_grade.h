@@ -1,9 +1,12 @@
-/* NFS_DAYNIGHT_GRADE (On unless 0/off, only with NFS_DAYNIGHT=on): by day
+/* NFS_DAYNIGHT_GRADE (On unless 0/off): by day
  * inside converted Rockport, the visual treatment's 3D colour grade is blended
  * toward identity by the day weight, so Carbon's retail grade (a blue cast made
  * for Palmont) no longer tints Rockport's daylight. Before the grade the road
  * already has Most Wanted's balance. Bloom, vignette, desaturation and fades
- * stay native. Weight 0 (night, Palmont, clock absent) keeps the grade exactly. */
+ * stay native. Neutral D65 opens the bypass in every treatment view and hour.
+ * This is a code-value LUT bypass, separate from the presenter sRGB decode;
+ * it does not establish a float scene composition contract.
+ * Weight 0 keeps the grade exactly. */
 static float carbon_compat_day(void);
 
 static int carbon_dn_grade_on(void) {
@@ -11,7 +14,8 @@ static int carbon_dn_grade_on(void) {
     if (configured) return enabled;
     configured = 1;
     const char *setting = getenv("NFS_DAYNIGHT_GRADE");
-    enabled = carbon_dn_on() && !(setting && (!strcmp(setting,"0") || !strcasecmp(setting,"off")));
+    enabled = (lighting_mode_d65() || carbon_dn_on()) &&
+        !(setting && (!strcmp(setting,"0") || !strcasecmp(setting,"off")));
     return enabled;
 }
 
@@ -19,7 +23,8 @@ static int carbon_dn_grade_on(void) {
  * The enhanced visual treatment blends its two colour LUTs, then applies
  * desaturation, fade and exposure. After the grade, insert
  *   mov_sat rT.rgb, r0 ; lrp grade.rgb, c31.z, rT, grade
- * with rT unused by the program. PS c31.z is the grade day weight (c31.x/.y
+ * Neutral D65 omits SAT so the same bypass carries float highlights to EDR.
+ * rT is unused by the program. PS c31.z is the bypass weight (c31.x/.y
  * belong to the world draws, which run earlier and reset c31 per draw). */
 static uint32_t *carbon_dn_grade_variant(const uint32_t *tokens, uint32_t count,
                                         uint32_t *patched_count) {
@@ -38,7 +43,7 @@ static uint32_t *carbon_dn_grade_variant(const uint32_t *tokens, uint32_t count,
         if (!memcmp(tokens+i,pattern,length*4)) { insert = i+length; ++matches; }
     if (matches != 1) return NULL;
     const uint32_t extra[] = {
-        0x02000001u, 0x80170000u | temp, 0x80e40000u,                           /* mov_sat rT.rgb, r0 */
+        0x02000001u, (lighting_mode_d65() ? 0x80070000u : 0x80170000u) | temp, 0x80e40000u, /* mov[_sat] rT.rgb, r0 */
         0x04000012u, 0x80070000u | grade, 0xa0aa001fu, 0x80e40000u | temp, 0x80e40000u | grade, /* lrp */
     };
     uint32_t n = sizeof extra / 4;
@@ -51,8 +56,11 @@ static uint32_t *carbon_dn_grade_variant(const uint32_t *tokens, uint32_t count,
     return out;
 }
 
-/* The camera visibility row identifies converted scenery independently of sky. */
+/* Neutral covers both cities at every hour, independent of overlay/sky.
+ * The legacy daylight bypass still requires the native dome and camera row
+ * section 2100; the row identifies converted scenery without rebinding sky. */
 static float carbon_dn_grade_weight(void) {
+    if (lighting_mode_d65()) return 1;
     const char *overlay = getenv("NFS_CARBON_TRACK_OVERLAY");
     if (!overlay || !*overlay || !M32(0x00A73358u) || M32(0x00B77918u) != 0xED85BA82u || !carbon_dn_imported_view) return 0;
     return carbon_compat_day();

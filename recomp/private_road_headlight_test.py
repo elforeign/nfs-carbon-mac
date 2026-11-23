@@ -199,6 +199,8 @@ int main(int argc,char **argv) { @autoreleasepool {
 
 NATIVE = r'''
 #include "host.h"
+#include "daynight.h"
+#include "lighting_colour.h"
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
@@ -210,7 +212,7 @@ static uint32_t stack;
 static int tagged;
 #define CARBON_WORLDREFLECT 0
 static float carbon_compat_day(void) { return 0; }
-static struct { float weight; } carbon_dn_clock = {1};
+static struct { float weight; DaynightRecord record; } carbon_dn_clock = {.weight=1};
 static float carbon_dn_float(uint32_t a) { float f; memcpy(&f,G+a,4); return f; }
 uint32_t call_guest(Cpu *c,uint32_t fn,int n,const uint32_t *args) {
     assert(n==4 && args[0]==0x2000);
@@ -365,7 +367,7 @@ def main(effects=HERE/'out/carbon/effects', carbon=None):
     for name, text in controls.items():
         (out/'road.inc').write_text(text)
         binary = out/name
-        run(['clang++', '-std=c++17', '-O1', '-fobjc-arc', '-I', ROOT/'host/shaders', out/'shader.mm',
+        run(['clang++', '-std=c++17', '-O1', '-fobjc-arc', '-I', ROOT/'host/shaders', '-I', ROOT/'runtime', out/'shader.mm',
              ROOT/'host/shaders/tests/sm_interp.cpp', library, '-framework', 'Foundation', '-framework', 'Metal', '-o', binary])
         result = run([binary, palmont, *corpus], expected=0 if name=='good' else 1)
         if name == 'old-eye':

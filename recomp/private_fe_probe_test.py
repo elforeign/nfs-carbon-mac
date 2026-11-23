@@ -32,6 +32,7 @@ SOURCE = r'''
 #include <time.h>
 int diag_on = 1;
 uint8_t *G;
+void carbon_blackbox_cinematics(uint64_t frame, uint64_t now) { (void)frame; (void)now; }
 PerfFrame perf_frames[PERF_RING];
 volatile uint64_t perf_nframes;
 static unsigned diag_events;

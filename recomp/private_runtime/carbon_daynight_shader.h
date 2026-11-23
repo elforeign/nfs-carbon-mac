@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include "lighting_colour.h"
 
 static uint64_t carbon_dn_shader_key(const uint32_t *tokens, uint32_t count) {
     uint64_t hash = 1469598103934665603ull;
@@ -71,7 +72,16 @@ static uint32_t *carbon_facade_shader_variant(const uint32_t *tokens, uint32_t c
         };
         memcpy(extra,tail,sizeof tail); n = sizeof tail / 4;
     }
-    uint32_t added = n + (legacy ? 3 : 0) + (copy ? 4 : 0);
+    const uint32_t bake[] = {
+        0x03000002u, 0x8008000bu, 0xa00000f9u, 0xa0ff00f9u, /* add r11.w,c249.x,c249.w */
+        0x02010029u, 0x80ff000bu, 0x81ff000bu, /* if_gt r11.w,-r11.w */
+        0x03000008u, 0x8007000bu, 0x80e4000au, 0xa0e400f9u, /* dp3 r11.rgb,bake,Y */
+        0x04000012u, 0x8007000au, 0xa0ff00f1u, 0x80e4000bu, 0x80e4000au,
+        0x02000001u, output, 0x80e4000au,
+        0x0000002bu
+    };
+    uint32_t bake_count = copy && lighting_mode_d65() ? sizeof bake / sizeof *bake : 0;
+    uint32_t added = n + (legacy ? 3 : 0) + (copy ? 4 : 0) + bake_count;
     uint32_t *out = (uint32_t *)malloc((size_t)(count+added)*4);
     if (!out) return NULL;
     uint32_t before = insert - (legacy ? 5 : 0);
@@ -88,13 +98,16 @@ static uint32_t *carbon_facade_shader_variant(const uint32_t *tokens, uint32_t c
         out[at++]=0x02000001u; out[at++]=0x80180001u; out[at++]=0xb0ff0000u;
         memcpy(out+at,tokens+before,5*4); at+=5;
     }
+    if (bake_count) { memcpy(out+at,bake,sizeof bake); at+=bake_count; }
     memcpy(out+at,extra,n*4); at+=n;
     memcpy(out+at,tokens+insert,(size_t)(count-insert)*4);
     *patched_count=count+added;
     return out;
 }
 
-/* c240 = light.xyz/0; c241 = diffuse.rgb/night; c242 = ambient.rgb/0.
+/* c240 = light.xyz/0; c241 = diffuse.rgb/night; c242 = live Neutral ambient.rgb/weight.
+ * The CPU applies the selected world dataset and elevation-dependent source
+ * white before uploading c241/c242; this tail retains the native RGB gains.
  * The six identities cover nine embedded programs across SM2/SM3 techniques.
  * No register in these programs overlaps r10/r11 or c240..242.
  * With trees, c251.w > 0 (converted source trees only) replaces the day colour
@@ -136,7 +149,8 @@ static uint32_t *carbon_dn_world_variant(const uint32_t *tokens, uint32_t count,
         i += 1 + length;
     }
     if (normal >= 16 || colour >= 16 || writes != 1 || !rgb) return NULL;
-    uint32_t added = trees ? 18 + 29 : 18;
+    int neutral = lighting_mode_d65();
+    uint32_t added = 18 + (trees ? 29 : 0) + (neutral ? 25 : 0);
     uint32_t *out = (uint32_t *)malloc((size_t)(count + added) * sizeof *out);
     if (!out) return NULL;
     memcpy(out, tokens, (size_t)(count - 1) * sizeof *out);
@@ -157,6 +171,19 @@ static uint32_t *carbon_dn_world_variant(const uint32_t *tokens, uint32_t count,
         0x04000004u, 0x8007000au, 0xa0e400fau, 0x8000000au, 0xa0e400fbu, /* mad day,2SD,x,2F */
         0x0000002bu
     };
+    // c249.xyz is the night bake's luminance vector, c249.w the live moon Y.
+    // Before the first in-world upload, both are zero and c241.w selects bake.
+    const uint32_t neutral_bake[] = {
+        0x03000002u, 0x8008000au, 0xa00000f9u, 0xa0ff00f9u, /* add r10.w,c249.x,c249.w */
+        0x02010029u, 0x80ff000au, 0x81ff000au, /* if_gt r10.w,-r10.w */
+        0x03000008u, 0x8007000bu, 0x80e4000bu, 0xa0e400f9u, /* dp3 r11.rgb,bake,Y */
+        0x0000002bu
+    };
+    const uint32_t moon[] = {
+        0x03000008u, 0x8008000au, 0x90e40000u | normal, 0xa0e400f0u,
+        0x0300000bu, 0x8008000au, 0x80ff000au, 0xa0ff00f0u,
+        0x04000004u, output, 0x80ff000au, 0xa0ff00f9u, 0x80e4000bu
+    };
     const uint32_t end[] = {
         0x04000012u, output, 0xa0ff00f1u, 0x80e4000bu, 0x80e4000au, /* lrp output,n,bake,day */
         0x0000ffffu
@@ -164,11 +191,40 @@ static uint32_t *carbon_dn_world_variant(const uint32_t *tokens, uint32_t count,
     uint32_t at = count - 1;
     memcpy(out + at, tail, sizeof tail); at += sizeof tail / 4;
     if (trees) { memcpy(out + at, tree, sizeof tree); at += sizeof tree / 4; }
-    memcpy(out + at, end, sizeof end);
+    if (neutral) {
+        memcpy(out+at,neutral_bake,sizeof neutral_bake); at += sizeof neutral_bake/4;
+        memcpy(out+at,end,5*4);
+        out[at+1] = 0x8007000bu; /* The moon MAD writes the original output. */
+        at += 5;
+        memcpy(out+at,moon,sizeof moon); at += sizeof moon/4;
+        out[at] = 0x0000ffffu;
+    } else memcpy(out + at, end, sizeof end);
     *patched_count = count + added;
     return out;
 }
 static uint32_t *carbon_dn_shader_variant(const uint32_t *tokens, uint32_t count,
                                          uint32_t *patched_count) {
     return carbon_dn_world_variant(tokens, count, patched_count, 0);
+}
+
+/* The pinned sky program projects its native moon texture around c5.xyz and
+ * subtracts the same centre at the other side of the intersection. Keep the
+ * projection, disc texture, fog and cloud transport. c17 is the live centre
+ * and c18 is the luminance of the original disc multiplier. */
+static uint32_t *carbon_dn_moon_variant(uint32_t *sky, uint32_t *count) {
+    const unsigned first = 175;
+    const uint32_t setup[] = {
+        0x04000012u, 0x8007000au, 0xa0ff0011u, 0xa0e40011u, 0xa0e40005u,
+        0x04000012u, 0x8007000bu, 0xa0ff0011u, 0xa0e40012u, 0xa0e4000bu
+    };
+    unsigned added = sizeof setup / sizeof *setup;
+    uint32_t *out = (uint32_t *)realloc(sky,(*count+added)*sizeof *sky);
+    if (!out) return sky;
+    memmove(out+first+added,out+first,(*count-first)*sizeof *out);
+    memcpy(out+first,setup,sizeof setup);
+    out[178+added] = 0x80e4000au; /* +centre */
+    out[233+added] = 0x81e4000au; /* -centre */
+    out[304+added] = 0x80e4000bu; /* disc RGB */
+    *count += added;
+    return out;
 }

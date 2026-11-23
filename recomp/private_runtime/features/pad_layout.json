@@ -37,11 +37,17 @@
           "read": [
             11110728
           ]
+        },
+        "carbon_padbind_read": {
+          "read": [
+            11110728
+          ]
         }
       },
       "guest_layouts": {
         "switch": "native property getters/setters 13A9/13A7 via copied CPU; active player zero config; 16 independent dispatch identities; native defaults call 00689550 rewrites only selected-pad slots; clear only selected-pad slots of descriptor actions 47/48 on PC switch; profile sidecar deferred",
-        "mode": "Xbox source modes 0 level / 1 press / 2 release; raw DirectInput cached inputs, separate trigger axes, native keyboard evaluator; unsupported PC turn/HUD-down/VOIP roles retained as negative IDs without borrowing another action slot"
+        "mode": "Xbox source modes 0 level / 1 press / 2 release; raw DirectInput cached inputs, separate trigger axes, native keyboard evaluator; unsupported PC turn/HUD-down/VOIP roles retained as negative IDs without borrowing another action slot",
+        "restart": "004B0270 native reader retains admission by controller-name hash; first automatic detection after settings read preserves loaded rows/configuration; same-layout identity changes never reseed; explicit layout changes still reseed; reader cursor +154 token count/+160 index; copied CPU scans native integer tokens and restores cursor; known saved name hash may identify one unknown virtual slot; live host identity supersedes cached enumeration name; different actual device still reseeds"
       }
     },
     "carbon_pad_layout_settings.h": {
@@ -107,7 +113,7 @@
     },
     "carbon_pad_layout_bindings.h": {
       "source": "carbon_pad_layout_bindings.h",
-      "sha256": "8fd918576f3d8b41be42ddfaf233b3a885ad2d345da6e0aa0617dd516ff2fd33",
+      "sha256": "c16bf674ae8f5a546fc43ca24c65c94b4a7278f3187c0db21736f62116771bf0",
       "functions": {}
     },
     "carbon_pad_layout_settings.h": {

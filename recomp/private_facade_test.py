@@ -1,4 +1,6 @@
 """Converted effect-5 glass: white 115.6511 +/- .5; old 5->25 is 14.8234 and fails.
+Live direct/ambient upload-card parity is exercised by private_daynight_test:
+1,080 cards, max dxy 1.54e-8; frozen-noon control .0795883 (limit .003).
 
 Executes production shader bytecode and the native draw weight. Tagged glass
 uploads the shared day weight (0 with the clock absent or at night: native
@@ -143,7 +145,7 @@ def main(effects=HERE/'out/carbon/effects'):
         assert label == 'good' or text != variant
         (out/'variant.inc').write_text(text)
         binary = out/label
-        run(['clang++','-std=c++17','-O1','-fobjc-arc','-I',shaders,'-I',out,fixture,shaders/'tests/sm_interp.cpp',shaders/'build/libsmtranslate.a','-framework','Foundation','-framework','Metal','-o',binary])
+        run(['clang++','-std=c++17','-O1','-fobjc-arc','-I',shaders,'-I',ROOT/'runtime','-I',out,fixture,shaders/'tests/sm_interp.cpp',shaders/'build/libsmtranslate.a','-framework','Foundation','-framework','Metal','-o',binary])
         proof.append(label+': '+run([binary,files[0],*(['old-control'] if label=='old-path' else [])], 0 if label=='good' else 1))
         print(proof[-1])
     source = (HERE/'private_runtime/carbon_daynight.h').read_text()
@@ -151,6 +153,8 @@ def main(effects=HERE/'out/carbon/effects'):
     assert hook['hooks'][0]['address']=='0071ECB0'
     assert source.index('carbon_facade_shader_variant(tokens,count,patched_count)') < source.index('if (carbon_dn_on()) variant =')
     code = '#include "host.h"\n#include <string.h>\n#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n'
+    code += '#include "lighting_colour.h"\n#include "daynight.h"\n'
+    code += 'static struct {DaynightRecord record;} carbon_dn_clock;\n'
     code += 'static int carbon_reflect_draw(Cpu*c,void(*original)(Cpu*)){return 0;}\n'
     code += 'static int carbon_tree_draw(Cpu*c,void(*original)(Cpu*)){return 0;}\n'
     code += 'static float day;static float carbon_compat_day(void){return day;}\n'
@@ -160,12 +164,12 @@ uint8_t *G;static unsigned uploads,calls;static float vc[4],pc[4];
 uint32_t call_guest(Cpu*c,uint32_t f,int n,const uint32_t*a){if(n!=4||a[3]!=1)abort();
  if(f==94&&a[1]==243)memcpy(vc,G+a[2],16);else if(f==109&&a[1]==31)memcpy(pc,G+a[2],16);else abort();++uploads;return 0;}
 static void native(Cpu*c){++calls;c->eax=42;c->esp+=20;}
-int main(){G=calloc(1,1<<26);M32(0xab0abc)=0x1000;M32(0x1000)=0x2000;M32(0x2000+94*4)=94;M32(0x2000+109*4)=109;
+int main(){carbon_dn_clock.record.ambient[0]=.220097f;carbon_dn_clock.record.ambient[1]=.236764f;carbon_dn_clock.record.ambient[2]=.263431f;carbon_dn_clock.record.ambient[3]=4;G=calloc(1,1<<26);M32(0xab0abc)=0x1000;M32(0x1000)=0x2000;M32(0x2000+94*4)=94;M32(0x2000+109*4)=109;
  const float days[3]={0,1,.5f};
  for(int mode=0;mode<3;++mode){day=days[mode];
  for(int tag=1;tag>=0;--tag){Cpu c={0};c.esp=0x8000;c.ecx=0x222;M32(c.esp+16)=0x3000;M32(0x301c)=0x4000;M32(0x4030)=tag?0x50019:25;M32(0x226)=25;
  float want=tag?day:0;
- carbon_facade_draw(&c,native);if(fabsf(vc[0]-1.760776f)>1e-6f||fabsf(vc[1]-1.894112f)>1e-6f||fabsf(vc[2]-2.107448f)>1e-6f||vc[3]!=want||pc[0]!=want||c.esp!=0x8014||c.eax!=42||c.ecx!=0x222)return 1;}}
+ carbon_facade_draw(&c,native);if(fabsf(vc[0]-(want>0?1.760776f:0))>1e-6f||fabsf(vc[1]-(want>0?1.894112f:0))>1e-6f||fabsf(vc[2]-(want>0?2.107448f:0))>1e-6f||vc[3]!=want||pc[0]!=want||c.esp!=0x8014||c.eax!=42||c.ecx!=0x222)return 1;}}
  if(uploads!=12||calls!=6)return 1;
  Cpu other={0};other.esp=0x8000;other.ecx=0x222;M32(other.esp+16)=0x3000;M32(0x4030)=0;carbon_facade_draw(&other,native);
  if(uploads!=12||calls!=7)return 1;
@@ -174,7 +178,7 @@ int main(){G=calloc(1,1<<26);M32(0xab0abc)=0x1000;M32(0x1000)=0x2000;M32(0x2000+
 '''
     path = out/'draw.c'
     binary = out/'draw'
-    for label, selected in [('good',code),('missing-brightness',code.replace('8*.', '4*.')),
+    for label, selected in [('good',code),('missing-brightness',code.replace('2 * record->ambient[k]', 'record->ambient[k]')),
                             ('always-on',code.replace('? carbon_compat_day() : 0;','? 1 : 0;'))]:
         assert label=='good' or selected!=code
         path.write_text(selected)

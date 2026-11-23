@@ -12,6 +12,7 @@
 extern int diag_on;
 extern void diag_event(const char *, ...);
 extern void portmenu_status(const char *, ...);
+void carbon_blackbox_movie_request(uint32_t player);
 
 static int cadd_title_seen;
 static uint32_t cadd_pending_profile;
@@ -40,6 +41,7 @@ static uint32_t cadd_player_perp(void) {
 }
 
 void carbon_addons_movie(Cpu *c, void (*original)(Cpu *)) {
+    carbon_blackbox_movie_request(c->ecx);
     uint32_t saved = M32(0x00A9E6D8u);
     int skip = !cadd_title_seen && settings_get("gameplay.skip_movies") > 0;
     if (skip) M32(0x00A9E6D8u) = 1;

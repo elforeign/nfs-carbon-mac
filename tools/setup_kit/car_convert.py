@@ -650,11 +650,16 @@ def decoded_models(models, mw=None, slot=None, texture_aliases=None, material_ro
                 aliases = normal_resource_aliases(car)
                 models[n]['textures'] = [aliases.get(h, (h, None))[0] for h in models[n]['textures']]
                 assembled.append(n)
+        fixed_bases = set()
         for lod in 'ABCD':
             roof, base = f'{car}_KIT00_ROOF_{lod}', f'{car}_BASE_{lod}'
             if roof in original and base in refnames:
                 anchors = [original[n] for n in (base, roof) if n in original]
-                models[base] = assemble(base, [original[roof]], marker_parts=anchors); assembled.append(base)
+                # Fixed deck and back glass must survive every body-kit choice.
+                rear_window = f'{car}_KIT00_REAR_WINDOW_{lod}'
+                fixed = [original[n] for n in (roof, base, rear_window) if n in original]
+                models[base] = assemble(base, fixed, marker_parts=anchors); assembled.append(base)
+                fixed_bases.add(base)
             target = f'{car}_KIT00_BODY_{lod}'
             keys = [f'{car}_KIT00_{p}_{lod}' for p in ('BODY', 'FRONT_BUMPER', 'REAR_BUMPER', 'SKIRT', 'EXHAUST')]
             doors = [n for side in ('LEFT', 'RIGHT')
@@ -666,7 +671,7 @@ def decoded_models(models, mw=None, slot=None, texture_aliases=None, material_ro
 
 
                 keys += doors
-                if base in original: keys.append(base)
+                if base in original and base not in fixed_bases: keys.append(base)
                 for end in ('FRONT', 'REAR'):
                     badge = f'{car}_KIT00_{end}_BUMPER_BADGING_SET_{lod}'
                     if badge in original: keys.append(badge)
@@ -1316,9 +1321,9 @@ CAMERA_FIELDS = ('HEIGHT', 'FOV', 'ANGLE', 'LAG')
 
 class FitAttributes:
     """Read typed values with inheritance across class and collection exports."""
-    def __init__(self, data):
+    def __init__(self, data, *, vaults=None):
         self.defs, self.collections = {}, {}
-        for _, binary, raw in read_vpak(data):
+        for _, binary, raw in read_vpak(data) if vaults is None else vaults:
             vault = WheelVault(binary, raw)
             for key, typ, off in vault.exports:
                 if typ == 0x5E970CBC:
@@ -1335,12 +1340,23 @@ class FitAttributes:
                     self.collections[identity] = (vault, off)
 
     def raw(self, cls, key, name, seen=(), *, allow_empty=False):
+        vault, dep, pos, size, maximum, flags = self.field_site(cls, key, name, seen)
+        if flags & 1:
+            alloc, count, esz, enc = words(vault.buffers[dep], pos, '<4H')
+            require((allow_empty or count > 0) and count <= alloc <= maximum and esz == size, 'fit array shape')
+            pos += 8 + (8 if enc & 0x8000 else 0)
+            size *= count
+        return bytes(span(vault.buffers[dep], pos, size, 'fit value range'))
+
+    def field_site(self, cls, key, name, seen=()):
+        """Resolve the data site, including fields containing relocations."""
         cls = hash32(cls) if isinstance(cls, str) else cls
+        ident = hash32(name) if isinstance(name, str) else name
         require(key not in seen and len(seen) < 32, 'fit parent cycle/depth')
         require((cls, key) in self.collections, 'fit collection missing')
         vault, off = self.collections[cls, key]
         raw = vault.buffers[0]
-        _, at, size, maximum, flags, _ = self.defs[cls][hash32(name) if isinstance(name, str) else name]
+        _, at, size, maximum, flags, _ = self.defs[cls][ident]
         target = None
         if flags & 2:
             target = vault.pointer(0, off + 28)
@@ -1350,7 +1366,7 @@ class FitAttributes:
             nt = words(raw, off + 24, '<H')[0] if vault.modern else u32(raw, off + 24)
             start = off + ((32 + nt * 4 + 7) & ~7) if vault.modern else off + 32 + nt * 4
             entries = span(raw, start, u32(raw, off + 20) * 12, 'fit entries range')
-            matches = [i for i in range(len(entries) // 12) if u32(entries, i * 12) == hash32(name)]
+            matches = [i for i in range(len(entries) // 12) if u32(entries, i * 12) == ident]
             require(len(matches) <= 1, 'duplicate fit field')
             if matches:
                 entry = start + matches[0] * 12
@@ -1359,14 +1375,9 @@ class FitAttributes:
         if target is None:
             parent = u32(raw, off + 8)
             require(parent != 0, 'fit field absent: ' + str(name))
-            return self.raw(cls, parent, name, seen + (key,), allow_empty=allow_empty)
+            return self.field_site(cls, parent, name, seen + (key,))
         dep, pos = target
-        if flags & 1:
-            alloc, count, esz, enc = words(vault.buffers[dep], pos, '<4H')
-            require((allow_empty or count > 0) and count <= alloc <= maximum and esz == size, 'fit array shape')
-            pos += 8 + (8 if enc & 0x8000 else 0)
-            size *= count
-        return bytes(span(vault.buffers[dep], pos, size, 'fit value range'))
+        return vault, dep, pos, size, maximum, flags
 
     def floats(self, cls, key, names):
         raw = b''.join(self.raw(cls, key, name) for name in names)
@@ -2001,7 +2012,11 @@ def _convert_decoded(*, car, donor, source, source_tex, models, textures, shared
     physics = car_physics.metadata(attributes, car, donor)
     if physics is not None:
         files['PHYSICS.BIN'] = physics
-    files['PERFORMANCE.BIN'] = car_performance.metadata(attributes, car, donor) if platform == 'pc' else performance
+    if car in car_performance.SIBLINGS:
+        native = tracked.read(mw_root / 'GLOBAL/attributes.bin')
+        files['PERFORMANCE.BIN'] = car_performance.sibling_record(native, car, donor, wheels=wheels)
+    else:
+        files['PERFORMANCE.BIN'] = car_performance.metadata(attributes, car, donor) if platform == 'pc' else performance
     files['GRIP.BIN'] = car_grip.optional_metadata(attributes, car, donor) if platform == 'pc' else grip
     files['PAINT.BIN'], paint = car_paint.metadata(shared_raw,
         lambda: unpack_file(tracked.read(mw_root / 'GLOBAL/GLOBALB.LZC')), car, donor, attributes)

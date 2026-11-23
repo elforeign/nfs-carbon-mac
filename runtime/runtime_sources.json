@@ -238,6 +238,22 @@
       "generated_data": null,
       "required_providers": []
     },
+    "car_audio_tmx.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": ["mw-private", "mw-public"],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "car_audio_tmx.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
     "car_audio_backend.c": {
       "class": "mw",
       "kind": "unit",
@@ -1320,7 +1336,9 @@
     "lighting_colour.h": {
       "class": "shared",
       "kind": "include",
-      "targets": [],
+      "targets": [
+        "private"
+      ],
       "constructors": "forbidden",
       "generated_data": null,
       "required_providers": []
@@ -3440,6 +3458,26 @@
       "generated_data": null,
       "required_providers": []
     },
+    "blackbox_render.m": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "blackbox_render.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
     "blackbox.c": {
       "class": "mixed",
       "kind": "unit",
@@ -3467,6 +3505,44 @@
         "mw-private",
         "mw-public"
       ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "blackbox_mw_fe.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "blackbox_mw_fe.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "blackbox_mw_cinematics.c": {
+      "class": "mw",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "blackbox_mw_cinematics.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
       "constructors": "forbidden",
       "generated_data": null,
       "required_providers": []
@@ -3511,7 +3587,8 @@
         "report.m",
         "report_github.m",
         "report_submit.m",
-        "blackbox.c"
+        "blackbox.c",
+        "blackbox_render.m"
       ],
       "extra_units": [
         "guide.m",

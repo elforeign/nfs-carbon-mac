@@ -120,6 +120,15 @@ static unsigned length(const unsigned char *array,unsigned maximum) {
     return header[1]<=maximum && header[2]==4 ? header[1] : 0;
 }
 
+float car_performance_clamp_top_speed(const void *engine_layout,float speed) {
+    const unsigned char *limiter=(const unsigned char *)engine_layout+0x2c;
+    if (length(limiter,2)==2) {
+        float onset=real(limiter+8), width=real(limiter+12);
+        if (onset>0 && width>0) return fminf(speed,(onset+width)*0.44703f);
+    }
+    return speed;
+}
+
 static void array_header(void *out,unsigned capacity,unsigned count) {
     uint16_t header[4]={capacity,count,4,0};
     memcpy(out,header,sizeof header);
@@ -138,7 +147,8 @@ unsigned car_performance_tiers(const CarPerformance *record,unsigned link,
     donor_indices[0]=0; donor_indices[1]=1; donor_indices[2]=2;
     /* With two references MW blends stock into partial kits. Give nitrous a
      * separate low kit so both ends of the blend have equipped refill values. */
-    if (link==CAR_PERFORMANCE_NOS_LINK && record->version>=3 && donor_count==2) {
+    if (link==CAR_PERFORMANCE_NOS_LINK &&
+        (record->version>=3 || record->source==CAR_PERFORMANCE_PROSTREET) && donor_count==2) {
         donor_indices[1]=0; donor_indices[2]=1;
         return 3;
     }
@@ -151,8 +161,9 @@ void car_performance_layout(const CarPerformance *record,unsigned link,int insta
     for (unsigned b=0;b<=link;++b)
         for (unsigned i=0;i<blocks[b].count;++i)
             p+=blocks[b].fields[i].width+blocks[b].fields[i].array;
-    Block block=performance_block(link+1,record->version);
-    int source_nos=link==CAR_PERFORMANCE_NOS_LINK && record->version>=3;
+    int prostreet=record->source==CAR_PERFORMANCE_PROSTREET;
+    int source_nos=link==CAR_PERFORMANCE_NOS_LINK && (record->version>=3 || prostreet);
+    Block block=performance_block(link+1,source_nos ? 3 : record->version);
     int stock_has_nos=source_nos && real(p+1)>0;
     for (unsigned i=0;i<block.count;++i) {
         Field field=block.fields[i];
@@ -169,6 +180,10 @@ void car_performance_layout(const CarPerformance *record,unsigned link,int insta
         }
         for (unsigned j=0;j<field.width;++j) {
             float projected=real(p+j);
+            if (prostreet && link==CAR_PERFORMANCE_ENGINE_LINK && field.offset==0x2c && j==1 && count==2)
+                projected=fmaxf(0,projected-real(p)); /* Absolute cutoff to ramp width. */
+            if (prostreet && link==CAR_PERFORMANCE_CHASSIS_LINK && field.offset==0x68)
+                projected=real(base+4*j); /* Retain the MW downforce model's coefficient. */
             if (installed && j<count && j<common) {
                 float before=real(base+4*j), after=real(tier+4*j);
                 if (source_nos) {
@@ -176,6 +191,7 @@ void car_performance_layout(const CarPerformance *record,unsigned link,int insta
                      * endpoints. Refill and flow stay at equipped values. */
                     if (i<2 || !stock_has_nos) projected=after;
                 } else if (link==CAR_PERFORMANCE_NOS_LINK && projected==0) projected=after;
+                else if (projected==before) projected=after;
                 else if (before!=after) projected=before!=0 ? projected*(after/before) : projected+after;
             }
             memcpy(dst+4*j,&projected,4);

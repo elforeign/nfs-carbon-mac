@@ -51,6 +51,12 @@ static unsigned checks, failures, calls;
 static uint32_t seen_rig, seen_context;
 #define CHECK(x) do {++checks; if(!(x)){++failures;fprintf(stderr,"CARS CHECK %d: %s\n",__LINE__,#x);}}while(0)
 float carbon_daynight_night(void) { return M32(0x00A99BBCu)==6 ? night : 1; }
+int carbon_daynight_d65_rig(float *sun, float *ambient) {
+    if (M32(0x00A99BBCu) != 6) return 0;
+    *sun = night ? .043f : 1;
+    *ambient = night ? .08f : 1;
+    return 1;
+}
 void diag_event(const char *f, ...) { (void)f; }
 #include "cars.inc"
 #define TOD 0x00200000u
@@ -125,6 +131,23 @@ int main(int argc, char **argv) {
     G=calloc(1,0xC00000);if(!G)return 2;
     memcpy(G+RIG,RIG_BYTES,0xa0);memcpy(native_rig,RIG_BYTES,0xa0);
     M32(0x00A99BBCu)=6;M32(0x00B77F34u)=TOD;memcpy(G+TOD+0x160,SUN,12);
+    if (lighting_mode_d65()) {
+        for (int midnight=0; midnight<=1; ++midnight) {
+            night=midnight;
+            CHECK(hooked(RIG)==1 && seen_rig!=RIG);
+            float key = MF32(0x30010);
+            CHECK(key>0 && key==MF32(0x30014) && key==MF32(0x30018));
+            CHECK(fabsf(key-.095702f*(midnight?.043f:1))<1e-6f);
+            for (unsigned k=0;k<3;++k) {
+                uint32_t slot=seen_rig+0x10+0x1c*k;
+                CHECK(MF32(slot)>0 && MF32(slot)==MF32(slot+4) && MF32(slot)==MF32(slot+8));
+                float expected_gain=carbon_dn_cars_mw[k][5]*(midnight?(k?.08f:.043f):1);
+                CHECK(fabsf(MF32(slot+12)-expected_gain)<1e-6f);
+            }
+        }
+        printf("CARS D65 noon and midnight checks=%u failures=%u\n",checks,failures);
+        free(G);return failures?1:0;
+    }
     if(argc>1) { /* switch off: noon stays native */
         night=0;unchanged("switch off");
         printf("CARS off checks=%u failures=%u\n",checks,failures);
@@ -278,6 +301,7 @@ def main():
         assert ('failures=0' in result) == (rc == 0), result
         results.append(f'{label}: {result} (exit {rc})')
         if label == 'good':
+            results.append('neutral-d65: '+command([binary], 0, dict(env, NFS_WORLD_LIGHTING='neutral-d65')))
             results.append(f'off: {command([binary, "off"], 0, off)} (exit 0)')
     (out/'cars.inc').write_text(production)
     (out/'proof.txt').write_text('\n'.join(results)+'\n')

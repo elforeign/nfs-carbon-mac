@@ -55,6 +55,28 @@
       },
       "provider": "carbon_padbind_resolve",
       "job": "A7.B"
+    },
+    {
+      "address": "004B0270",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "004B0270",
+        "length": 16,
+        "sha256": "202b0b0aad14e46142063b850e70498e1564d230e1f9a0548c8c7f3c07712ad4"
+      },
+      "provider": "carbon_padbind_read",
+      "job": "Native controller settings restart"
+    },
+    {
+      "address": "00680890",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "00680890",
+        "length": 16,
+        "sha256": "a35ac72ca6171e544d65d0d00f8db563692455f89ade0b437e8bd31c54672710"
+      },
+      "provider": "carbon_padbind_hash",
+      "job": "Controller identity across restart"
     }
   ]
 }

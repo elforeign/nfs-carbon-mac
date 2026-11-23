@@ -169,9 +169,12 @@ def selectors():
     return '''#include <stdatomic.h>
 #include <pthread.h>
 #include "setting_bool.h"
+#include "lighting_colour.h"
+extern int diag_on;
 static _Atomic int carbon_ao_on;
 static int carbon_coat_materials, carbon_envcube_on, carbon_envcube_float, carbon_envcube_hdr;
 static int carbon_dn_configured, carbon_dn_enabled;
+static uint64_t carbon_dn_isolate_moon_frame;
 static _Atomic int private_audio_enabled = -1;
 static _Atomic unsigned private_audio_generation;
 static pthread_mutex_t private_audio_control_mutex = PTHREAD_MUTEX_INITIALIZER;

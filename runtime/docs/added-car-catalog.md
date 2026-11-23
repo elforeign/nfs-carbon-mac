@@ -222,8 +222,12 @@ audio files under `SOUND/ENGINE`. The Xbox 360 route reads those logical ranges
 from the selected disc's numbered archives. Reimport a retained Carbon pack to
 get its source sidecar. Retained catalogs still open under their original
 approval contracts. The earlier private Jaguar XK stock sidecar is also
-readable. Missing or refused sidecars, ProStreet and Undercover additions, and
-explicit `off` or `0` use donor audio.
+readable. Missing or refused sidecars, Undercover additions, ProStreet
+additions other than the Veyron, and explicit `off` or `0` use donor audio.
+The ProStreet PC Veyron imports its own stock layers (version 4 below): engine
+`car_068-engine.tmx` and exhaust `car_062-exhaust.tmx` under `SOUND/ENGINE`,
+plus their `swtn_car_068.abk` / `swtn_car_062.abk` transient banks. Only the
+audited attributes revision is admitted; any other revision uses donor audio.
 
 The converter preserves `pvehicle.Audio[]` order. Each `caraudio` resolves to
 engine and exhaust `engineaudio`, in that order. Each layer contains its
@@ -259,6 +263,16 @@ Each bank plan starts with the length and bytes of its translated executable
 image followed by the same pointer-free execution manifest. Sample rows
 store declared frames, rate and loop start with a zero PCM byte count. The
 runtime checks those values against the source before decoding to float PCM.
+
+Version 4 identifies ProStreet PC. It keeps the 68-byte header with one tier.
+The payload starts with the engine and exhaust TMX resource indices (two
+words) and each layer's source RPM range (four floats), then the attributes
+SHA-256. Each resource row stores kind (3 TMX, 2 SWTN bank), source byte
+count, zero and the count of resident sounds, then its SHA-256 and the original
+bytes. A TMX row is followed by each resident sound's frames, rate, loop word
+and little-endian mono PCM. The runtime maps normalized RPM into each layer's
+source range and plays both layers continuously. SWTN transient programs are
+validated and retained but not executed.
 
 For race objects the port obtains the live MW engine upgrade level via
 `Physics::Upgrades::GetLevel` (00672D30, engine type 4). Carbon PC's 0053B570
@@ -382,7 +396,7 @@ call owns its guest tyre-layout shadow and restores the original pointer and
 thread-local scope on exit. Unload, reload and address reuse invalidate old
 selection tokens. The default remains off pending a handling comparison.
 
-## Carbon source performance
+## Source performance
 
 Setup emits a 344-byte `PERFORMANCE.BIN` for each supported Carbon PC and Xbox
 360 variant from that variant's local `GLOBAL/ATTRIBUTES.BIN`. The CPF3 header
@@ -451,3 +465,21 @@ maximum ratings from those collections using its retail normalization bounds.
 | nos RECHARGE_MIN_SPEED | 1C → 1C | Lower refill speed threshold, in mph |
 
 The conversion and native input regression is `tests/setup/test_car_performance.py`.
+
+Setup approval policy revision 9 adds `PERFORMANCE.BIN` for all 31
+ProStreet PC imports. The same startup switch enables their source values.
+Setup resamples their engine torque curves on MW's RPM grid and projects the
+source speed limits, drivetrain, axle brakes, steering scale and handling
+ratings into MW's collections. MW supplies the upgrade slots, brake-lock
+settings, steering rate and range, and nitrous kits. Reimport ProStreet cars
+to add their driving records. Earlier approved generations still load.
+
+Setup approval policy revision 10 adds the same performance record for all
+14 Undercover PC imports. It includes stock mass and inertia, resampled
+engine torque, speed limits, drivetrain and zero-speed brake and steering
+calibration. MW uses those inputs for driving and to estimate stock speed
+and acceleration on the retail scale. MW supplies the handling endpoints,
+suspension, contact, steering and brake envelopes, and nitrous kits.
+Superleggera keeps its own save ID and fit with the authored LP560-4 tuning
+link. Reimport existing Undercover cars to add source performance. Earlier
+approved generations still load and retain save compatibility.

@@ -56,6 +56,7 @@ HARNESS = r'''
 #include <sys/stat.h>
 #include <unistd.h>
 uint8_t *G;
+void carbon_blackbox_movie_request(uint32_t player) { (void)player; }
 int diag_on=1;
 __thread uint32_t last_error;
 static unsigned forbidden, delegated, cash, message, dialogs, getters;

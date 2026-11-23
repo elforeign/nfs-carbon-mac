@@ -13,12 +13,12 @@
       "generated_data": null,
       "required_providers": [],
       "guest_layouts": {
-        "tod": "B77F34 points to the time-of-day object; +20 diffuse, +30 ambient. A99BBC flow 6; A6C204 racing baked power/brightness. B4295C points to native fog RGB. Advance uses A99A5C real dt; +150 sun position and +160 normalized light; callbacks use AB0ABC device vtable slot 94. The shader constants c240..242 are private to these pinned programs.",
-        "sky": "B77F34 block +70 sky and +80 haze; B4295C fog RGB and +10..24 native distances/falloff. AB0ABC device slot 109 uploads pixel c14..16 after the sky callback. 0073E890 takes its fog destination as the second stack argument. Native global dome, clouds and moon are used in every camera row.",
+        "tod": "B77F34 points to the time-of-day object; +20 diffuse, +30 ambient. A99BBC flow 6; A6C204 racing baked power/brightness. B4295C points to native fog RGB. Advance uses A99A5C real dt; +150 sun position and +160 normalized light; callbacks use AB0ABC device vtable slot 94. VS c240..242 carry the clock lighting. Neutral D65 also uploads c249 (linear bake luminance, direct moon Y) and reads the PC specular at TOD +40. World Neutral reconstructs only diffuse/ambient/specular from collection layout pointers +C4/D4/E4/F4 (visual treatment) or +104/114/124/134, native weather +140 and high-sun +144; A65394 selects the quartet. gen/attrib_light_data.inc supplies the same X360 field overlay as the reference (NFS_LIGHT_DATA=pc retains PC). Post-clock direct uses the live solar elevation and shared adapted source white; ambient uses shared Y-preserving 2/3 desaturation. Guest fields remain unchanged.",
+        "sky": "B77F34 block +70 sky and +80 haze; B4295C fog RGB and +10..24 native distances/falloff. AB0ABC device slot 109 uploads pixel c14..16 after the sky callback. 0073E890 takes its fog destination as the second stack argument. The native dome and cloud transport apply in every camera row. Neutral D65 uploads PS c17..18 for the disc centre at the opposing orbit and the original disc luminance. Neutral D65 uses the luminance of the active scenery fog record at the horizon of both dome terms.",
         "clock": "A98284 race status +6A14 active race, +6A18 mode (3 Career), +6A1C event identity; B4CFE0 simulation +24 state 4 paused. Clock settings are environment-only.",
-        "facade": "0071ECB0 receives draw at stack+10, draw+1C material. Material+30 word 00050019 selects source effect 5; native loader resolves low ushort 25. Device slots 94/109 upload reserved VS c243 and PS c31 before CommitChanges. Neutral ambient RGB times W=4 and brightness=2; c243.w / c31.x carry the day weight (1 - clock night; 0 with the clock absent, unready or outside flow 6), blending over the native colour. Material+30 word 00060000 marks source trees on native effect 0: unless NFS_DAYNIGHT_TREES=0/off, VS c250/c251 carry the source tree terms around that draw only (c251.w wrap > 0) and are zeroed after it.",
-        "reflect": "Material+30 word 00010001 selects source reflective transport on native effect 1. Draw+0C/+14 retain normal/specular texture handles from material+19/+1B; device slots 65/69 bind reserved s5/s6. VS c248 light, PS c21..25 source noon terms, c31.y day weight (1 - clock night; 0 with the clock absent, unready or outside flow 6) blending over the native output. Native effect 1 resets the weight; fog and native beams remain. Native weather is active view AB08F4+4, B4AF7C+view*80 pointer, +28C rain scalar, as read by 00748B50; A650E0 is pass brightness. VS c247.w selects the road position transform from this exact material tag on every effect-1 draw, independently of clock/day weight; native draws reset it.",
-        "grade": "0071D4E0(this, technique, effect) is called only by the final treatment 00726AF0, just before its full-screen draw; B42FE8 is the visual-treatment effect. Unless NFS_DAYNIGHT_GRADE=0/off the visualtreatment (3879B8C8D72DF0CB) and visualtreatment_enchanced (5AD9EA49CAC6D49B) programs blend their 3D grade toward saturate(input) by PS c31.z, uploaded after 0071D4E0: the day weight inside converted Rockport (overlay, A73358 sky enabled, camera visibility row contains reserved section 2100 and native primary dome B77918 = ED85BA82), else 0.",
+        "facade": "0071ECB0 receives draw at stack+10, draw+1C material. Material+30 word 00050019 selects source effect 5; native loader resolves low ushort 25. Device slots 94/109 upload reserved VS c243 and PS c31 before CommitChanges. Live Neutral ambient RGB times the record W and brightness=2; c243.w / c31.x carry the day weight (1 - clock night; 0 with the clock absent, unready or outside flow 6), blending over the native colour. Material+30 word 00060000 marks source trees on native effect 0: unless NFS_DAYNIGHT_TREES=0/off, VS c250/c251 carry the source tree terms around that draw only (c251.w wrap > 0) and are zeroed after it.",
+        "reflect": "Material+30 word 00010001 selects source reflective transport on native effect 1. Draw+0C/+14 retain normal/specular texture handles from material+19/+1B; device slots 65/69 bind reserved s5/s6. VS c248 light, PS c21..25 live world Neutral terms, c31.y day weight (1 - clock night; 0 with the clock absent, unready or outside flow 6) blending over the native output. Native effect 1 resets the weight; fog and native beams remain. Native weather is active view AB08F4+4, B4AF7C+view*80 pointer, +28C rain scalar, as read by 00748B50; A650E0 is pass brightness. VS c247.w selects the road position transform from this exact material tag on every effect-1 draw, independently of clock/day weight; native draws reset it.",
+        "grade": "0071D4E0(this, technique, effect) is called only by the final treatment 00726AF0, just before its full-screen draw; B42FE8 is the visual-treatment effect. Unless NFS_DAYNIGHT_GRADE=0/off the visualtreatment (3879B8C8D72DF0CB) and visualtreatment_enchanced (5AD9EA49CAC6D49B) programs blend their 3D grade toward saturate(input) by PS c31.z, uploaded after 0071D4E0: the day weight inside converted Rockport (overlay, A73358 sky enabled, camera visibility row contains reserved section 2100 and native primary dome B77918 = ED85BA82), else 0. Neutral D65 uses weight 1 in every view and preserves float highlights above code value 1. Grade proof is independent of presenter transfer: both cities/programs retain reference grey and computed Neutral noon; shared sRGB transport is checked separately, without establishing float composition parity.",
         "view": "007AFB70 stack +4 view/+8 sky mode; view+40 camera, camera+40 render XYZ. 007A3290 this=B69CD0 returns row +10 u16 count/+12 u16 sections. Section 2100 marks imported scenery for the colour grade only; no sky model is rebound."
       }
     },
@@ -73,17 +73,23 @@
   "bindings": {
     "carbon_daynight.c": {
       "source": "carbon_daynight.h",
-      "sha256": "1431bab7733493f7b904a8b1697cfd85a5b100a54f374a349569e93762cc7894",
-      "functions": {}
+      "sha256": "885d6660438db2fbd34d5f3f2f5f4208c92a5e797ad081f8143f3cf6fe4208a6",
+      "functions": {
+        "carbon_dn_world_record": {
+          "read": [
+            10900372
+          ]
+        }
+      }
     },
     "carbon_daynight_shader.h": {
       "source": "carbon_daynight_shader.h",
-      "sha256": "bb0448231f7b2218a645d87c43ed3deba4b74d2e0306152f57cc309414d5fca1",
+      "sha256": "3d1feab0716d69cd28ffc42173a49a71212f5a508c3b276aee86ce7d0429e9c3",
       "functions": {}
     },
     "carbon_daynight_sky.h": {
       "source": "carbon_daynight_sky.h",
-      "sha256": "052f06f35a0b385574a15651468e739b02535ecd403a708df985491b44d77eb4",
+      "sha256": "0f1bc67031544b32ece7883457b785d815d84dcbc9ad6911e0e4b77ac0458172",
       "functions": {
         "carbon_daynight_view": {
           "read": [
@@ -100,7 +106,7 @@
     },
     "carbon_daynight_grade.h": {
       "source": "carbon_daynight_grade.h",
-      "sha256": "dff850e89df23ade1fdc8012d00c8c4345f743f6acc98948448980716d6cad82",
+      "sha256": "c8492d5457ca54dab45da4a12214de6648c74875ce320de3fae0be350549edd6",
       "functions": {
         "carbon_dn_grade_weight": {
           "read": [

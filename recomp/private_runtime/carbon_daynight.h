@@ -2,6 +2,7 @@
 #include "host.h"
 #include "daynight.h"
 #include "daynight_clock.h"
+#include "lighting_colour.h"
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -30,8 +31,10 @@ static void (*carbon_dn_step)(DaynightClock *, const DaynightClockInput *,
                               DaynightMode, double, double, double, DaynightClockOutput *);
 extern int diag_on;
 extern void diag_event(const char *, ...);
+extern uint64_t diag_current_frame(void);
 
 static int carbon_dn_configured, carbon_dn_enabled, carbon_dn_fixed;
+static uint64_t carbon_dn_isolate_moon_frame;
 static double carbon_dn_fixed_hour;
 static DaynightClock carbon_dn_policy;
 static struct {
@@ -41,14 +44,21 @@ static struct {
     int ready, blended;
     DaynightSample sample;
     DaynightRecord record;
+    float sun_ratio, ambient_ratio, moon;
 } carbon_dn_clock;
 
 static int carbon_dn_on(void) {
     if (carbon_dn_configured) return carbon_dn_enabled;
     carbon_dn_configured = 1;
     const char *setting = getenv("NFS_DAYNIGHT");
-    carbon_dn_enabled = setting && (!strcmp(setting,"1") || !strcasecmp(setting,"on"));
+    carbon_dn_enabled = lighting_mode_d65() || (setting && (!strcmp(setting,"1") || !strcasecmp(setting,"on")));
     if (!carbon_dn_enabled) return 0;
+    setting = diag_on && lighting_mode_d65() ? getenv("NFS_TEST_DAYNIGHT_MOON_ONLY") : NULL;
+    if (setting && *setting) {
+        char *end;
+        unsigned long long frame = strtoull(setting,&end,10);
+        if (!*end) carbon_dn_isolate_moon_frame = frame;
+    }
     carbon_dn_wrap = (double (*)(double))dlsym(RTLD_DEFAULT,"daynight_wrap");
     carbon_dn_sample = (void (*)(double,float,float,DaynightSample *))dlsym(RTLD_DEFAULT,"daynight_sample");
     carbon_dn_mix = (void (*)(DaynightRecord *,const DaynightRecord *,float))dlsym(RTLD_DEFAULT,"daynight_mix");
@@ -120,7 +130,9 @@ uint32_t *carbon_daynight_shader(const uint32_t *tokens, uint32_t count, uint32_
         variant ? variant : tokens,variant_count,patched_count);
     if (reflect) { free(variant); return reflect; }
     if (variant) { *patched_count=variant_count; return variant; }
-    return carbon_dn_on() ? carbon_dn_sky_variant(tokens,count,patched_count) : NULL;
+    if (!carbon_dn_on()) return NULL;
+    uint32_t *sky = carbon_dn_sky_variant(tokens,count,patched_count);
+    return sky && lighting_mode_d65() ? carbon_dn_moon_variant(sky,patched_count) : sky;
 }
 
 /* Day weight of the converted-material paths. Zero with the clock absent,
@@ -158,11 +170,12 @@ static int carbon_reflect_draw(Cpu *c, void (*original)(Cpu *)) {
         call_guest(&upload,M32(vt+109*4),4,select);
         if (day>0) {
             uint32_t tod=M32(0x00B77F34u);
-            float params[5][4]={{4*.220097f,4*.236764f,4*.263431f,4},
-                {.532102f,.476753f,.452102f,0},{.58f,.52f,.41f,0},{0},{2,-1,11,0}};
-            for (int k = 0; k < 3; ++k) {
-                params[1][k] *= carbon_dn_clock.weight;
-                params[2][k] *= carbon_dn_clock.weight;
+            float params[5][4]={{0,0,0,4},{0},{0},{0},{2,-1,11,0}};
+            const DaynightRecord *record = &carbon_dn_clock.record;
+            for (int k=0; k<3; ++k) {
+                params[0][k] = record->ambient[k] * record->ambient[3];
+                params[1][k] = record->diffuse[k] * carbon_dn_clock.weight;
+                params[2][k] = record->specular[k] * carbon_dn_clock.weight;
             }
             /* Match the native dryroad/raining_on_road selector (00748B50).
              * A650E0 is a render-pass brightness, unrelated to weather. */
@@ -199,7 +212,7 @@ static int carbon_reflect_draw(Cpu *c, void (*original)(Cpu *)) {
  * CommitChanges only uploads the program's declared constants, below these
  * reserved registers. Reset both blend weights on every draw, including native. */
 /* Source tree leaves (lightmaterial treeleaves: floor .13, scale 1.2, wrap
- * .24) under the source X360 sun .6/.48/.22; the source x2 is folded in.
+ * .24) under the live world light; the source x2 is folded in.
  * VS c250/c251 are set only around tagged draws, so every other draw sees
  * c251.w = 0 and keeps the native day colour. */
 static int carbon_tree_draw(Cpu *c, void (*original)(Cpu *)) {
@@ -208,7 +221,12 @@ static int carbon_tree_draw(Cpu *c, void (*original)(Cpu *)) {
         !carbon_dn_trees_on() || carbon_compat_day()<=0) return 0;
     uint32_t device=M32(0x00AB0ABCu), vt=device?M32(device):0;
     if (!vt) return 0;
-    float tree[2][4]={{2*1.2f*.6f,2*1.2f*.48f,2*1.2f*.22f,1},{2*.13f,2*.13f,2*.13f,.24f}};
+    float tree[2][4]={{0,0,0,1},{0,0,0,.24f}};
+    const DaynightRecord *record = &carbon_dn_clock.record;
+    for (int k=0; k<3; ++k) {
+        tree[0][k] = 2 * 1.2f * record->diffuse[k];
+        tree[1][k] = 2 * .13f * record->ambient[k] * record->ambient[3];
+    }
     float none[2][4]={{0},{0}};
     Cpu upload=*c; upload.esp-=64;
     memcpy(G+upload.esp,tree,sizeof tree);
@@ -239,7 +257,12 @@ void carbon_facade_draw(Cpu *c, void (*original)(Cpu *)) {
         return;
     }
     float day = M32(mesh+0x30) == 0x00050019u ? carbon_compat_day() : 0;
-    float vertex[4] = {8*.220097f,8*.236764f,8*.263431f,day};
+    float vertex[4] = {0,0,0,day};
+    if (day > 0) {
+        const DaynightRecord *record = &carbon_dn_clock.record;
+        for (int k=0; k<3; ++k)
+            vertex[k] = 2 * record->ambient[k] * record->ambient[3];
+    }
     float pixel[4] = {day,0,0,0};
     uint32_t device = M32(0x00AB0ABCu), vt = device ? M32(device) : 0;
     if (vt) {
@@ -328,6 +351,60 @@ void carbon_daynight_set(Cpu *c, void (*original)(Cpu *)) {
     if (carbon_dn_on()) carbon_dn_clock.ready = carbon_dn_clock.blended = 0;
 }
 
+/* Rebuild only world RGB from the same quartet, weather and low-sun weights
+ * as 007F12A0/007F0C00. The generated overlay is the shared selected data;
+ * never patch guest layouts, which also feed cars, sky and fog. */
+static void carbon_dn_world_record(uint32_t tod, DaynightRecord *record) {
+#include "gen/attrib_light_data.inc"
+    const uint32_t keys[4] = {0x3DCFA673u,0xB902CFADu,0x59C373C3u,0xD835D0C8u};
+    uint32_t base = M32(0x00A65394u) ? 0xc0 : 0x100;
+    float fields[4][3][4];
+    const char *setting = getenv("NFS_LIGHT_DATA");
+    int x360 = !(setting && !strcasecmp(setting,"pc"));
+    for (unsigned r=0; r<4; ++r) {
+        uint32_t layout = M32(tod+base+16*r+4);
+        if (!layout) return; /* No collection during an incomplete load. */
+        for (unsigned f=0; f<3; ++f) {
+            unsigned off = f==0 ? 0x10 : f==1 ? 0x20 : 0;
+            memcpy(fields[r][f],gptr(layout+off),16);
+            if (x360 && base==0xc0) {
+                for (unsigned j=0; j<sizeof k_light_patch/sizeof *k_light_patch; ++j)
+                    if (k_light_patch[j].cls==0x399ED882u &&
+                        k_light_patch[j].key==keys[r] && k_light_patch[j].off==off)
+                        memcpy(fields[r][f],k_light_patch[j].data,16);
+            }
+        }
+    }
+    float weather = carbon_dn_float(tod+0x140), high = carbon_dn_float(tod+0x144);
+    float *out[3] = {record->diffuse,record->ambient,record->specular};
+    for (unsigned f=0; f<3; ++f) for (unsigned k=0; k<3; ++k) {
+        float a = fields[0][f][k] + weather*(fields[2][f][k]-fields[0][f][k]);
+        float b = fields[1][f][k] + weather*(fields[3][f][k]-fields[1][f][k]);
+        out[f][k] = b + high*(a-b);
+    }
+}
+
+/* Match the world setters: post-clock direct Y with one gamut scale, and
+ * clamped ambient desaturated toward Y. W and material gains stay separate. */
+static void carbon_dn_neutral(DaynightRecord *record) {
+    float z = carbon_dn_clock.sample.light[2];
+    float elevation = asinf(fminf(1,fmaxf(-1,z))) * 57.29577951308232f;
+    float t = elevation<=5 ? 3500 : elevation<15 ? 3500+(elevation-5)*100 :
+        elevation<30 ? 4500+(elevation-15)*(800.f/15) :
+        elevation<62 ? 5300+(elevation-30)*(500.f/32) : 5800;
+    float white[3], direct[3], weight = carbon_dn_clock.weight;
+    lighting_colour_white(t,white);
+    for (int k=0; k<3; ++k) {
+        direct[k] = fminf(1,record->diffuse[k]*weight);
+        record->ambient[k] = fminf(1,record->ambient[k]);
+    }
+    float scale = fminf(lighting_colour_luminance(direct),
+                        1/fmaxf(white[0],fmaxf(white[1],white[2])));
+    for (int k=0; k<3; ++k)
+        record->diffuse[k] = weight>0 ? white[k]*scale/weight : 0;
+    lighting_colour_desaturate(record->ambient,2.f/3);
+}
+
 void carbon_daynight_blend(Cpu *c, void (*original)(Cpu *)) {
     uint32_t tod = c->ecx;
     original(c); /* A fresh weather/view blend every time; no accumulated mix. */
@@ -339,9 +416,38 @@ void carbon_daynight_blend(Cpu *c, void (*original)(Cpu *)) {
     memcpy(record->ambient,gptr(tod+0x30),sizeof record->ambient);
     DaynightRecord night;
     carbon_dn_night_record(&night);
-    carbon_dn_mix(record,&night,carbon_dn_clock.sample.night);
+    float n = carbon_dn_clock.sample.night;
+    if (lighting_mode_d65()) {
+        memcpy(record->specular,gptr(tod+0x40),sizeof record->specular);
+        lighting_colour_d65(record->diffuse);
+        lighting_colour_d65(record->ambient);
+        lighting_colour_d65(record->specular);
+        lighting_colour_d65(night.diffuse);
+        lighting_colour_d65(night.ambient);
+        lighting_colour_d65(night.specular);
+        carbon_dn_clock.moon = n * night.diffuse[0] * carbon_dn_clock.weight;
+        float sun = record->diffuse[0], ambient = record->ambient[0] * record->ambient[3];
+        carbon_dn_mix(record,&night,n);
+        carbon_dn_clock.sun_ratio = sun > 0 ? record->diffuse[0] / sun * carbon_dn_clock.weight : 0;
+        carbon_dn_clock.ambient_ratio = ambient > 0 ? record->ambient[0] * record->ambient[3] / ambient : 0;
+        // The vertex program adds the moon after the day/bake interpolation.
+        record->diffuse[0] = record->diffuse[1] = record->diffuse[2] = sun;
+    } else {
+        memcpy(record->specular,gptr(tod+0x40),sizeof record->specular);
+        carbon_dn_world_record(tod,record);
+        carbon_dn_mix(record,&night,n);
+        carbon_dn_neutral(record);
+    }
     carbon_dn_clock.blended = 1;
     /* Keep the guest block, especially fog/sky/reflection fields, unchanged. */
+}
+
+int carbon_daynight_d65_rig(float *sun, float *ambient) {
+    if (!lighting_mode_d65() || M32(0x00A99BBCu) != 6 ||
+        !carbon_dn_clock.ready || !carbon_dn_clock.blended) return 0;
+    *sun = carbon_dn_clock.sun_ratio;
+    *ambient = carbon_dn_clock.ambient_ratio;
+    return 1;
 }
 
 static void carbon_dn_observe(unsigned pass) {
@@ -362,6 +468,8 @@ static void carbon_dn_observe(unsigned pass) {
 static void carbon_dn_constants(Cpu *c) {
     if (!carbon_dn_on()) return;
     float constants[3][4] = {{0},{0,0,0,1},{0}};
+    float neutral[4] = {0};
+    int d65 = lighting_mode_d65();
     if (M32(0x00A99BBCu) == 6 && carbon_dn_clock.ready && carbon_dn_clock.blended) {
         memcpy(constants[0],carbon_dn_clock.sample.light,sizeof carbon_dn_clock.sample.light);
         for (int k = 0; k < 3; ++k)
@@ -369,6 +477,25 @@ static void carbon_dn_constants(Cpu *c) {
         constants[1][3] = carbon_dn_clock.sample.night;
         memcpy(constants[2],carbon_dn_clock.record.ambient,3*sizeof(float));
         constants[2][3] = carbon_dn_clock.weight;
+        if (d65) {
+            neutral[0] = .2126f;
+            neutral[1] = .7152f;
+            neutral[2] = .0722f;
+            neutral[3] = carbon_dn_clock.moon;
+            // The native world vertex program's daylight gain is calibrated
+            // at ambient W=4. Preserve the live record's relative gain.
+            for (int k=0; k<3; ++k) constants[2][k] *= carbon_dn_clock.record.ambient[3] * .25f;
+            if (carbon_dn_isolate_moon_frame && carbon_dn_clock.sample.night >= 1 &&
+                (carbon_dn_isolate_moon_frame == 1 || diag_current_frame() >= carbon_dn_isolate_moon_frame)) {
+                memset(neutral,0,3*sizeof(float));
+                static int reported;
+                if (!reported) {
+                    reported = 1;
+                    diag_event("carbon_daynight: moon_only=1 after_frame=%llu moon=%.9g",
+                        (unsigned long long)diag_current_frame(),neutral[3]);
+                }
+            }
+        }
         if (diag_on) {
             static int recorded;
             if (!recorded) {
@@ -377,6 +504,14 @@ static void carbon_dn_constants(Cpu *c) {
                     carbon_dn_clock.hour, constants[0][0], constants[0][1], constants[0][2],
                     constants[1][3], constants[1][0], constants[1][1], constants[1][2],
                     constants[2][0], constants[2][1], constants[2][2]);
+                if (d65) {
+                    float direct[3];
+                    for (int k=0; k<3; ++k) direct[k] = (1-constants[1][3])*constants[1][k]+neutral[3];
+                    diag_event("carbon_daynight: d65 direct=%.9g,%.9g,%.9g moon=%.9g bake_y=%.9g,%.9g,%.9g specular=%.9g,%.9g,%.9g ambient_w=%.9g",
+                        direct[0],direct[1],direct[2],neutral[3],neutral[0],neutral[1],neutral[2],
+                        carbon_dn_clock.record.specular[0],carbon_dn_clock.record.specular[1],
+                        carbon_dn_clock.record.specular[2],carbon_dn_clock.record.ambient[3]);
+                }
             }
         }
     }
@@ -389,12 +524,36 @@ static void carbon_dn_constants(Cpu *c) {
     memcpy(G+upload.esp,constants,sizeof constants);
     uint32_t args[] = {device,240,upload.esp,3};
     call_guest(&upload,M32(vt+94*4),4,args);
+    if (d65) {
+        upload = *c;
+        upload.esp -= sizeof neutral;
+        memcpy(G+upload.esp,neutral,sizeof neutral);
+        uint32_t colour_args[] = {device,249,upload.esp,1};
+        call_guest(&upload,M32(vt+94*4),4,colour_args);
+    }
+}
+
+static void carbon_dn_moon_constants(Cpu *c) {
+    if (!lighting_mode_d65()) return;
+    uint32_t device = M32(0x00AB0ABCu), vt = device ? M32(device) : 0;
+    if (!vt) return;
+    float moon[2][4] = {{0},{.992098f,.992098f,.992098f,0}};
+    if (M32(0x00A99BBCu) == 6 && carbon_dn_clock.ready && carbon_dn_clock.blended) {
+        // Native disc projection radius |(-50000, 60000, 30000)|.
+        for (int k=0;k<3;++k) moon[0][k] = -83666.00265f * carbon_dn_clock.sample.sun[k];
+        moon[0][3] = 1;
+    }
+    Cpu upload = *c;
+    upload.esp -= sizeof moon;
+    memcpy(G+upload.esp,moon,sizeof moon);
+    uint32_t args[] = {device,17,upload.esp,2};
+    call_guest(&upload,M32(vt+109*4),4,args);
 }
 
 #define CARBON_DN_PASS(name, index) \
 void name(Cpu *c, void (*original)(Cpu *)) { \
     original(c); carbon_dn_observe(index); carbon_dn_constants(c); \
-    if (index == 4) carbon_dn_sky_constants(c); \
+    if (index == 4) { carbon_dn_sky_constants(c); carbon_dn_moon_constants(c); } \
 }
 CARBON_DN_PASS(carbon_daynight_world,0)
 CARBON_DN_PASS(carbon_daynight_normalmap,1)

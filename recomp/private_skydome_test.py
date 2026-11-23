@@ -73,6 +73,7 @@ OLD_SELECTOR_SHA256 = '46deb442b434b16be276ab310061666a61d7106930511cfd1776c6719
 HARNESS = r'''
 #include "host.h"
 #include "game_select.h"
+#include "lighting_colour.h"
 #include <stdlib.h>
 #include <stdarg.h>
 uint8_t *G;

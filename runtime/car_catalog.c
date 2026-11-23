@@ -33,6 +33,13 @@
 #define CPF1_POLICY_SHA256 "6f8a273c185c2554a30520a8c9e4e80ac01bad81d23d98e2e8523cb843cc9e22"
 #define CPF2_POLICY_SHA256 "43a33ad36f53f90c2f0ebfabf7f77b183f0bacc61e8f6842d181a6b19bce0471"
 #define CPF3_POLICY_SHA256 "312f3f1918451e49b641cef9ad596f77a2b7c0e242b5050b2a30b91343ea01a3"
+#define PRE_RETAIL_ATTRIBUTES_POLICY_SHA256 "db670b741c125f0cb2c04551f2f272685af6733bde946c8d05a99fbd86006f0d"
+#define RETAIL_ATTRIBUTES_POLICY_SHA256 "ebb6868f4e9d9ae0cae0e414e3269834860671c5d093621cc22248b081c34bd4"
+#define PS_PERFORMANCE_POLICY_SHA256 "c04434fa3790528f8e8723b0448a3bc97edc4ac92cdb57e8cca3092125ad23c2"
+#define PRE_UC_PERFORMANCE_POLICY_SHA256 "e5800b882bf2fc7a01d23974ec1f1e7316b0b3977137ceccf5b1d82b8d45eaf7"
+#define PRE_SIBLING_PERFORMANCE_POLICY_SHA256 "93a8b9666cdffe4108ae9234fa08e718e47538609110feca05dbfd317b76295b"
+#define PRE_CACHE_PUBLISH_POLICY_SHA256 "582212d17b6c590bd8ddcdff84eb4b296e78ee1846a5457bb72942e28d6aa830"
+#define PRE_PROSTREET_AUDIO_POLICY_SHA256 "12f70e44254f539a2adb100a6c876d3ad7e562c52b5ae619f316115a343d45cd"
 #define LEGACY_POLICY_SHA256 "cf1965a6ad93a2da2ea28001f29e298912c1d61c3883d6842231f98162918a9c"
 #define DIR_FLAGS (O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
 #define FILE_FLAGS (O_RDONLY | O_NOFOLLOW | O_NONBLOCK | O_CLOEXEC)
@@ -349,7 +356,7 @@ static int policy_load(Json *p, int slots[CAR_CATALOG_SLOTS], char digest[65]) {
             uint64_t legacy;
             NEED((FIELDS(p,v,"contract","compatibility") ||
                   (FIELDS(p,v,"contract","compatibility","legacy") &&
-                   !number(p,field(p,v,"legacy"),5,&legacy) && legacy)) &&
+                   !number(p,field(p,v,"legacy"),12,&legacy) && legacy)) &&
                  !hash_field(p,v,"contract",contracts[used]) &&
                  !hash_field(p,v,"compatibility",c),"invalid approval variant");
             for (unsigned k=0;k<used;++k) NEED(strcmp(contracts[k],contracts[used]),"duplicate approval variant");
@@ -468,7 +475,9 @@ static int row_load(Json *j, int at, unsigned s, Json *policy, int approval) {
         unsigned kind;
         for (kind=0;kind<CAR_CATALOG_OUTPUTS;++kind) if (equal(j,k,output_names[kind])) break;
         NEED(kind<CAR_CATALOG_OUTPUTS,"unknown output type; a supported sidecar validator is required");
-        NEED(kind!=CAR_CATALOG_AUDIO || carbon,"audio sidecar requires Carbon provenance");
+        NEED(kind!=CAR_CATALOG_AUDIO || carbon ||
+             (pc && equal(j,game,"prostreet") && !strcmp(out->source_folder,"VEYRON")),
+             "audio sidecar requires an audited source");
         CarCatalogOutput *o=&out->outputs[kind];
         NEED(!pin(j,k+1,&o->size,o->sha256),"invalid output size/hash pin"); o->present=1;
     }
@@ -519,17 +528,16 @@ static int floats(const unsigned char *p, unsigned n, float maximum) {
 static int sidecar(CarCatalogSlot *car, unsigned kind, int fd) {
     CarCatalogOutput *o=&car->outputs[kind];
     if (kind==CAR_CATALOG_PERFORMANCE) {
-        NEED(!strcmp(car->source_game,"carbon") &&
-             !car_performance_read(fd,attribute_key_case(car->source_folder,1),
+        NEED(!car_performance_read(fd,attribute_key_case(car->source_folder,1),
                                    attribute_key_case(car->model_donor,1),&car->performance),
-             "invalid Carbon performance record; reimport");
+             "invalid performance record; reimport");
         o->version=car->performance.version;
         return 0;
     }
     if (kind==CAR_CATALOG_AUDIO) {
         unsigned char header[68];
         size_t name_size=strlen(car->source_folder);
-        unsigned version=!strcmp(car->source_platform,"x360")?3:2;
+        unsigned version=!strcmp(car->source_game,"prostreet")?4:!strcmp(car->source_platform,"x360")?3:2;
         NEED(name_size<16 && o->size>=sizeof header && o->size<=256u*1024*1024 &&
              pread(fd,header,sizeof header,0)==sizeof header && !memcmp(header,"A7CA",4) &&
              word32(header+4)==version && word32(header+8)==o->size &&
@@ -802,7 +810,14 @@ static int load(const char *root) {
          strcmp(claimed,PRE_AUDIO_POLICY_SHA256) && strcmp(claimed,PC_AUDIO_POLICY_SHA256) &&
          strcmp(claimed,X360_AUDIO_POLICY_SHA256) && strcmp(claimed,AUDIO_V7_POLICY_SHA256) &&
          strcmp(claimed,CPF1_POLICY_SHA256) && strcmp(claimed,CPF2_POLICY_SHA256) &&
-         strcmp(claimed,CPF3_POLICY_SHA256))) { bad("catalog schema or packaged approval policy mismatch"); goto done; }
+         strcmp(claimed,CPF3_POLICY_SHA256) && strcmp(claimed,PRE_RETAIL_ATTRIBUTES_POLICY_SHA256) &&
+         strcmp(claimed,RETAIL_ATTRIBUTES_POLICY_SHA256) && strcmp(claimed,PS_PERFORMANCE_POLICY_SHA256) &&
+         strcmp(claimed,PRE_UC_PERFORMANCE_POLICY_SHA256) &&
+         strcmp(claimed,PRE_SIBLING_PERFORMANCE_POLICY_SHA256) &&
+         strcmp(claimed,PRE_CACHE_PUBLISH_POLICY_SHA256) &&
+         strcmp(claimed,PRE_PROSTREET_AUDIO_POLICY_SHA256))) {
+        bad("catalog schema or packaged approval policy mismatch"); goto done;
+    }
     int cars=field(&catalog,0,"cars");
     if (catalog.t[cars].type!='[' || catalog.t[cars].count!=CAR_CATALOG_SLOTS) { bad("catalog requires 90 ordered reservations"); goto done; }
     int at=cars+1;

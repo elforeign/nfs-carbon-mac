@@ -79,7 +79,8 @@ static int apply_performance(Cpu *c,Source *owner,uint32_t ld,uint32_t lay,Addit
     car_performance_body(&a->performance,G+lay,G+handling);
     uint32_t attr=own_fit_entry(owner->ld,ld,0xAACBE2E7u,0x3C16EC5Eu);
     M32(attr+4)=handling;
-    unsigned links=a->performance.version==1 ? CAR_PERFORMANCE_NOS_LINK : CAR_PERFORMANCE_LINKS;
+    unsigned links=a->performance.version==1 && a->performance.source!=CAR_PERFORMANCE_PROSTREET
+        ? CAR_PERFORMANCE_NOS_LINK : CAR_PERFORMANCE_LINKS;
     for (unsigned i=0;i<links;++i)
         performance_link(c,owner,ld,a,i);
     if (diag_on) diag_event("addcars: source performance name=%s key=%08X mass=%.3f",
@@ -87,36 +88,47 @@ static int apply_performance(Cpu *c,Source *owner,uint32_t ld,uint32_t lay,Addit
     return 1;
 }
 
-/* Retail rating normalization compares raw acceleration time, top speed and
- * handling in this list. Use the bounds from retail rows while source
- * performance is active, so imported cars cannot shift retail ratings. */
-void f_006794E0(Cpu *c) {
-    if (!performance_allocations) { f_006794E0_orig(c); return; }
-    uint32_t head=M32(c->ecx+4);
-    float direction=MF32(c->esp+4);
-    uint32_t dest=M32(c->esp+8);
-    float bounds[3]={0,0,0};
-    unsigned seen=0;
-    for (uint32_t row=M32(head);row!=head;row=M32(row)) {
-        unsigned j=0;
-        while (j<nadditions && additions[j].key!=M32(row+0x2c)) ++j;
-        if (j<nadditions) continue;
-        for (unsigned i=0;i<3;++i) {
-            float value=MF32(row+8+4*i);
-            if (!seen || direction*bounds[i]<direction*value) bounds[i]=value;
-        }
-        ++seen;
+void f_00678CE0(Cpu *c) {
+    if (!performance_allocations) { f_00678CE0_orig(c); return; }
+    uint32_t stats=c->ecx, instance=M32(c->esp+4), collection=M32(instance+4);
+    if (collection && (M8(instance+0x10)&1)) collection=M32(collection+0x10);
+    uint32_t key=collection ? M32(collection+0x20) : 0, ref=0;
+    for (unsigned i=0;i<nadditions;++i) {
+        if (additions[i].key!=key || !additions[i].performance.source) continue;
+        Cpu saved=*c;
+        uint32_t args[]={car_performance_links[CAR_PERFORMANCE_ENGINE_LINK].key,0};
+        c->ecx=instance;
+        ref=call_guest(c,0x00454810,2,args);
+        *c=saved;
+        break;
     }
-    memcpy(G+dest,bounds,sizeof bounds);
-    c->esp+=12;
+    f_00678CE0_orig(c);
+    /* The retail integration loop can overwrite the limiter result when it
+     * reaches the final gear. Bound the result by the actual ECU cutoff. */
+    uint32_t engine=ref ? M32(ref+8) : 0;
+    uint32_t layout=engine ? M32(engine+0x18) : 0;
+    if (layout) MF32(stats+4)=car_performance_clamp_top_speed(G+layout,MF32(stats+4));
+}
+
+/* The weakest retail rating is already zero. Include added cars in the
+ * original stock/upgraded bounds so slower source values remain ordered
+ * instead of all clamping to that endpoint. */
+void f_006794E0(Cpu *c) {
+    f_006794E0_orig(c);
 }
 
 void f_00683EB0(Cpu *c) {
     f_00683EB0_orig(c);
-    if (!diag_on || !nadditions) return;
+    if (!diag_on) return;
     uint32_t head=M32(0x0092C4E8);
     if (!head) return;
+    diag_event("addcars: performance bounds speed=%.6f/%.6f handling=%.6f/%.6f time=%.6f/%.6f",
+               MF32(0x0092C57C),MF32(0x009261A0),MF32(0x0092C580),MF32(0x009261A4),
+               MF32(0x0092C578),MF32(0x0092619C));
     for (uint32_t row=M32(head);row!=head;row=M32(row)) {
+        diag_event("addcars: performance row key=%08X speed=%.6f handling=%.6f time=%.6f bars=%.6f/%.6f/%.6f",
+                   M32(row+0x2c),MF32(row+0xc),MF32(row+0x10),MF32(row+0x8),
+                   MF32(row+0x14),MF32(row+0x18),MF32(row+0x1c));
         for (unsigned i=0;i<nadditions;++i) {
             Addition *a=&additions[i];
             if (M32(row+0x2c)==a->key)

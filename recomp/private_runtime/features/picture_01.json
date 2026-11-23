@@ -161,7 +161,7 @@
     },
     "game_settings.h": {
       "source": "game_settings.h",
-      "sha256": "4b5872289fe03b2c90c9fa11e4758fcae23895d926d654e3a6aef63c28a15680",
+      "sha256": "a0dfa15b3568f97058a381c6f848112d438ef677743af369676dd01d6311aad0",
       "functions": {}
     },
     "game_menu_report.h": {

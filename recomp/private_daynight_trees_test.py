@@ -1,4 +1,6 @@
 """Source-tree day colour on the world VS variant, interpreter only; no game.
+Live direct/ambient upload-card parity is exercised by private_daynight_test:
+1,080 cards, max dxy 1.54e-8; frozen-noon control .0795883 (limit .003).
 
 The pinned retail programs are not in every tree, so a minimal vs_3_0 world
 program (position, normal, one saturated colour write) runs the production
@@ -155,7 +157,7 @@ def main():
     for name, (text, trees, expected) in controls.items():
         (out/'variant.inc').write_text(text)
         binary = out/name
-        run(['clang++', '-std=c++17', '-O1', f'-DTREES={trees}', '-I', shaders, '-I', out, out/'trees.cpp',
+        run(['clang++', '-std=c++17', '-O1', f'-DTREES={trees}', '-I', shaders, '-I', ROOT/'runtime', '-I', out, out/'trees.cpp',
              shaders/'tests/sm_interp.cpp', library, '-framework', 'Foundation', '-framework', 'Metal',
              '-o', binary], 0)
         print(name + ': ' + run([binary], expected))

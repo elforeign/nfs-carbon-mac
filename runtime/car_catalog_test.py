@@ -469,7 +469,10 @@ class NativeCatalogTests(unittest.TestCase):
     def test_legacy_policy_envelope_still_checks_contract_and_outputs(self):
         for digest in (cc.LEGACY_POLICY_SHA256, cc.PRE_AUDIO_POLICY_SHA256, cc.PC_AUDIO_POLICY_SHA256,
                        cc.X360_AUDIO_POLICY_SHA256, cc.AUDIO_V7_POLICY_SHA256,
-                       cc.CPF1_POLICY_SHA256, cc.CPF2_POLICY_SHA256, cc.CPF3_POLICY_SHA256):
+                       cc.CPF1_POLICY_SHA256, cc.CPF2_POLICY_SHA256, cc.CPF3_POLICY_SHA256,
+                       cc.PRE_RETAIL_ATTRIBUTES_POLICY_SHA256, cc.RETAIL_ATTRIBUTES_POLICY_SHA256,
+                       cc.PS_PERFORMANCE_POLICY_SHA256, cc.PRE_UC_PERFORMANCE_POLICY_SHA256,
+                       cc.PRE_SIBLING_PERFORMANCE_POLICY_SHA256, cc.PRE_CACHE_PUBLISH_POLICY_SHA256):
             self.rewrite(lambda doc: doc.update(policy_sha256=digest))
             self.good_result()
             self.assertEqual(len(cc.verify_current(self.store, policy=self.policy).selected), 3)

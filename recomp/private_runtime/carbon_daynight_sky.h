@@ -16,12 +16,22 @@ static void carbon_dn_sky_compiled(const uint32_t *tokens, uint32_t count) {
         (unsigned long long)key,M32(0x00A99BBCu));
 }
 
+#if __has_include("carbon_c3fog.h")
+static int carbon_c3fog_neutral_horizon(Cpu *c, float rgb[3]);
+#endif
+
 /* Native dome gradient, cloud scroll and moon sampling. */
 static uint32_t *carbon_dn_sky_variant(const uint32_t *tokens, uint32_t count,
                                       uint32_t *patched_count) {
     if (count != 441 || tokens[0] != 0xffff0300u ||
         carbon_dn_shader_key(tokens,count) != 0xb03ae6d5fda81119ull) return NULL;
-    uint32_t *out = (uint32_t *)malloc((count+24)*sizeof *out);
+    int neutral = lighting_mode_d65();
+    const uint32_t horizon[] = {
+        0x03000005u, 0x8007000bu, 0x80e40001u, 0x80ff0000u, /* mul night,r1,r0.w */
+        0x04000012u, 0x8007000bu, 0x90000003u, 0x80e4000bu, 0xa0e40010u, /* lrp night,clear,night,fog */
+    };
+    unsigned extra = neutral ? sizeof horizon / sizeof *horizon : 0;
+    uint32_t *out = (uint32_t *)malloc((count+24+extra)*sizeof *out);
     if (!out) return NULL;
     memcpy(out,tokens,(count-1)*sizeof *out);
     out[434] = (tokens[434] & 0x0fff0000u) | 0x8000000bu;
@@ -33,8 +43,9 @@ static uint32_t *carbon_dn_sky_variant(const uint32_t *tokens, uint32_t count,
         0x04000012u, 0x80070800u, 0xa0ff000eu, 0x80e4000bu, 0x80e4000au, /* lrp oC0.rgb,n,native,day */
         0x0000ffffu
     };
-    memcpy(out+count-1,tail,sizeof tail);
-    *patched_count = count+24;
+    if (neutral) memcpy(out+count-1,horizon,sizeof horizon);
+    memcpy(out+count-1+extra,tail,sizeof tail);
+    *patched_count = count+24+extra;
     return out;
 }
 
@@ -46,6 +57,15 @@ static void carbon_dn_sky_constants(Cpu *c) {
         memcpy(constants[0],gptr(tod+0x70),3*sizeof(float));
         memcpy(constants[1],gptr(tod+0x80),3*sizeof(float));
         memcpy(constants[2],constants[1],3*sizeof(float));
+    }
+    if (lighting_mode_d65()) {
+        uint32_t fog = M32(0x00B4295Cu);
+        if (fog) memcpy(constants[2],gptr(fog),3*sizeof(float));
+        lighting_colour_d65(constants[2]);
+#if __has_include("carbon_c3fog.h")
+        carbon_c3fog_neutral_horizon(c,constants[2]);
+#endif
+        memcpy(constants[1],constants[2],3*sizeof(float));
     }
     uint32_t device = M32(0x00AB0ABCu), vt = device ? M32(device) : 0;
     if (!vt) return;
@@ -67,6 +87,12 @@ void carbon_daynight_fog(Cpu *c, void (*original)(Cpu *)) {
             float native = carbon_dn_float(fog+4*k);
             carbon_dn_write(fog+4*k,haze+n*(native-haze));
         }
+    }
+    if (fog && lighting_mode_d65()) {
+        float rgb[3];
+        memcpy(rgb,gptr(fog),sizeof rgb);
+        lighting_colour_d65(rgb);
+        memcpy(gptr(fog),rgb,sizeof rgb);
     }
     if (diag_on && fog && tod && M32(0x00A99BBCu) == 6) {
         static int recorded;

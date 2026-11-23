@@ -34,7 +34,15 @@ static char heading[256];
 static Cpu cpu(void) { return (Cpu){.ecx=DEVICE,.esp=STACK,.cw=0x37F}; }
 int carbon_pad_context(void) { return context; }
 int user32_pad_native(void) { return kinds[0]>=PAD_KIND_DUALSENSE && kinds[0]<=PAD_KIND_EDGE; }
-int pad_identity_n(int p,char *name,size_t n) { (void)name;(void)n;return p<2?kinds[p]:0; }
+int pad_identity_n(int p,char *name,size_t n) {
+    int kind=p<2?kinds[p]:0;
+    const char *label=kind==PAD_KIND_DUALSENSE?"Controller (DualSense)":
+                      kind==PAD_KIND_DUALSHOCK4?"Controller (DualShock 4)":
+                      kind==PAD_KIND_EDGE?"Controller (DualSense Edge)":
+                      kind==PAD_KIND_OTHER?"Controller (XBOX 360 For Windows)":"";
+    if(name && n)snprintf(name,n,"%s",label);
+    return kind;
+}
 void bad_jump(Cpu *c,uint32_t a) { (void)c;fprintf(stderr,"bad jump %x\n",a);abort(); }
 void untranslated(Cpu *c,uint32_t a) { bad_jump(c,a); }
 void host_import(Cpu *c,uint32_t a) {
@@ -74,6 +82,8 @@ void dispatch(Cpu *c,uint32_t a) {
     }
     else if(a==0x00689550u) carbon_padbind_defaults(c,native_defaults);
     else if(a==0x0067A340u) f_0067A340(c);
+    else if(a==0x006924F0u) f_006924F0(c);
+    else if(a==0x00475F90u) f_00475F90(c);
     else bad_jump(c,a);
 }
 uint32_t call_guest(Cpu *c,uint32_t a,int n,const uint32_t *args) {
@@ -104,8 +114,15 @@ void f_00475F90(Cpu *c) {
     M32(c->ecx+0x160)=i+1;c->esp+=4;
 }
 void f_00475C10(Cpu *c) {
-    CHECK(!strcmp((char *)G+arg(c,1),"\t%d"));
-    c->eax=snprintf((char *)G+arg(c,0),32,(char *)G+arg(c,1),(int32_t)arg(c,2));c->esp+=4;
+    const char *format=(char *)G+arg(c,1);
+    CHECK(!strcmp(format,"\t%d") || !strcmp(format,"\t\"%s\""));
+    if(strstr(format,"%s")) c->eax=snprintf((char *)G+arg(c,0),128,format,(char *)G+arg(c,2));
+    else c->eax=snprintf((char *)G+arg(c,0),32,(char *)G+arg(c,1),(int32_t)arg(c,2));c->esp+=4;
+}
+void f_00475F30(Cpu *c) {
+    unsigned i=M32(c->ecx+0x160),table=M32(c->ecx+0x15C);
+    CHECK(i<M32(c->ecx+0x154));
+    c->eax=M32(table+12*i+4);M32(c->ecx+0x160)=i+1;c->esp+=4;
 }
 void f_004711B0(Cpu *c) { c->eax=(uint32_t)strlen((char *)G+arg(c,0));c->esp+=4; }
 void f_0087ED0A(Cpu *c) { (void)c;abort(); }
@@ -126,6 +143,7 @@ static void neutral(unsigned p) {
     M32(cache+0x220)=0xFFFFFFFF;
 }
 static void setup(void) {
+    memset(carbon_padbind_saved_name,0,sizeof carbon_padbind_saved_name);
     layout_pref[0]=0;unsetenv("NFS_PAD_LAYOUT");
     memset(carbon_padbind_seen,0,sizeof carbon_padbind_seen);
     memset(carbon_padbind_remembered,0,sizeof carbon_padbind_remembered);
@@ -176,6 +194,15 @@ void f_00689550(Cpu *c) {
 void f_006924F0(Cpu *c) {
     if(retail)native_rows(c);else carbon_padbind_rows(c,native_rows);
 }
+#ifndef PADPERSIST_OLD
+#define PADPERSIST_OLD 0
+#endif
+void f_00680890(Cpu *c) {
+    if(retail || PADPERSIST_OLD)native_hash(c);else carbon_padbind_hash(c,native_hash);
+}
+void f_004B0270(Cpu *c) {
+    if(retail || PADPERSIST_OLD)native_read(c);else carbon_padbind_read(c,native_read);
+}
 void f_0049DBA0(Cpu *c) {
     if(retail)native_resolve(c);else carbon_padbind_resolve(c,native_resolve);
 }
@@ -189,6 +216,12 @@ static void parse_tokens(uint32_t text) {
     for(uint32_t p=text;M8(p);) {
         while(isspace(M8(p)))++p;
         if(!M8(p))break;
+        if(M8(p)=='"') {
+            uint32_t value=++p;while(M8(p) && M8(p)!='"')++p;
+            CHECK(M8(p)=='"');M8(p++)=0;
+            M32(TOKENS+12*n)=0;M32(TOKENS+12*n+4)=value;M32(TOKENS+12*n+8)=0;++n;
+            continue;
+        }
         M32(TOKENS+12*n)=0;M32(TOKENS+12*n+4)=p;M32(TOKENS+12*n+8)=0;++n;
         while(M8(p) && !isspace(M8(p)))++p;
     }
@@ -246,11 +279,92 @@ static unsigned roundtrip(const char *layout,unsigned number,int broken) {
     CHECK(!config);CHECK(!remaps);CHECK(!other);
     return config+remaps+other;
 }
+#define PROFILE_TEXT 0x250000u
+static void disk_file(const char *directory,const char *name,void *data,size_t size,int writing) {
+    char path[1024];snprintf(path,sizeof path,"%s/%s",directory,name);
+    FILE *f=fopen(path,writing?"wb":"rb");CHECK(f!=NULL);if(!f)exit(2);
+    CHECK((writing?fwrite(data,1,size,f):fread(data,1,size,f))==size);CHECK(fclose(f)==0);
+}
+static unsigned disk_restart(const char *mode,const char *directory) {
+    const int writing=!strcmp(mode,"write"),late=strncmp(mode,"late-",5)==0;
+    setup();strcpy(layout_pref,"playstation");
+    M32(0xA99228)=1;M32(0xA991DC)=1;M32(0xA991E0)=DEVICE;M32(0xA98948)=1;
+    unsigned char expected[29][24]={0};unsigned pair[2]={2,1};
+    if(!strcmp(mode,"fresh-auto")) {
+        defaults(0,1);for(unsigned a=0;a<29;++a)memcpy(expected[a],G+record(a,2),24);
+        setup();M32(0xA99228)=1;M32(0xA991DC)=1;M32(0xA991E0)=DEVICE;M32(0xA98948)=1;
+        kinds[0]=PAD_KIND_NONE;defaults(0,1);kinds[0]=PAD_KIND_DUALSENSE;evaluate(1);
+        for(unsigned a=0;a<29;++a)CHECK(!memcmp(expected[a],G+record(a,2),24));
+        printf("fresh automatic: checks=%u failures=%u\n",checks,failures);return 0;
+    }
+    if(writing) {
+        strcpy((char *)G+PROFILE+0x10,"Restart Driver");
+        Cpu c=cpu();carbon_padbind_store(&c,2,1);defaults(0,1);
+        capture(0,2,14);capture(1,2,15);
+        for(unsigned a=0;a<29;++a)memcpy(expected[a],G+record(a,2),24);
+        c=cpu();c.ecx=PROFILE;M32(c.esp+4)=PROFILE_TEXT;M32(c.esp+8)=0;
+        f_0049B1F0(&c);CHECK(c.esp==STACK+12);save();
+    } else {
+        strcpy((char *)G+PROFILE+0x10,"NAME");
+        if(late)kinds[0]=PAD_KIND_NONE;
+        if(!strcmp(mode,"late-auto") || !strcmp(mode,"late-name-auto"))layout_pref[0]=0;
+        if(!strcmp(mode,"foreign-controller"))kinds[0]=PAD_KIND_OTHER;
+        if(!strcmp(mode,"ambiguous-pads")) { kinds[0]=kinds[1]=PAD_KIND_NONE;M32(0xA98948)=2; }
+        if(!strcmp(mode,"foreign-controller") || !strcmp(mode,"ambiguous-pads") ||
+           !strcmp(mode,"late-different") || !strcmp(mode,"stale-identity") ||
+           !strncmp(mode,"late-name",9))strcpy((char *)G+JOY(0)+0x114,"Controller (XBOX 360 For Windows)");
+        defaults(0,1);
+    }
+    disk_file(directory,"profile.txt",G+PROFILE_TEXT,1024,writing);
+    disk_file(directory,"player-settings.txt",G+PLAYER_TEXT,65536,writing);
+    disk_file(directory,"controller-settings.txt",G+PAD_TEXT,65536,writing);
+    disk_file(directory,"expected-rows.bin",expected,sizeof expected,writing);
+    if(writing)return 0;
+    parse_tokens(PROFILE_TEXT);Cpu c=cpu();c.ecx=PROFILE;M32(c.esp+4)=PARSER;
+    if(strcmp(mode,"missing-name-reader")) { f_0049B230(&c);CHECK(c.esp==STACK+8); }
+    load(0);
+    unsigned before=0;for(unsigned a=0;a<2;++a)before+=memcmp(expected[a],G+record(a,2),24)==0;
+    if(late) { kinds[0]=!strcmp(mode,"late-different")?PAD_KIND_OTHER:PAD_KIND_DUALSENSE;evaluate(1); }
+    unsigned name=!strcmp((char *)G+PROFILE+0x10,"Restart Driver");
+    unsigned properties=(M32(CONFIG_INDEX)==pair[0])+(M8(CONFIG_ANALOG)==pair[1]),remaps=0,other=0;
+    for(unsigned a=0;a<29;++a) {
+        unsigned kept=!memcmp(expected[a],G+record(a,2),24);
+        if(a<2)remaps+=kept;else other+=kept;
+    }
+    int rejected=!strcmp(mode,"foreign-controller") || !strcmp(mode,"ambiguous-pads") || !strcmp(mode,"late-different");
+    CHECK(name==1);CHECK(properties==2);CHECK(remaps==(rejected?0:2));if(!rejected)CHECK(other==27);
+    if(!strcmp(mode,"late-name-resave")) {
+        save();
+        disk_file(directory,"player-settings.txt",G+PLAYER_TEXT,65536,1);
+        disk_file(directory,"controller-settings.txt",G+PAD_TEXT,65536,1);
+    }
+    printf("disk %s name=%u/1 properties=%u/2 remaps-before-identity=%u/2 remaps=%u/2 other=%u/27 checks=%u failures=%u\n",
+           mode,name,properties,before,remaps,other,checks,failures);
+    return 32-name-properties-remaps-other;
+}
+static void hash_oracle(void) {
+    const unsigned text=0x260000u;
+    for(unsigned byte=1;byte<=255;++byte) {
+        M8(text)=byte;M8(text+1)=0;
+        Cpu c=cpu();M32(c.esp+4)=text;f_004710B0(&c);
+        CHECK(carbon_padbind_name_hash((char *)G+text)==c.eax);
+    }
+    const char *names[]={"","Controller (DualSense)","Controller (DualShock 4)",
+                         "Controller (DualSense Edge)","Controller (XBOX 360 For Windows)",
+                         "Controller (\xC3\xA9)"};
+    for(unsigned i=0;i<sizeof names/sizeof *names;++i) {
+        strcpy((char *)G+text,names[i]);Cpu c=cpu();M32(c.esp+4)=text;f_004710B0(&c);
+        CHECK(carbon_padbind_name_hash(names[i])==c.eax);
+    }
+    printf("native name hash checks=%u failures=%u\n",checks,failures);
+}
 int main(int argc,char **argv) {
-    if(argc!=4)return 2;G=calloc(1,0xC00000);if(!G)return 2;
+    if(argc!=4 && argc!=6)return 2;G=calloc(1,0xC00000);if(!G)return 2;
     FILE *f=fopen(argv[1],"rb");if(!f)return 2;
     if(fread(G,1,0xC00000,f)!=0xC00000)return 2;fclose(f);
     retail=atoi(argv[2]);int broken=atoi(argv[3]);unsigned lost=0;
+    if(argc==6 && !strcmp(argv[4],"hash")) { hash_oracle();free(G);return failures?1:0; }
+    if(argc==6) { lost=disk_restart(argv[4],argv[5]);free(G);return failures?1:0; }
     lost+=roundtrip("playstation",3,broken);
     lost+=roundtrip("playstation",1,broken);
     lost+=roundtrip("playstation",8,broken);

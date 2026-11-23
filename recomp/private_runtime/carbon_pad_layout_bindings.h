@@ -65,10 +65,69 @@ static float carbon_padbind_xbox_edge(unsigned pad, unsigned action, float value
 #endif
 static int carbon_padbind_last[16], carbon_padbind_kind[16], carbon_padbind_seen[16];
 static unsigned carbon_padbind_remembered[16][3];
+static int carbon_padbind_settings_read[16];
+static uint32_t carbon_padbind_saved_name[16];
+static uint32_t carbon_padbind_name_hash(const char *name) {
+    uint32_t hash = 0xFFFFFFFFu;
+    for (const unsigned char *s = (const unsigned char *)name; *s; ++s) {
+        int value = (int8_t)*s; /* Native bStringHashUpper sign-extends each byte. */
+        if (value >= 'a' && value <= 'z') value -= 'a' - 'A';
+        hash = 33u * hash + (uint32_t)value;
+    }
+    return hash;
+}
+/* The guest caches the enumeration-time name. Use a known live identity, or
+ * the saved identity of the single virtual slot until detection completes. */
+void carbon_padbind_hash(Cpu *c, void (*original)(Cpu *)) {
+    unsigned pad = arg(c,1);
+    if (arg(c,0) == 3 && pad < 16) {
+        char name[64] = {0};
+        int kind = pad_identity_n((int)pad,name,sizeof name);
+        uint32_t hash = kind != PAD_KIND_NONE && name[0] ?
+                        carbon_padbind_name_hash(name) : carbon_padbind_saved_name[pad];
+        if (hash) { c->eax = hash; c->esp += 12; return; }
+    }
+    original(c);
+}
+static unsigned carbon_padbind_read_int(Cpu *c, unsigned parser) {
+    c->ecx = parser;
+    return call_guest(c,0x00475F90u,0,NULL);
+}
+/* Native admission (including its controller-name hash check) stays authoritative.
+ * Once it has read the profile, first device detection must not replace its rows. */
+void carbon_padbind_read(Cpu *c, void (*original)(Cpu *)) {
+    unsigned count = M32(0x00A98948u), parser = arg(c,0);
+    memset(carbon_padbind_saved_name,0,sizeof carbon_padbind_saved_name);
+    if (count == 1 && pad_identity_n(0,NULL,0) == PAD_KIND_NONE) {
+        /* Native stream: two properties, four integers per keyboard row,
+         * controller count, then each controller's name hash and rows. Only
+         * an unambiguous single saved pad may supply an as-yet unknown name. */
+        Cpu scan = *c; scan.esp -= 32;
+        uint32_t args[] = {1,0xFFFFFFFFu};
+        unsigned keys = call_guest(&scan,0x006924F0u,2,args);
+        unsigned cursor = M32(parser+0x160), tokens = M32(parser+0x154);
+        if (keys <= 72 && cursor <= tokens && tokens-cursor >= 4+4*keys) {
+            for (unsigned i = 0; i < 2+4*keys; ++i) carbon_padbind_read_int(&scan,parser);
+            unsigned saved = carbon_padbind_read_int(&scan,parser);
+            uint32_t hash = carbon_padbind_read_int(&scan,parser);
+            /* Known port identities only; foreign devices retain native admission. */
+            if (saved == 1 && (hash == carbon_padbind_name_hash("Controller (DualSense)") ||
+                hash == carbon_padbind_name_hash("Controller (DualShock 4)") ||
+                hash == carbon_padbind_name_hash("Controller (DualSense Edge)") ||
+                hash == carbon_padbind_name_hash("Controller (XBOX 360 For Windows)")))
+                carbon_padbind_saved_name[0] = hash;
+            M32(parser+0x160) = cursor;
+        }
+    }
+    original(c);
+    if (count > 16) return;
+    for (unsigned p = 0; p < count; ++p) carbon_padbind_settings_read[p] = 1;
+}
 static void carbon_padbind_seeded(unsigned pad) {
     CarbonPadLayoutChoice choice = carbon_pad_layout_resolve(pad);
     carbon_padbind_last[pad] = choice.layout; carbon_padbind_kind[pad] = choice.kind;
     carbon_padbind_seen[pad] = 1;
+    carbon_padbind_settings_read[pad] = 0;
 }
 static void carbon_padbind_store(Cpu *c, unsigned index, unsigned analog) {
     Cpu write = *c;
@@ -105,7 +164,26 @@ static void carbon_padbind_sync(Cpu *c) {
     for (unsigned p = 0; p < count; ++p) {
         CarbonPadLayoutChoice choice = carbon_pad_layout_resolve(p);
         if (!carbon_padbind_seen[p]) { carbon_padbind_seeded(p); continue; }
-        if (carbon_padbind_last[p] == (int)choice.layout && carbon_padbind_kind[p] == choice.kind) continue;
+        /* A different device arriving in the saved slot still gets defaults. */
+        int different = 0;
+        if (carbon_padbind_kind[p] == PAD_KIND_NONE && choice.kind != PAD_KIND_NONE &&
+            carbon_padbind_saved_name[p]) {
+            char name[64] = {0};
+            pad_identity_n((int)p,name,sizeof name);
+            different = name[0] && carbon_padbind_name_hash(name) != carbon_padbind_saved_name[p];
+        }
+        /* A kind change within one layout changes prompts, not native bindings. */
+        if (!different && carbon_padbind_last[p] == (int)choice.layout) {
+            if (carbon_padbind_kind[p] != choice.kind) carbon_padbind_seeded(p);
+            continue;
+        }
+        /* Automatic starts as Xbox while no device has been identified. The
+         * saved directory/configuration wins when the first device arrives. */
+        if (carbon_padbind_kind[p] == PAD_KIND_NONE && choice.kind != PAD_KIND_NONE &&
+            choice.origin == CARBON_LAYOUT_AUTOMATIC && carbon_padbind_settings_read[p] && !different) {
+            carbon_padbind_seeded(p);
+            continue;
+        }
         /* Capture completes in its native state before any binding directory swap.
          * No slot is rewritten underneath a native in-flight capture. */
         if (carbon_pad_context() == CARBON_PAD_CAPTURE) continue;

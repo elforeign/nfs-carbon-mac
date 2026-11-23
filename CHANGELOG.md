@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.3.0
+
+- **Fill notch area:** new F10 > Display option, off by default, for borderless full screen beside the camera notch (applies at the next start).
+- **Installing from discs:** Setup asks for every disc, update and game file up front, lists everything missing in one message, and has Add another disc.
+- **Fixed:** DualSense button changes stay after a restart; a moved game folder no longer stops updates; plain disk-full message; an interrupted update opens Setup to repair it.
+- **Going back to an older version:** run that version's Setup again.
+
 ## 1.2.0
 
 - **Sharper rear-view mirror:** with the game's Rearview Mirror option on, the mirror shows the same buildings and scenery detail as the main view. The option stays off until you turn it on.

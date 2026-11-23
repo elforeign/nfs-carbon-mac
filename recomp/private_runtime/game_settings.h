@@ -4,7 +4,7 @@
 #include "game_basic_rows.h"
 #include "carbon_report_settings.h"
 int user32_fullscreen(void);
-void user32_toggle_fullscreen(void), user32_fullscreen_mode_changed(void);
+void user32_toggle_fullscreen(void), user32_fullscreen_mode_changed(void), user32_notch_fill_changed(void);
 void app_quit_game(int);
 void portmenu_open_folder(const char *);
 const char *log_dir(void);
@@ -14,6 +14,7 @@ const char *render_hdr_output_status(void);
 static int private_window_get(void) { return user32_fullscreen() ? 0 : 1; }
 static void private_window_apply(int v) { if (private_window_get() != v) user32_toggle_fullscreen(); }
 static void private_fullscreen_apply(int v) { (void)v; user32_fullscreen_mode_changed(); }
+static void private_notch_apply(int v) { (void)v; user32_notch_fill_changed(); }
 static void private_hdr_status(char *b, int n) { snprintf(b, (size_t)n, "%s", render_hdr_output_status()); }
 static void private_logs_open(int v) { (void)v; portmenu_open_folder(diag_on && diag_dir ? diag_dir : log_dir()); }
 static const char *const private_window_choices[]={"Full screen", "Window"}, *const private_window_values[]={"1", "0"};
@@ -27,6 +28,7 @@ static Setting private_rows[]={
  {.id="diag.full_logging", .category=SET_DIAGNOSTICS, .order=90, .label="Full diagnostic logging", .help="Write detailed logs from the next launch. Restart to apply.", .type=SET_TOGGLE, .env="BOOT_DIAG", .pref="diag_logging", .own_pref=1, .restart=1},
  {.id="diag.logs_open", .category=SET_DIAGNOSTICS, .order=100, .label="Show logs in Finder", .help="Open this run's log folder.", .type=SET_ACTION, .pref="", .apply=private_logs_open},
  {.id="diag.quit_game", .category=SET_DISPLAY, .order=49, .label="Quit game", .help="Press twice within four seconds to save settings and quit.", .type=SET_ACTION, .pref="", .apply=app_quit_game},
+ {.id="display.notch", .category=SET_DISPLAY, .order=12, .label="Fill notch area", .help="On: Borderless full screen also draws beside the camera housing on MacBooks that have one. Off (default) stays below it. Native full screen is decided by macOS. The window applies at once, the native resolution at the next launch.", .type=SET_TOGGLE, .def=0, .env="NFS_FULLSCREEN_NOTCH", .live_env=1, .apply=private_notch_apply},
 };
 #include "carbon_unlock_settings.h"
 #include "carbon_port_settings.h"
