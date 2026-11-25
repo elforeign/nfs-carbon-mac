@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_lan_session.c": {
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "class": "mixed",
+      "guest_layouts": {
+        "session": "0095CAB0 GM roster +128, activated list +138; 00983030 player persona +1C, id +18, address +28; 0095A520 commits active state +24=6. Native protocol 4 via 00955FD0/00956B40/0095C300/0095C520; 0095F720 channel +0C/+10/+14 and 0098B640 NetGameLink."
+      }
+    }
+  },
+  "staged_sources": {
+    "carbon_lan_session.c": "carbon_lan_session.c"
+  },
+  "bindings": {
+    "carbon_lan_session.c": {
+      "source": "carbon_lan_session.c",
+      "sha256": "c7c0b9da76b3000002aca9370d5ae3cf02835d54a28865efbc6ed976a2183043",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

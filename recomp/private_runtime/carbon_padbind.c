@@ -1,6 +1,7 @@
 #include "host.h"
 #include "carbon_pad_state.h"
 #include "carbon_pad_layout.h"
+#include "carbon_padguest.h"
 
 int user32_pad_native(void);
 
@@ -143,7 +144,12 @@ static float carbon_padbind_cached(unsigned pad, PadBinding binding) {
 /* Evaluate existing keyboard/non-native records through the native evaluator.
  * A separate CPU preserves the original function's registers and x87 stack. */
 static float carbon_padbind_existing(Cpu *c, unsigned action, unsigned slot) {
-    if (!M32(carbon_padbind_record(action, slot))) return 0;
+    uint32_t type = M32(carbon_padbind_record(action, slot));
+    if (!type) return 0;
+    if (pad_count() == 2 && slot >= 2) {
+        uint32_t physical = M32(0x00A986D0u + 4 * (slot / 2 - 1));
+        if (type == PB_KEY || !physical || physical == 0xFFFFFFFCu) return 0;
+    }
     Cpu eval = *c;
     uint32_t args[] = {action, slot};
     call_guest(&eval, 0x0067A340u, 2, args);
@@ -159,6 +165,8 @@ static void carbon_padbind_driving(Cpu *c, uint32_t device) {
     if (count > 16) return;
     int any = 0;
     for (unsigned p = 0; p < count; ++p) {
+        configs[p] = 0;
+        if (!carbon_padguest_owns(device, p)) continue;
         configs[p] = carbon_padbind_console(p) ? carbon_padbind_config(c, p) : 0;
         any |= configs[p] != 0;
     }
@@ -168,12 +176,14 @@ static void carbon_padbind_driving(Cpu *c, uint32_t device) {
         if ((a > 28 && a < 47 && a != 37) || a == 23) continue;
         int adjust = a == 37;
         for (unsigned p = 0; p < count; ++p)
-            if (carbon_pad_layout_resolve(p).layout == CARBON_LAYOUT_XBOX) adjust = 1;
+            if (carbon_padguest_owns(device, p) && carbon_pad_layout_resolve(p).layout == CARBON_LAYOUT_XBOX) adjust = 1;
         for (unsigned p = 0; p < count; ++p)
             if (configs[p] && carbon_padbind_selected(p, configs[p], a).low > 0) adjust = 1;
         if (!adjust) continue;
-        float value = fmaxf(carbon_padbind_existing(c, a, 0), carbon_padbind_existing(c, a, 1));
+        float value = carbon_padguest_keyboard(device) ?
+            fmaxf(carbon_padbind_existing(c, a, 0), carbon_padbind_existing(c, a, 1)) : 0;
         for (unsigned p = 0; p < count; ++p) {
+            if (!carbon_padguest_owns(device, p)) continue;
             float pad = fmaxf(carbon_padbind_existing(c, a, 2 + 2*p),
                               carbon_padbind_existing(c, a, 3 + 2*p));
             if (configs[p]) {
@@ -248,9 +258,9 @@ static void carbon_padbind_controls(Cpu *c, uint32_t output) {
 
 void carbon_padbind_evaluate(Cpu *c, void (*original)(Cpu *)) {
     uint32_t device = c->ecx;
-    int active = !M32(device + 0x24) && M32(0x00AB0AD0u) && !M8(device + 0x183C);
+    int active = (M32(device + 0x24) == 0 || (pad_count() == 2 && M32(device + 0x24) == 1)) && M32(0x00AB0AD0u) && !M8(device + 0x183C);
     if (active) carbon_padbind_sync(c);
-    original(c);
+    carbon_padguest_evaluate(c, original);
     if (!active || !M32(0x00A986F4u)) return;
     if (carbon_pad_context() == CARBON_PAD_DRIVING) {
         carbon_padbind_driving(c, device);
@@ -273,8 +283,10 @@ void carbon_padbind_evaluate(Cpu *c, void (*original)(Cpu *)) {
     uint32_t output = M32(device + 0x20), count = M32(0x00A98948u);
     for (unsigned i = 0; i < PADBIND_MENU_COUNT; ++i) {
         unsigned action = menu[i].action;
-        float value = fmaxf(carbon_padbind_existing(c, action, 0), carbon_padbind_existing(c, action, 1));
-        for (unsigned pad = 0; pad < count; ++pad) {
+        float value = carbon_padguest_keyboard(device) ?
+            fmaxf(carbon_padbind_existing(c, action, 0), carbon_padbind_existing(c, action, 1)) : 0;
+        for (unsigned pad = 0; pad < count && pad < 16; ++pad) {
+            if (!carbon_padguest_owns(device, pad)) continue;
             float primary, secondary;
             if (carbon_padbind_console(pad)) {
                 PadAction row = carbon_padbind_menu(pad, action);
@@ -288,7 +300,7 @@ void carbon_padbind_evaluate(Cpu *c, void (*original)(Cpu *)) {
         }
         MF32(output + 4 * action) = value;
     }
-    carbon_padbind_controls(c, output);
+    if (carbon_padguest_keyboard(device)) carbon_padbind_controls(c, output);
 }
 
 void carbon_padbind_rows(Cpu *c, void (*original)(Cpu *)) {

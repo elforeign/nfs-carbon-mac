@@ -160,6 +160,9 @@ void f_00475F90(Cpu *c) {
     while(*read_tokens==' ')++read_tokens;c->esp+=4;
 }
 #include "native.inc"
+int pad_count(void){return 1;}
+int pad_read_n(int n,PadState *s){(void)n;memset(s,0,sizeof *s);return 0;}
+#include "carbon_padguest.c"
 #include "carbon_padbind.c"
 static void original_defaults(Cpu *c) { ++originals[0];native_defaults(c); }
 static void original_evaluate(Cpu *c) { ++originals[1];native_evaluate(c);evaluated_cpu=*c; }
@@ -341,6 +344,7 @@ def main():
         (tmp/'native.inc').write_text('\n\n'.join(native)+'\n')
         (tmp/'image.bin').write_bytes(memory)
         (tmp/'fixture.c').write_text(HARNESS+PROOF)
+        (tmp/'carbon_padguest.c').write_bytes((PRIVATE/'carbon_padguest.c').read_bytes())
         def execute(label,current,layout,expected,public=False):
             (tmp/'carbon_padbind.c').write_text(current)
             (tmp/'carbon_pad_layout.c').write_text(layout)

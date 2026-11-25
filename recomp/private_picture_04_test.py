@@ -107,6 +107,7 @@ static unsigned aa_polls;
 int aa_game_get(void) { ++aa_polls;return 0; }
 static void present(void) { ++presentations; }
 void gil_yield(Cpu *c) { (void)c; ++yields; }
+void carbon_lan_menu_tick(Cpu *c) { (void)c; }
 #define D3D_OK 0
 static int device_present(Cpu *c)
 #include "present.inc"

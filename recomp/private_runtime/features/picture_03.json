@@ -106,7 +106,7 @@
     },
     "game_camera_wide.c": {
       "source": "game_camera_wide.h",
-      "sha256": "daf208bebf8dbf44c96a0ad9bbdf4cafed33d6d24f399b2465bf44f672bc9d2c",
+      "sha256": "f5a6bccf811f0a159fd2e37c3bb3dfdd77eca5fc95b0ab4ce868625406b4863d",
       "functions": {}
     }
   },

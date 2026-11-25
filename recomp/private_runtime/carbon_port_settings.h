@@ -1,5 +1,7 @@
 /* Port additions only; native Video and Audio retain their own preferences. */
 #include "settings.h"
+void carbon_lan_menu_host(int), carbon_lan_menu_browse(int), carbon_lan_menu_leave(int);
+void carbon_lan_menu_status(char *,int);
 void portmenu_status(const char *, ...);
 
 static const char *const carbon_port_bool[] = {"0", "1"};
@@ -39,6 +41,23 @@ void carbon_envcube_apply(int);
 void carbon_devrows_crew(int), carbon_devrows_nitrous(int), carbon_devrows_speedbreaker(int);
 static const char *const carbon_port_maps[] = {"Off", "Rockport", "Atlas"};
 static const char *const carbon_port_map_values[] = {"off", "rockport", "atlas"};
+
+static Setting carbon_lan_port_rows[] = {
+    {.id="network.persona", .category=SET_GAMEPLAY, .order=80, .label="LAN driver name",
+     .help="Optional name for the next LAN room (1-31 characters). Leave blank for a local driver name.",
+     .type=SET_TEXT, .pref=""},
+    {.id="network.host", .category=SET_GAMEPLAY, .order=81, .label="Host LAN game",
+     .help="From the main menu, open the LAN room and wait for a driver. Confirm toggles Ready; Back leaves.",
+     .type=SET_ACTION, .pref="", .apply=carbon_lan_menu_host},
+    {.id="network.browse", .category=SET_GAMEPLAY, .order=82, .label="Browse LAN games",
+     .help="From the main menu, find a LAN host, select it and confirm to join. Back cancels.",
+     .type=SET_ACTION, .pref="", .apply=carbon_lan_menu_browse},
+    {.id="network.status", .category=SET_GAMEPLAY, .order=83, .label="LAN status",
+     .type=SET_INFO, .pref="", .value_text=carbon_lan_menu_status},
+    {.id="network.leave", .category=SET_GAMEPLAY, .order=84, .label="Leave LAN game",
+     .help="Cancel a pending join or leave the room and return to the previous menu.",
+     .type=SET_ACTION, .pref="", .apply=carbon_lan_menu_leave},
+};
 
 static Setting carbon_port_rows[] = {
     {.id="gameplay.traffic_density", .category=SET_GAMEPLAY, .order=10, .label="Traffic density (-1: game)",
@@ -105,6 +124,8 @@ static Setting carbon_port_rows[] = {
 };
 
 static void carbon_port_settings_init(void) {
+    for (unsigned i=0; i<sizeof carbon_lan_port_rows/sizeof *carbon_lan_port_rows; ++i)
+        settings_add(&carbon_lan_port_rows[i]);
     for (unsigned i=0; i<sizeof carbon_port_rows/sizeof *carbon_port_rows; ++i)
         settings_add(&carbon_port_rows[i]);
 }

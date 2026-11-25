@@ -2,6 +2,9 @@
  * change before multiplication: the primary product also supplies culling. */
 #include "host.h"
 #include <math.h>
+#if defined(NFS_GAME) && NFS_GAME == NFS_GAME_PRIVATE
+#include "carbon_splitworld.h"
+#endif
 static uint32_t carbon_camera_view;
 /* 0071B780 is thiscall: ECX platform, first stack argument native view.
  * Capture here because the builder reuses EBP for the projection pointer. */
@@ -15,6 +18,11 @@ static void carbon_camera_correct(Cpu *c, uint32_t view, uint32_t proj) {
     uint32_t vp = M32(view + 0x50u), camera = M32(view + 0x40u);
     uint32_t w = M32(0x00AB06FCu), h = M32(0x00AB0700u);
     if (!vp || !camera || !w || !h) return;
+#if defined(NFS_GAME) && NFS_GAME == NFS_GAME_PRIVATE
+    uint32_t rect[4];
+    if (carbon_splitworld_rect(view, rect)) { w = rect[2]; h = rect[3]; }
+    else
+#endif
     if (view != 0x00B4B110u && (M32(vp + 0x14) != w || M32(vp + 0x18) != h)) return;
     float kx = (4.0f / 3.0f) * (float)h / (float)w;
     if (kx >= 1.0f) return;

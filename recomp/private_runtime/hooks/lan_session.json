@@ -1,0 +1,225 @@
+{
+  "version": 1,
+  "hooks": [
+    {
+      "address": "008DEE70",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "008DEE70",
+        "length": 16,
+        "sha256": "aa61242dea2838ce6885c2066e4fddc5397e1baf63161fb6d987982c51909e00"
+      },
+      "provider": "carbon_lan_memory",
+      "job": "J2.local-session"
+    },
+    {
+      "address": "008DEFF0",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "008DEFF0",
+        "length": 16,
+        "sha256": "67687e15e9497fa207db7bf56d0c55ecd3848dc267124035557ea113440b7d6f"
+      },
+      "provider": "carbon_lan_users",
+      "job": "J2.local-session"
+    },
+    {
+      "address": "008DF480",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "008DF480",
+        "length": 16,
+        "sha256": "4ef2e5099ea84d2432ee3d8e1ff9985f51320f492e9a70105ff062bb4b65d42a"
+      },
+      "provider": "carbon_lan_config",
+      "job": "J2.local-session"
+    },
+    {
+      "address": "008F3B90",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "008F3B90",
+        "length": 16,
+        "sha256": "225640b1b72d5b4c7b9d259f5ea3d6e3fc8ffb884fe39239171e0093302ade0a"
+      },
+      "provider": "carbon_lan_logger",
+      "job": "J2.local-session"
+    },
+    {
+      "address": "00936A20",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "00936A20",
+        "length": 16,
+        "sha256": "5bea90865dfb49c131a555eb1fb3cf1eb1fcb4730fc714bba5ff33dac68cad0c"
+      },
+      "provider": "carbon_lan_clock",
+      "job": "J2.local-session"
+    },
+    {
+      "address": "008F3F90",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "008F3F90",
+        "length": 16,
+        "sha256": "51689f4bed9b3183fc8e6ea050f3618d40235de4daf8947448b165841876db11"
+      },
+      "provider": "carbon_lan_allocator",
+      "job": "J2.local-session"
+    },
+    {
+      "address": "008F3FD0",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "008F3FD0",
+        "length": 16,
+        "sha256": "f4a79ade52d3ed5e325c404203c40ae9ea08084c2c6602c8a4dd25d62d4f0629"
+      },
+      "provider": "carbon_lan_dirty_alloc",
+      "job": "J2.local-session"
+    },
+    {
+      "address": "008F4000",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "008F4000",
+        "length": 16,
+        "sha256": "f4a79ade52d3ed5e325c404203c40ae9ea08084c2c6602c8a4dd25d62d4f0629"
+      },
+      "provider": "carbon_lan_dirty_free",
+      "job": "J2.local-session"
+    },
+    {
+      "address": "009766C0",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "009766C0",
+        "length": 16,
+        "sha256": "a3e4b36040d6c06d94c296aecc6444c0488ab880309a535c7c007ed340f5b70e"
+      },
+      "provider": "carbon_lan_socket_open",
+      "job": "J2.local-session"
+    },
+    {
+      "address": "009767B0",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "009767B0",
+        "length": 16,
+        "sha256": "cf5763e7562f459bbb655b7416a3fa08a5f010ae8fe244213b05dd00e30a57b3"
+      },
+      "provider": "carbon_lan_socket_close",
+      "job": "J2.local-session"
+    },
+    {
+      "address": "00976820",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "00976820",
+        "length": 16,
+        "sha256": "1727526058c401951ef01292f572f8f9f715a0b410bb6e6f409103478b016af2"
+      },
+      "provider": "carbon_lan_socket_bind",
+      "job": "J2.local-session"
+    },
+    {
+      "address": "00976CE0",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "00976CE0",
+        "length": 16,
+        "sha256": "ef647958ccfb7547d68c0e332ecb1971e1100130310bd8e4bb27ef194495c0e9"
+      },
+      "provider": "carbon_lan_socket_info",
+      "job": "J2.local-session"
+    },
+    {
+      "address": "00976EF0",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "00976EF0",
+        "length": 16,
+        "sha256": "2f00daa7bd0cc83d759d21048332a12356b3c9c781999e8f8fedab03ea93ff7d"
+      },
+      "provider": "carbon_lan_socket_callback",
+      "job": "J2.local-session"
+    },
+    {
+      "address": "00976B50",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "00976B50",
+        "length": 16,
+        "sha256": "7651dd8bddf97165444d3773221fc36b66a4a6eebdcebc33687a24dd5c673792"
+      },
+      "provider": "carbon_lan_socket_recv",
+      "job": "J2.local-session"
+    },
+    {
+      "address": "00976A80",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "00976A80",
+        "length": 16,
+        "sha256": "0ad19e98e7e6404b6d34d1e8d6ce9ba921012af3423357617eb005315fcb5e1c"
+      },
+      "provider": "carbon_lan_socket_send",
+      "job": "J2.local-session"
+    },
+    {
+      "address": "0098A8C0",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "0098A8C0",
+        "length": 16,
+        "sha256": "7ab243ccbbfcc7e43b23782bfed9e01ebb02679b15bc35e6ed3098c7c4b013cd"
+      },
+      "provider": "carbon_lan_connect_address",
+      "job": "J2.local-session"
+    },
+    {
+      "address": "0094C790",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "0094C790",
+        "length": 16,
+        "sha256": "5173cdaa45be243c6444526575c0c7463ca84e7067b0264104cf08875057089d"
+      },
+      "provider": "carbon_lan_tick_clock",
+      "job": "J2.local-session"
+    },
+    {
+      "address": "00977750",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "00977750",
+        "length": 16,
+        "sha256": "e3b89ec783c3039243dd17497e6997bdcf79f03eca5bef45c917b48a541aba69"
+      },
+      "provider": "carbon_lan_local_address",
+      "job": "J2.local-session"
+    },
+    {
+      "address": "0095B790",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "0095B790",
+        "length": 16,
+        "sha256": "3c1a9fe831d59439227f8bdcf36cff726d67854bb5af7de2495aafa02034e2e8"
+      },
+      "provider": "carbon_lan_roster_player",
+      "job": "J2.local-session"
+    },
+    {
+      "address": "0092EF10",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "0092EF10",
+        "length": 16,
+        "sha256": "ce16c725f2015b85bef29797dbb0f511548f798ec3e50b09608b4527b28a3c8a"
+      },
+      "provider": "carbon_lan_persona",
+      "job": "J2.local-session"
+    }
+  ]
+}

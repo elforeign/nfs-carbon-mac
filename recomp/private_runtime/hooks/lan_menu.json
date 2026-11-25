@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "hooks": [
+    {
+      "address": "005C7A60",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "005C7A60",
+        "length": 16,
+        "sha256": "9749af3b08e3b473000027cfe8319270841b68dbe4c6a2a4aab1db9402939ac3"
+      },
+      "provider": "carbon_lan_menu_construct",
+      "job": "J3.lan-menu"
+    },
+    {
+      "address": "005CC140",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "005CC140",
+        "length": 16,
+        "sha256": "c0db8aca8a441c90a181d108327e85e00d082ba34db0655ca657c3c86a035bde"
+      },
+      "provider": "carbon_lan_menu_notification",
+      "job": "J3.lan-menu"
+    },
+    {
+      "address": "005BEBE0",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "005BEBE0",
+        "length": 16,
+        "sha256": "803257acf8508928000c61b28df2d78fd0c7458273539fba8727d56546a2fe99"
+      },
+      "provider": "carbon_lan_menu_destroy",
+      "job": "J3.lan-menu"
+    }
+  ]
+}

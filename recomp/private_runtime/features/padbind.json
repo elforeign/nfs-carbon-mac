@@ -57,11 +57,16 @@
           "read": [
             11110728
           ]
+        },
+        "carbon_padbind_existing": {
+          "read": [
+            11110096
+          ]
         }
       },
       "guest_layouts": {
         "live_bindings": "00A98700: 72 {name, bindings_pointer} entries at stride 8; each binding triple 12 bytes; slots 0/1 keyboard, 2+2p/3+2p controller; defaults write only the selected controller slots of actions 0..22,24..28,47,48",
-        "logical_device": "entry ECX: active +24, capture +183C, scalars +20; menu writes 19 FE values, driving recombines only PS driving actions and skip channel 37; keyboard and other-pad values remain native",
+        "logical_device": "entry ECX: port +24, capture +183C, scalars +20; NFS_PADS=2 isolates 72 native action slots and padbind maxima by logical port; keyboard/menu configuration remains port 0; one-pad native behavior retained",
         "cached_joystick": "00A986D0[p] pointer: read +234 cache, axes +0/+4/+8/+20C/+210/+214, buttons +C..+48, POV +220; no device poll",
         "text": "entry stack arguments: output pointer/size/kind/binding pointer; read binding type/+8 object, write bounded output string",
         "native_evaluator": "0067A340(action, slot): existing keyboard and other controller records; copied CPU and scratch below returned ESP; native cached getters only",
@@ -99,7 +104,7 @@
   "bindings": {
     "carbon_padbind.c": {
       "source": "carbon_padbind.c",
-      "sha256": "bc392094011780c5c38711fc6e9d4153ce8e55ed611ba247a27e1ccdef9927b1",
+      "sha256": "2f256ad9ce06f96df6659d77743b49890937555c413e2e1b866699ffcdc458b0",
       "functions": {
         "carbon_padbind_cached": {
           "read": [

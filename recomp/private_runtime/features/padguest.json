@@ -1,0 +1,159 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_padguest.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_layouts": {
+        "logical": "006892B0 IO +4 count/+8 devices/+48 mask; reserve index 1 before 0067A680 returns to 006892F0; 006893D0 factory, GameDevice +24 port, +18 scalar rows/+1C previous/+20 current, 72 actions, +1838 row count/+183C capture. Shared DirectInput initialization/polling remains on port 0. The first-device-only constructor pointers are set for P2 to +34 rows/+1034 previous/+1434 current; capture/capture-state bytes are initialized locally.",
+        "fe": "0056FEF0 16-byte root: +0 queue 0, +4..+B required-controller flags, +C 82D21520 action map. Provider owns queue 1 separately; 00696D30 constructs 29C bytes with logical port, root action hash, 009D0550 mapping, zero. 006959A0 destroys; 00609E80 frees through 00A99720. Both 0056FF80 and scalar-deleting destructor 00572AC0 release queue 1 before native root destruction. Decoded FE methods 0056FFB0/00570000/00570010/00570080 and 00572210 are registered as function starts for their port/all contracts.",
+        "events": "0059FDC0 consumes both queues into distinct integer button columns; records use 00680310/350/320 and 16 native rows at 00A5E038, stride 28, columns +C/+10. 0059FF46..77 loads magnitude, adds float 009C2888 and calls native x87 integer converter 0087EAC0. Connection event 89 enables assigned ports; shared shortcuts remain P1-owned. 00597180 bounds required checks to ports 0/1/All: 00A97A7C DB +CC two signed-byte ports, +C8 unplugged player, queue +28D required/+28C connected; root flags never become pointers. 005913C0 receives the FE wrapper at 00A97A78 as ECX. Inlined all-port package toggles/flushes at 00584151/005840CA/00584158/005BB48C/005BB493 affect both queues; individual calls remain local."
+      },
+      "guest_accesses": {
+        "carbon_padguest_backend": {
+          "read": [
+            6853584
+          ]
+        },
+        "carbon_padguest_initialize": {
+          "read": [
+            11110144
+          ]
+        },
+        "carbon_padguest_evaluate": {
+          "read": [
+            11110096,
+            11110100,
+            11110132,
+            11110148,
+            11110728,
+            11209424
+          ],
+          "write": [
+            11110148
+          ]
+        },
+        "carbon_padguest_construct": {
+          "read": [
+            11112928,
+            11112932
+          ]
+        },
+        "carbon_padguest_connect_event": {
+          "read": [
+            11106940
+          ]
+        },
+        "carbon_padguest_value": {
+          "read": [
+            10233992
+          ]
+        },
+        "carbon_padguest_events": {
+          "read": [
+            10870840,
+            10880184,
+            11106940
+          ],
+          "write": [
+            10870840,
+            11106940
+          ]
+        },
+        "carbon_padguest_required": {
+          "read": [
+            6817040,
+            11106936,
+            11106940,
+            11107716,
+            11107724,
+            11115452
+          ],
+          "write": [
+            11106940
+          ]
+        },
+        "carbon_padguest_enable_all": {
+          "read": [
+            11106324
+          ]
+        },
+        "carbon_padguest_disable_all": {
+          "read": [
+            11106324
+          ]
+        },
+        "carbon_padguest_queue_flush": {
+          "write": [
+            10870856
+          ]
+        }
+      }
+    },
+    "carbon_padguest.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    }
+  },
+  "staged_sources": {
+    "carbon_padguest.c": "carbon_padguest.c",
+    "carbon_padguest.h": "carbon_padguest.h"
+  },
+  "bindings": {
+    "carbon_padguest.c": {
+      "source": "carbon_padguest.c",
+      "sha256": "bc1e1f46baa4935b0ecad82d9595112a725dd54efd111b241ae087c64fb47f04",
+      "functions": {
+        "carbon_padguest_backend": {
+          "read": [
+            6853584
+          ]
+        },
+        "carbon_padguest_value": {
+          "read": [
+            10233992
+          ]
+        },
+        "carbon_padguest_events": {
+          "read": [
+            10870840,
+            10880184
+          ],
+          "write": [
+            10870840
+          ]
+        },
+        "carbon_padguest_required": {
+          "read": [
+            6817040
+          ]
+        },
+        "carbon_padguest_queue_flush": {
+          "write": [
+            10870856
+          ]
+        }
+      }
+    },
+    "carbon_padguest.h": {
+      "source": "carbon_padguest.h",
+      "sha256": "028126922f5a9e57a6d3fef5d922fca9c23f25d79be34c5a6729b89d3a3c6c26",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

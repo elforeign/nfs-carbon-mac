@@ -34,6 +34,11 @@ from layers import load_manifest
 
 # Independent registration expectation also consumed by private_settings_test.
 SETTINGS_ROWS = {
+    'network.persona': {},
+    'network.host': {'apply': 'carbon_lan_menu_host'},
+    'network.browse': {'apply': 'carbon_lan_menu_browse'},
+    'network.status': {'value_text': 'carbon_lan_menu_status'},
+    'network.leave': {'apply': 'carbon_lan_menu_leave'},
     'gameplay.traffic_density': {},
     'gameplay.cheat_nitrous': {'apply': 'carbon_devrows_nitrous'},
     'gameplay.cheat_speedbreaker': {'apply': 'carbon_devrows_speedbreaker'},
@@ -54,6 +59,10 @@ SETTINGS_ROWS = {
     'controls.adaptive_triggers': {'apply': 'padfx_set_triggers'},
 }
 SETTINGS_PROVIDERS = {
+    'carbon_lan_menu_host': 'carbon_lan_menu.c',
+    'carbon_lan_menu_browse': 'carbon_lan_menu.c',
+    'carbon_lan_menu_leave': 'carbon_lan_menu.c',
+    'carbon_lan_menu_status': 'carbon_lan_menu.c',
     'carbon_envcube_apply': 'carbon_envcube.m',
     'carbon_ao_set': 'carbon_ao.h',
     'private_carbon_limiter_set': 'private_carbon_audio_limiter.h',
@@ -67,6 +76,10 @@ SETTINGS_PROVIDERS = {
     'carbon_port_preset_apply': 'carbon_port_settings.h',
 }
 SETTINGS_FIXTURE = """
+void carbon_lan_menu_host(int v) { (void)v; }
+void carbon_lan_menu_browse(int v) { (void)v; }
+void carbon_lan_menu_leave(int v) { (void)v; }
+void carbon_lan_menu_status(char *b, int n) { snprintf(b,n,"Offline"); }
 void portmenu_status(const char *fmt, ...) { (void)fmt; }
 void carbon_envcube_apply(int v) { (void)v; }
 void carbon_ao_set(int v) { (void)v; }

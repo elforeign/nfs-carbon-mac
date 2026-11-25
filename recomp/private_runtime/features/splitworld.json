@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_splitworld.c": {
+      "kind": "unit",
+      "class": "mixed",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_layouts": {
+        "views": "007103C0 iterates views at B4AF90/B4B010, stride 80, active +C, descriptor +50. 007107C0 initializes their separate platforms/cameras and shared AB04EC target. 007655D0 creates two players in B4D854 mode 1. 0071BCA0 runs before the camera loop, but has no split dimensions. 0072EBA0 prepares once, then calls 0072E5B0 with P1; 0070DD30 binds targets, clears, then sets a zero-origin viewport."
+      }
+    },
+    "carbon_splitworld.h": {
+      "kind": "include",
+      "class": "mixed",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    }
+  },
+  "staged_sources": {
+    "carbon_splitworld.c": "carbon_splitworld.c",
+    "carbon_splitworld.h": "carbon_splitworld.h"
+  },
+  "bindings": {
+    "carbon_splitworld.c": {
+      "source": "carbon_splitworld.c",
+      "sha256": "6e603c259eaeda539defe44f873a0dab77b10a5498e2cd14dd4fb2463939634e",
+      "functions": {
+        "cs_world": {
+          "read": [
+            10894624
+          ],
+          "write": [
+            10899680
+          ]
+        }
+      }
+    },
+    "carbon_splitworld.h": {
+      "source": "carbon_splitworld.h",
+      "sha256": "87eb73e70ccef26d757ccfbc4d79f981e305b661d6a77e68edcce2fea1bf73d0",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

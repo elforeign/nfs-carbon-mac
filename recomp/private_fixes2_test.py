@@ -9,6 +9,7 @@ Exit 3 without the Carbon image/build. No emulation, game or device I/O.
 import hashlib
 import json
 from pathlib import Path
+import re
 import subprocess
 import sys
 import tempfile
@@ -53,7 +54,12 @@ def main():
         w = row['witness']
         assert hashlib.sha256(pe.read(int(w['start'], 16), w['length'])).hexdigest() == w['sha256']
     address = 0x8887F3
-    source = (base / 'NFSC_53.c').read_text()
+    # Native entry registration can move chunk boundaries; retain the exact
+    # fragment/hash contract while finding its current generated container.
+    from build_all import CHUNK
+    starts = [int(v.removesuffix('u'), 16) for v in re.search(
+        r'guest_func_addr\[\] = \{([^}]+)', (base / 'table.c').read_text())[1].split(',')]
+    source = (base / f'NFSC_{starts.index(address)//CHUNK:02d}.c').read_text()
     name = private_hooks.original_name(address)
     if f'void {name}(' not in source:
         name = f'f_{address:08X}'

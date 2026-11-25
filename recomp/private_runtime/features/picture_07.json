@@ -85,7 +85,7 @@
     },
     "game_hdrclip_init.h": {
       "source": "game_hdrclip_init.h",
-      "sha256": "de56c3631271059a63f005afc9b6498d1a929871c84ea05f4e6a9f9e6d0e9948",
+      "sha256": "ff27b71e463640941815b8b6bc78072341f493d0a90e227fd30bf539b416cc65",
       "functions": {}
     },
     "game_hdrclip_select.h": {

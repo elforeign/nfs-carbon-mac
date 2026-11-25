@@ -45,7 +45,7 @@
   "bindings": {
     "carbon_port_settings.h": {
       "source": "carbon_port_settings.h",
-      "sha256": "91e9f6e6e64f3ce10b4bf7f1b798f4bda58d866065895c038ee49c972f5a2254",
+      "sha256": "7b3ce07bb72ec18c893a9c22d5f72680a74fd6782ce5ca5377c1ca49c32acd1c",
       "functions": {}
     },
     "carbon_devrows.c": {

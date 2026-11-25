@@ -1,0 +1,84 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_lan.h": {
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "class": "mixed"
+    },
+    "carbon_lan_discovery.c": {
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "class": "mixed"
+    },
+    "carbon_lan_menu.c": {
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "class": "mixed",
+      "guest_layouts": {
+        "room": "005C7A60 constructs FeOnlineGameRoom: package +C, primary vtable 009D526C, notification 005CC140, destructor 005BEBE0. FEng wrapper A97A78 -> engine; queued package push/pop 005F71C0/005F71E0. Flow A99BBC=3 is frontend; A97B7C is the native room singleton. FE object +1C visibility matches 005A9320.",
+        "objects": "005983F0 returns the package root; 005F3760 returns its FE object. Object +1C is the native visibility/dirty flag (005A9320). The access provenance follows the root-returning call, not a dereference of its code address.",
+        "package": "FeOnlineGameRoom.fng in FRONTB2.BUN: 399 ObjD records. TITLE 03C458C1, subtitle EE60FFCA; accept footer 666D40DF/59AF1946; settings 498C629C/FA1B25AA; car/chat/messenger parents 1D4CB506/64035FE5/CFA78975. PAD_ACCEPT/PAD_BACK hashes 406415E3/911AB364. Native copy/queue ownership 005F0B90/005F2AC0."
+      },
+      "guest_accesses": {
+        "clm_visible": {
+          "read": [
+            5866480
+          ],
+          "write": [
+            5866480
+          ]
+        }
+      }
+    }
+  },
+  "staged_sources": {
+    "carbon_lan.h": "carbon_lan.h",
+    "carbon_lan_discovery.c": "carbon_lan_discovery.c",
+    "carbon_lan_menu.c": "carbon_lan_menu.c"
+  },
+  "bindings": {
+    "carbon_lan.h": {
+      "source": "carbon_lan.h",
+      "sha256": "7e67577cf5ce6b3a4d03c202c2ab4046bf8b9d75f2ce934c096799f88f6bed08",
+      "functions": {}
+    },
+    "carbon_lan_discovery.c": {
+      "source": "carbon_lan_discovery.c",
+      "sha256": "1b57034b79710560d0f9d1be6cc66a64413c9b6c785881256b86d9bf5576b97f",
+      "functions": {}
+    },
+    "carbon_lan_menu.c": {
+      "source": "carbon_lan_menu.c",
+      "sha256": "ef4c111e7ba576cab89b45f8fdab21038f73d5e62434ec0f0b4a599315965261",
+      "functions": {
+        "clm_visible": {
+          "read": [
+            5866480
+          ],
+          "write": [
+            5866480
+          ]
+        }
+      }
+    }
+  },
+  "enabled_providers": []
+}

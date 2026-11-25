@@ -1,3 +1,6 @@
+#if defined(NFS_GAME) && NFS_GAME == NFS_GAME_PRIVATE
+#include "carbon_splitworld.h"
+#endif
 /* Private native storage policy. Explicit On only; output composition is separate. */
 void render_float_scene_begin(void);
 static void float_scene_copy(uint32_t dst, MTLPixelFormat format);
@@ -85,10 +88,17 @@ void hdrclip_init(void) {
 void carbon_hdr_allocate(Cpu *c,void (*original)(Cpu *)) {
     original(c); carbon_hdr_promote_all();
 }
+static void carbon_hdr_world_body(Cpu *c,void (*original)(Cpu *)) {
+#if defined(NFS_GAME) && NFS_GAME == NFS_GAME_PRIVATE
+    carbon_splitworld_frame(c, original);
+#else
+    original(c);
+#endif
+}
 void carbon_hdr_world(Cpu *c,void (*original)(Cpu *)) {
-    if(!float_scene_on && !hdrclip_on){original(c);return;}
+    if(!float_scene_on && !hdrclip_on){carbon_hdr_world_body(c,original);return;}
     render_float_scene_begin(); carbon_hdr_world_phase=1;
-    original(c); carbon_hdr_world_phase=0;
+    carbon_hdr_world_body(c,original); carbon_hdr_world_phase=0;
 }
 void carbon_hdr_dispatch(Cpu *c,void (*original)(Cpu *)) {
     carbon_hdr_world_phase=0;

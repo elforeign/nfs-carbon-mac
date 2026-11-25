@@ -67,6 +67,7 @@ void render_present(void){++presents;}
 void portmenu_frame(void){++menus;}
 void user32_script(uint64_t f,uint64_t d){(void)f;(void)d;}
 void gil_yield(Cpu*c){(void)c;++yields;}
+void carbon_lan_menu_tick(Cpu*c){(void)c;}
 static int limit_choice;
 int *carbon_frame_limit_choice=&limit_choice;
 void carbon_picture_wait(void){abort();}
