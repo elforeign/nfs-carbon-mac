@@ -7,7 +7,8 @@ c14..16 upload through slot 109 preserves c13/c17 and increments ver_psc;
 shifting it to c13 fails check 29. Six HDR
 formats map without conversion; replacing
 RGBA16Float by BGRA8 fails format 113. No Metal device is created.
-Missing private effect corpus skips with exit 3.
+Missing private effect corpus skips with exit 3. The mock device has no
+self, so the redundant-constant skip never applies and every upload is seen.
 """
 from pathlib import Path
 import os
@@ -37,13 +38,13 @@ def main():
 #include <assert.h>
 #include <math.h>
 uint8_t *G;int boot_trace,diag_on;static uint32_t allocated=0x10000;static unsigned checks;
-int carbon_fe_scope;float carbon_fe_kx(void){return 1;}
+int carbon_fe_scope;float carbon_fe_kx(void){return 1;}float carbon_fe_ky(void){return 1;}
 uint64_t diag_current_frame(void){return 0;}int diag_frame_wanted(uint64_t f,const char*n){(void)f;(void)n;return 0;}
 void diag_event(const char*fmt,...){(void)fmt;}
 uint32_t galloc(uint32_t n){uint32_t p=allocated;allocated+=(n+15)&~15u;assert(allocated<(1<<26));return p;}
 uint32_t gstr(const char*s){uint32_t p=galloc(strlen(s)+1);strcpy((char*)G+p,s);return p;}
 float lighting_inv_shadow_strength(float f){(void)f;return 0;}
-static struct {float vsc[256][4],psc[224][4];int32_t vsi[16][4],psi[16][4];uint32_t vsb[16],psb[16];uint32_t ver_vsc,ver_psc,ver_vsi,ver_psi,ver_vsb,ver_psb;} dev;
+static struct {float vsc[256][4],psc[224][4];int32_t vsi[16][4],psi[16][4];uint32_t vsb[16],psb[16];uint32_t ver_vsc,ver_psc,ver_vsi,ver_psi,ver_vsb,ver_psb;struct{uint32_t guest;}*self;} dev;
 CONSTANTS
 uint32_t call_guest(Cpu*c,uint32_t fn,int n,const uint32_t*a){uint32_t saved=c->esp;c->esp-=4*(n+1);M32(c->esp)=0xfeed;for(int k=0;k<n;k++)M32(c->esp+4+4*k)=a[k];
  unsigned slot=fn-0xf1000000u;int done=1;

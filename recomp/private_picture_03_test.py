@@ -9,6 +9,9 @@ IDI_FE_FX / IDI_FE_MASK_FX declare WorldViewProj c0-c3 as MATRIX_COLUMNS and
 their vertex shaders start `dp4 oPos.x, v0, c0`, which this fixture executes.
 Good: 1920x1080 and 3840x2160 -> 13BE=1, kx=0.75 (1e-6), FE clip x scaled by
 kx, y unchanged; cursor inverse within 1 FE unit with consistent delta;
+Notch race: 3456x2234 fits the 16:9 HUD to 3456x1944 (y=145..2089).
+Original notch transform: 3971.56x2234, clipped horizontally, exit=1; fixed=0.
+Matrix, fixed-function and both cursor axes use the fit; Off/front end unchanged.
 1440x1080 and 640x480 -> getter and cursor byte-identical to the originals.
 Aspect change 16:9 -> 4:3 -> 16:9 resends NORMAL_MODE / WIDESCREEN_MODE to both
 packages once each. Broken (each exit 1): fixed mask (no FF scale), row
@@ -40,6 +43,13 @@ from layers import selected_source
 
 FRAGMENTS = {'004A4770': '34c5aee22ba6ccec8d6f80fc55ce61128ea1108bbee9bf0a2c1306a5db0eb6d6', '00731580': 'b81c9d9f571b6bd723b03320d444bdcb29904e6e121ea2fa416615604ed8ed98'}
 
+OLD_NOTCH_GETTER = '''float carbon_fe_kx(void) {
+    uint32_t w, h;
+    carbon_output_size(&w, &h);
+    return carbon_wide_kx(w, h);
+}'''
+assert hashlib.sha256(OLD_NOTCH_GETTER.encode()).hexdigest() == 'cabe7db12d433c055273dc44167e69358db28bb260fc347bc26b9fbc899b4fdd'
+
 
 CAMERA_FRAGMENTS = {'0071B780': '6d20562933c35d25bdc13b7da7c231d1123fdd24683185968cc23a2f1189edc8', '0046DC30': '9c33b7a934ed2388ac7e4f04e631eb7b2bdf544d6d6b3db040ba94c7f0883c6d', '0046DCF0': 'dd2585a6e725ff7594a7e76128d1ad729489863b9ee78017094ff23910bc40cb', '0070F2A0': '20361827c9369c310ff1f52919b5d0dd9a3bdaf867fbf907eedfa4b44c0dec29', '0070F2F0': '9128dac145cdca4223c058a472bffad42e93dd2a3d5fcbac93e3c5a3cb4ade2a', '0087EAC0': '613c584ed1cb82b7014a6eca36763dae6aec8f78e3feb2d21d5d02ee0a30312c'}
 
@@ -68,6 +78,8 @@ HARNESS = r'''
 uint8_t *G;
 #define CHECK(x) do { if (!(x)) { fprintf(stderr,"WIDE CHECK %d: %s\n",__LINE__,#x); exit(1); } } while(0)
 static uint32_t mode_w = 640, mode_h = 480;
+static int notch;
+int user32_notch_fill(void) { return notch; }
 void widescreen_mode(int i, uint32_t *w, uint32_t *h) { (void)i; *w = mode_w; *h = mode_h; }
 static unsigned sends; static uint32_t sent_hash[16], sent_package[16], sent_this[16];
 static uint32_t text_hash(uint32_t text) { return 0x11110000u ^ text; }
@@ -142,10 +154,11 @@ static float clip_x(const float regs[256][4], const float v[4]) {   /* dp4 oPos.
 static float clip_y(const float regs[256][4], const float v[4]) {
     return regs[1][0] * v[0] + regs[1][1] * v[1] + regs[1][2] * v[2] + regs[1][3] * v[3];
 }
-static void wide(uint32_t w, uint32_t h) {
+static void wide(uint32_t w, uint32_t h, float ky) {
     output(w, h);
     float kx = carbon_fe_kx();
     CHECK(fabsf(kx - 0.75f) < 1e-6f);
+    CHECK(fabsf(carbon_fe_ky() - ky) < 1e-6f);
     CHECK(getter(1, 0) == 1 && getter(1, 1) == 1 && getter(0, 0) == 0);
     /* Front-end WorldViewProj, as the game sets it: 640x480 units to clip space. */
     float m[16] = {1.0f / 320, 0, 0, 0,  0, -1.0f / 240, 0, 0,  0, 0, 1, 0,  -1, 1, 0, 1};
@@ -157,7 +170,7 @@ static void wide(uint32_t w, uint32_t h) {
     for (int i = 0; i <= 8; ++i) {
         float v[4] = {80.0f * i, 60.0f * i, 0.5f, 1};
         CHECK(fabsf(clip_x(regs, v) - kx * clip_x(plain, v)) < 1e-5f);
-        CHECK(fabsf(clip_y(regs, v) - clip_y(plain, v)) < 1e-5f);
+        CHECK(fabsf(clip_y(regs, v) - ky * clip_y(plain, v)) < 1e-5f);
     }
     Param other = {"cvTextureOffset", PC_MATRIX_COLUMNS, 4, 4};
     pack(&other, PC_MATRIX_COLUMNS, regs); CHECK(!memcmp(regs, plain, 16 * 4));
@@ -170,7 +183,7 @@ static void wide(uint32_t w, uint32_t h) {
         dev.viewport[2] = w; dev.viewport[3] = h; float one = 1; memcpy(&dev.viewport[5], &one, 4);
         carbon_fe_scope = 0; ff_constants(t, base);
         carbon_fe_scope = 1; ff_constants(t, vsc);
-        for (int k = 0; k < 4; ++k) { CHECK(fabsf(vsc[0][k] - kx * base[0][k]) < 1e-6f); CHECK(vsc[1][k] == base[1][k]); }
+        for (int k = 0; k < 4; ++k) { CHECK(fabsf(vsc[0][k] - kx * base[0][k]) < 1e-6f); CHECK(fabsf(vsc[1][k] - ky * base[1][k]) < 1e-6f); }
     }
     carbon_fe_scope = 0;
     /* Cursor: a target drawn at FE x lands at screen x; the inverse returns it. */
@@ -181,6 +194,13 @@ static void wide(uint32_t w, uint32_t h) {
         CHECK(abs(fe - target) <= 1);
         CHECK((int32_t)M32(0x6014) == fe - previous);
         CHECK(abs((int32_t)M32(0x6008) - 240) <= 1);
+    }
+    for (int target = 0; target <= 480; target += 20) {
+        int32_t sy = (int32_t)lrintf((float)h / 2 + (target - 240) / 240.0f * ky * (float)h / 2);
+        cursor(1, (int32_t)w / 2, sy, 0x6000);
+        int32_t fe = (int32_t)M32(0x6008), previous = (int32_t)M32(0x6010);
+        CHECK(abs(fe - target) <= 1);
+        CHECK((int32_t)M32(0x6018) == fe - previous);
     }
 }
 int main(int argc, char **argv) {
@@ -196,8 +216,8 @@ int main(int argc, char **argv) {
     CHECK(getter(1, 0) == getter(0, 0)); cursor_same_as_original();
     output(640, 480); CHECK(carbon_fe_kx() == 1.0f); cursor_same_as_original();
     output(0, 0); mode_w = 1280; mode_h = 720; CHECK(fabsf(carbon_fe_kx() - 0.75f) < 1e-6f);   /* before the device */
-    wide(1920, 1080);
-    wide(3840, 2160);
+    wide(1920, 1080, 1);
+    wide(3840, 2160, 1);
     /* Aspect change: the native mode messages are sent again, once per package. */
     unsigned before = sends;
     output(1920, 1080); getter(1, 0); getter(1, 0); CHECK(sends == before);
@@ -207,6 +227,17 @@ int main(int argc, char **argv) {
     CHECK(sent_this[before] == 0x310000);
     M32(0x00A99BBCu) = 6; output(3840, 2160); getter(1, 0);
     CHECK(sends == before + 4 && sent_hash[before + 2] == text_hash(0x009D4B78u));
+    output(3456, 2234);
+    float old_kx = (4.0f / 3.0f) * 2234 / 3456;
+    CHECK(carbon_fe_kx() == old_kx && carbon_fe_ky() == 1); // Off
+    notch=1; M32(0x00A99BBCu)=3;
+    CHECK(carbon_fe_kx() == old_kx && carbon_fe_ky() == 1); // front end
+    M32(0x00A99BBCu)=6;
+    printf("NOTCH HUD width=%.2f height=%.2f top=%.2f\n",3456 * carbon_fe_kx() / .75f,
+           2234 * carbon_fe_ky(),2234 * (1-carbon_fe_ky()) / 2);
+    wide(3456, 2234, 1944.0f / 2234);
+    output(1440,1080);CHECK(carbon_fe_kx()==1 && carbon_fe_ky()==1);
+    notch=0;
     puts("WIDE PASS 13BE=1@16:9 kx=0.75 FE-columns=1 FF=2 cursor=33x2 4:3-identical=2 resend=2+2");
     free(G); return 0;
 }
@@ -384,7 +415,7 @@ def main():
         (tmp / 'guest.bin').write_bytes(blob)
         wide = (PRIVATE / 'game_widescreen.h').read_text()
         clip = (PRIVATE / 'game_frontend_clip.h').read_text()
-        for variant in ('good', 'fixed-mask', 'row-packing', 'no-resend'):
+        for variant in ('good', 'fixed-mask', 'row-packing', 'no-resend', 'notch-old'):
             harness, source = HARNESS, wide
             pack, ff = packing, fixed
             if variant == 'fixed-mask':
@@ -396,6 +427,9 @@ def main():
             elif variant == 'no-resend':
                 assert '    carbon_wide_resend(c, wide);\n' in source
                 source = source.replace('    carbon_wide_resend(c, wide);\n', '')
+            elif variant == 'notch-old':
+                source = re.sub(r'float carbon_fe_kx\(void\) \{.*?\n}', OLD_NOTCH_GETTER, source, count=1, flags=re.S)
+                source = re.sub(r'float carbon_fe_ky\(void\) \{.*?\n}', 'float carbon_fe_ky(void) { return 1; }', source, count=1, flags=re.S)
             (tmp / 'game_widescreen.h').write_text(source)
             text = harness.replace('PACKING', pack).replace('FIXED', ff).replace('ORIGINALS', bodies)
             (tmp / 'fixture.c').write_text(text)

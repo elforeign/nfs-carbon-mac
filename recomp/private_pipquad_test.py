@@ -1,9 +1,11 @@
 """Carbon crew member picture inside its HUD frame on a wide output, on the retained quad builder.
 
 One number: the picture's centre minus its frame's centre, in pixels of a 3840x2160 output.
-Good: 7.4 (the 1.6-unit offset the 4:3 layout has), picture 792 px wide, 20 checks / 0 failures.
+Good: 7.4 (the 1.6-unit offset the 4:3 layout has), picture 792 px wide, 25 checks / 0 failures.
 Broken control (the unhooked translated builder, as before the fix): 224.3, picture 1056 px wide, exit 1.
 A 4:3 output and the mirror's quad keep the native result.
+Notch HUD fit: picture Y follows the frame; old Y stays 137.75 px away (exit 1),
+fixed Y error 0 px (exit 0). Off retains all native non-X fields.
 No emulation, game, devices or sockets. Exit 3 without private build inputs.
 """
 import hashlib
@@ -32,6 +34,12 @@ CONSTANTS = {0x9C2478: 4, 0x9C92F0: 4}
 # 157C5B37 (0), PIP_BACKING (8.28), the frame art (1.0); 640x480 units from the centre.
 FRAME_43, FRAME_WIDE_SHIFT = 320.0 + (-226.28 + 8.28 + 1.0), -346.28 - -226.28
 
+OLD_PIP_LOOP = '''    for (unsigned vertex = 0; vertex < 4; ++vertex) {
+        uint32_t x = quad + vertex * 0x18u;
+        MF32(x) = (MF32(x) - 120.0f / 320.0f) * kx;
+    }'''
+assert hashlib.sha256(OLD_PIP_LOOP.encode()).hexdigest() == 'eb8f255822084e20599116d76c1bb4177b2e7d498df1fa96680820baa7a1ab7d'
+
 FIXTURE = r'''
 #include "funcs.h"
 #include "host.h"
@@ -40,8 +48,9 @@ FIXTURE = r'''
 uint8_t *G;
 int diag_on;
 void diag_event(const char *format, ...) { (void)format; }
-static float kx;
+static float kx, ky=1;
 float carbon_fe_kx(void) { return kx; }
+float carbon_fe_ky(void) { return ky; }
 #include "carbon_pipquad.c"
 
 enum { MEMORY = 0xC00000, STACK = 0x200000, QUAD = 0x3000, NATIVE = 0x3100,
@@ -118,6 +127,16 @@ int main(void) {
     float frame43 = FRAME_43 * 1440.0f / 640.0f;
     printf("4:3 picture-frame centre px=%.1f width px=%.1f\n", (left + right) * 0.5f - frame43, right - left);
     CHECK((left + right) * 0.5f - frame43 > 3.0f && (left + right) * 0.5f - frame43 < 4.5f);
+    kx=.75f;ky=1944.0f/2234;
+    build(NATIVE, MIRROR, 0.026f, 0.7f, 0.275f, 0.275f);
+    build(QUAD, PICTURE, 0.026f, 0.7f, 0.275f, 0.275f);
+    float error=0;
+    for(unsigned v=0;v<4;++v) {
+        float delta=MF32(QUAD+v*0x18+4)-MF32(NATIVE+v*0x18+4)*ky;
+        if(delta<0)delta=-delta;
+        if(delta*2234/2>error)error=delta*2234/2;
+    }
+    printf("notch picture Y error px=%.3f\n",error);CHECK(error<.001f);
     printf("checks=%u failures=%u\n", checks, failures);
     return failures != 0;
 }
@@ -210,8 +229,10 @@ def main():
         (tmp / 'constants.inc').write_text(constants)
         (tmp / 'fixture.c').write_text(FIXTURE)
         offset = {}
-        for variant, expected in (('good', 0), ('unhooked', 1)):
-            builder = private_hooks.wrap(BUILD, bodies[BUILD], hooks[BUILD]) if variant == 'good' else bodies[BUILD]
+        for variant, expected in (('good', 0), ('unhooked', 1), ('notch-old-y',1)):
+            changed=provider if variant!='notch-old-y' else re.sub(r'    for \(unsigned vertex = 0; vertex < 4; \+\+vertex\) \{.*?\n    }',OLD_PIP_LOOP,provider,count=1,flags=re.S)
+            (tmp / 'carbon_pipquad.c').write_text(changed)
+            builder = private_hooks.wrap(BUILD, bodies[BUILD], hooks[BUILD]) if variant != 'unhooked' else bodies[BUILD]
             (tmp / 'native.inc').write_text(declarations + bodies[TO_INT] + '\n\n' + builder + '\n')
             binary = tmp / variant
             run(['clang', '-O1', '-g', '-fsanitize=address,undefined', '-fno-sanitize-recover=all',

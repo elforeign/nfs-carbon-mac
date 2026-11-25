@@ -175,7 +175,7 @@
     },
     "game_first_resolution.h": {
       "source": "game_first_resolution.h",
-      "sha256": "440632fc7df79116a67c6f6286cba09900b59ba3d134e359b437d55d860e88c7",
+      "sha256": "a00a927184910d3b5b4cbb93a36d225eac617c747618ddeec84ae914b361c2b0",
       "functions": {
         "carbon_first_mode": {
           "write": [

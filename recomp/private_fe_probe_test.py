@@ -66,6 +66,7 @@ static uint8_t fixture_read8(uint32_t a) {
 #undef M8
 #define M32(a) (*(u32a *)(G+(uint32_t)(a)))
 #define M8(a) (*(u8a *)(G+(uint32_t)(a)))
+void blackbox_input(uint64_t frame, uint64_t now) { (void)frame; (void)now; }
 #include "adapter.inc"
 #include "frame.inc"
 #define HOOK() do { guest_reads=0; fixture_frame(perf_nframes, M32(0x00A99BBCu)); \

@@ -18,7 +18,6 @@
 #include "realworld_materials.h"
 #include "replay_input.h"
 #include "roadfilm.h"
-#include "roam_online.h"
 #include "save_timing.h"
 #include "server_loader.h"
 #include "sign_diag.h"
@@ -518,8 +517,6 @@ int roadfilm_enabled(void) { return (int){0}; }
 /* roadfilm.m */
 int roadfilm_shader_hash(uint64_t hash) { return (int){0}; }
 
-/* roam_game.c */
-atomic_int roam_online_active;
 
 /* rumble.m */
 void rumble_close(void) { }

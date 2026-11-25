@@ -74,7 +74,7 @@
     },
     "game_shader_catalogue.h": {
       "source": "game_shader_catalogue.h",
-      "sha256": "0b5b142b38c2edd50f65591fa96174fc0e02d6740fb7deda3a305f9102a58848",
+      "sha256": "9570486442ea8dee55c395ec27fda5bf08bd7abc035fa34116ad90e61c1ed52f",
       "functions": {}
     },
     "game_shader_cache_policy.h": {

@@ -51,7 +51,7 @@
   "bindings": {
     "carbon_autodrive.c": {
       "source": "carbon_autodrive.h",
-      "sha256": "cf967c3f02a4df310f04966c28bcb4b315694cce1a2aa5a8179546acefe73515",
+      "sha256": "4082170604a7bdd9e6a08c8428d8220dcb0f4c93b2f0a580ca93e64e98cfb5da",
       "functions": {}
     },
     "carbon_census.h": {

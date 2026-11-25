@@ -53,7 +53,7 @@
   "bindings": {
     "game_menu_hold.h": {
       "source": "game_menu_hold.h",
-      "sha256": "dd3dd047a5a9d4991540f40230cab964e89dfe013b985a84b95d2649e7032a28",
+      "sha256": "a9de42cafcc5988516782e448b953e61444cfca921e05522ed92df08586b8c25",
       "functions": {}
     },
     "game_pacing_settings.h": {

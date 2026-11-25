@@ -3,12 +3,22 @@
 extern int postfx_look_variant(const char *);
 extern float carbon_dn_lamps_level(void);
 extern uint64_t diag_current_frame(void);
-static int carbon_lamplight_on,carbon_lamplight_shift;
+static int carbon_lamplight_on,carbon_lamplight_shift,carbon_lamplight_warm;
 static void carbon_lamplight_init(void) {
     const char *e=getenv("NFS_CARBON_LAMPLIGHT");
     carbon_lamplight_on=!(e && !strcmp(e,"off"));
+    e=getenv("NFS_CARBON_LAMP_WARM");
+    carbon_lamplight_warm=e && !strcmp(e,"on") && lighting_mode_d65();
     e=diag_on?getenv("BOOT_DIAG_LAMPLIGHT_SHIFT"):NULL;
     carbon_lamplight_shift=e && !strcmp(e,"1");
+}
+/* Street records carry no source class and author only cool or white colours.
+ * The warm option declares a pre-LED 2700 K source and keeps the authored Y. */
+#define CARBON_LAMP_WARM_K 2700.f
+static void carbon_lamplight_warm_white(float rgb[3]) {
+    float y=lighting_colour_luminance(rgb),w[3];
+    lighting_colour_white(CARBON_LAMP_WARM_K,w);
+    for(unsigned j=0;j<3;j++)rgb[j]=y*w[j];
 }
 /* LMP2 uses inner < 0 to store the imported tunnel's negative intensity. */
 typedef struct {float position[3],inner,outer,rgb[3];uint32_t hash;} CarbonLamp;
@@ -48,7 +58,8 @@ static void carbon_lamplight_refresh(void) {
             for(unsigned j=0;j<3;j++)lamp.rgb[j]=((rgb>>(j*8))&255)/255.0f;
             if(!tunnel) {
                 lamp.inner=fminf(lamp.outer,fmaxf(0,lamp.inner));
-                lighting_colour_adapt(lamp.rgb);
+                if(carbon_lamplight_warm)carbon_lamplight_warm_white(lamp.rgb);
+                else {lighting_colour_adapt(lamp.rgb);}
             }
             if(carbon_lamps_count==carbon_lamps_capacity) {
                 size_t capacity=carbon_lamps_capacity?carbon_lamps_capacity*2:256;

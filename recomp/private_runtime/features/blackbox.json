@@ -20,7 +20,7 @@
   "bindings": {
     "carbon_blackbox.c": {
       "source": "carbon_blackbox.c",
-      "sha256": "114487d1fea324e2837d32000d9bac6584261f67c2e5bd23d95eb66fc99d083e",
+      "sha256": "68a2eef836f220074190b79116ae17311ca6ff08ec248f265ef099f7bff65fe5",
       "functions": {}
     }
   },

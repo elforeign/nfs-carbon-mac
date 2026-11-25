@@ -384,6 +384,18 @@ static void carbon_dn_world_record(uint32_t tod, DaynightRecord *record) {
     }
 }
 
+/* NFS_WORLD_LIGHTING=original (Most Wanted's Original, parsed as lighting.c
+ * does): keep the authored quartet colours, as Most Wanted's Original world
+ * setters do. Unset or neutral keeps the Neutral transform below. */
+static int carbon_dn_retail_mw(void) {
+    static int selected = -1;
+    if (selected < 0) {
+        const char *e = getenv("NFS_WORLD_LIGHTING");
+        selected = e && (!strcasecmp(e,"original") || !strcasecmp(e,"pc") || !strcmp(e,"0"));
+    }
+    return selected;
+}
+
 /* Match the world setters: post-clock direct Y with one gamut scale, and
  * clamped ambient desaturated toward Y. W and material gains stay separate. */
 static void carbon_dn_neutral(DaynightRecord *record) {
@@ -436,7 +448,7 @@ void carbon_daynight_blend(Cpu *c, void (*original)(Cpu *)) {
         memcpy(record->specular,gptr(tod+0x40),sizeof record->specular);
         carbon_dn_world_record(tod,record);
         carbon_dn_mix(record,&night,n);
-        carbon_dn_neutral(record);
+        if (!carbon_dn_retail_mw()) carbon_dn_neutral(record);
     }
     carbon_dn_clock.blended = 1;
     /* Keep the guest block, especially fog/sky/reflection fields, unchanged. */

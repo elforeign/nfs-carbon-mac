@@ -619,6 +619,25 @@ def _write_pair(mw_root, carbon_root, stage, *, zones=False, shift=DEFAULT_SHIFT
     prop_attributes.write_overlay(mw_root, carbon_root, stage)
 
 
+def converter_stamp():
+    """Content hash of the converter sources: any change to them makes older worlds stale."""
+    digest = hashlib.sha256()
+    for path in sorted(HERE.glob('*.py')):
+        if not path.name.startswith('test_'):
+            digest.update(path.name.encode() + b'\0' + path.read_bytes() + b'\0')
+    return digest.hexdigest()
+
+
+def require_current(directory):
+    """Refuse a built world whose proof.json lacks this converter's stamp (missing or built by other sources)."""
+    try:
+        stamp = json.loads((Path(directory)/'proof.json').read_text()).get('converter')
+    except (OSError, ValueError, AttributeError):
+        stamp = None
+    require(stamp == converter_stamp(),
+            f'world in {directory} was not built by the current converter (stamp {stamp or "missing"}); rebuild it')
+
+
 def build(mw_root, carbon_root, out, *, zones=False, shift=DEFAULT_SHIFT, street_lamps=False):
     """Atomically write a new pair, publishing it only after independent check."""
     shift = _physics_shift(shift)
@@ -631,7 +650,7 @@ def build(mw_root, carbon_root, out, *, zones=False, shift=DEFAULT_SHIFT, street
             import street_lamps as lamps
             lamps.apply(stage, mw_root, shift=shift)
         report = check(stage, mw_root, carbon_root, shift=shift, street_lamps=street_lamps)
-        (stage/'proof.json').write_text(json.dumps(report, indent=2, sort_keys=True)+'\n')
+        (stage/'proof.json').write_text(json.dumps(dict(report, converter=converter_stamp()), indent=2, sort_keys=True)+'\n')
         os.rename(stage, out)
         return report
     finally:
@@ -1084,6 +1103,7 @@ def _check_collision_sources(result, carbon, source, shift=DEFAULT_SHIFT):
     require(packs.keys() == set(carbon.packs) | set(pack_mapping.values()), 'pack completeness differs')
     for key, pack in carbon.packs.items():
         require(packs[key] == pack, 'native collision pack bytes changed')
+    group_base = grid.highest_group(carbon.packs.values())
     for old, pack in source.packs.items():
         expected = bytearray(pack)
         struct.pack_into('<I',expected,4,pack_mapping[old])
@@ -1096,6 +1116,9 @@ def _check_collision_sources(result, carbon, source, shift=DEFAULT_SHIFT):
                 basis_x = struct.unpack_from('<f',pack,p+axis*4)[0]
                 basis_z = struct.unpack_from('<f',pack,p+32+axis*4)[0]
                 struct.pack_into('<f',expected,p+48+axis*4,value-basis_x*shift[0]-basis_z*shift[1])
+            number = struct.unpack_from('<H',pack,p+24)[0]
+            if number:
+                struct.pack_into('<H',expected,p+24,number+group_base)
         require(packs[pack_mapping[old]] == expected, 'source collision pack translation/id differs')
     expected_cells = {}
     native_cells, source_cells = set(), set()
@@ -1397,13 +1420,20 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--mw-root',type=Path,default=DEFAULT_MW)
     parser.add_argument('--carbon-root',type=Path,default=DEFAULT_CARBON)
-    parser.add_argument('--out',type=Path,required=True,help='new directory outside all checkouts')
+    parser.add_argument('--out',type=Path,help='new directory outside all checkouts')
+    parser.add_argument('--verify',type=Path,help='refuse a built world made by other converter sources')
     parser.add_argument('--shift', nargs=2, type=float, default=DEFAULT_SHIFT, metavar=('X', 'Z'),
                         help='physics translation in metres (default: 20480 0)')
     parser.add_argument('--zones',action='store_true',help='append translated Rockport global tables (outside the coast link)')
     parser.add_argument('--street-lamps', action='store_true',
                         help='add imported bulb markers and available coast tunnel lights (default: off)')
     args = parser.parse_args(argv)
+    if args.verify:
+        require_current(args.verify)
+        print('world stamp current')
+        return 0
+    if not args.out:
+        parser.error('--out or --verify required')
     if not all((root/name).is_file() for root,base in ((args.mw_root,'L2RA'),(args.carbon_root,'L5RA'))
                for name in (base+'.BUN','STREAM'+base+'.BUN')) or not all(
                    (root.parent/'GLOBAL/attributes.bin').is_file() for root in (args.mw_root,args.carbon_root)):

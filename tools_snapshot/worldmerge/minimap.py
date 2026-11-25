@@ -334,10 +334,30 @@ def link_lines(world, mw_root, carbon_root):
     return lines
 
 
-def composite(native, rockport, link=()):
+def world_shift(world):
+    """Rockport's physics (X, Z) in a built combined world, from the proof its builder wrote beside TRACKS."""
+    if world is None:
+        return WORLD_SHIFT
+    proof = Path(world).parent/'proof.json'
+    require(proof.is_file(), 'combined world proof.json absent')
+    x, y, z = json.loads(proof.read_text())['roads']['shift_physics_xyz']
+    require(y == 0 and all(math.isfinite(v) for v in (x, z)), 'combined world shift')
+    return (float(x), float(z))
+
+
+def rockport_inside(shift):
+    """Rockport's square under this shift must lie inside the shared canvas the runtime calibrates."""
+    left, top = ROCKPORT[0]+shift[1]-SHARED[0], SHARED[1]+SHARED[2]-ROCKPORT[1]-ROCKPORT[2]+shift[0]
+    require(0 <= left and left+ROCKPORT[2] <= SHARED[2] and 0 <= top and top+ROCKPORT[2] <= SHARED[2],
+            'Rockport outside the shared atlas')
+
+
+def composite(native, rockport, link=(), shift=WORLD_SHIFT):
     """Map pixel centres through world coordinates; no integer placement drift."""
+    rockport_inside(shift)
     canvas = Image.new('RGBA', (SIDE, SIDE), (0, 0, 0, 255))
-    for image, (bx, by, size), shift in ((native, PALMONT, (0., 0.)), (rockport, ROCKPORT, WORLD_SHIFT)):
+    palmont = None
+    for image, (bx, by, size), shift in ((native, PALMONT, (0., 0.)), (rockport, ROCKPORT, shift)):
         left = (bx+shift[1]-SHARED[0])/SHARED[2]*SIDE
         top = (SHARED[1]+SHARED[2]-by-size+shift[0])/SHARED[2]*SIDE
         extent = size/SHARED[2]*SIDE
@@ -347,6 +367,10 @@ def composite(native, rockport, link=()):
             (scale, 0, (box[0]-left)*scale, 0, scale, (box[1]-top)*scale),
             Image.Resampling.BILINEAR, fillcolor=(0, 0, 0, 255))
         canvas.paste(placed, box[:2])
+        palmont = palmont or (placed, box[:2])
+    # The squares may overlap (the coast link): Palmont's drawn roads stay above Rockport's opaque square.
+    placed, corner = palmont
+    canvas.paste(placed, corner, Image.fromarray((np.asarray(placed)[:, :, :3].max(2) > 0).astype(np.uint8)*255))
     draw = ImageDraw.Draw(canvas)
     for line in link:
         draw.line([((z-SHARED[0])/SHARED[2]*SIDE, (1+(SHARED[1]+x)/SHARED[2])*SIDE) for x, _, z in line],
@@ -382,7 +406,7 @@ def convert(mw_root, carbon_root, out, layout='rockport', world=None):
     packs = [read_stock(path, base) for path, base in zip(targets, BASES)]
     # Complete the premise and stock round trip before creating output files.
     require(all(write_pack(pack) == pack.raw for pack in packs), 'stock round trip differs')
-    cal, shift = (ROCKPORT, (0., 0.)) if layout == 'rockport' else (SHARED, WORLD_SHIFT)
+    cal, shift = (ROCKPORT, (0., 0.)) if layout == 'rockport' else (SHARED, world_shift(world))
     link = link_lines(world, mw_root, carbon_root) if world and layout == 'shared' else ()
     manifest = {'schema': 1, 'layout': layout, 'canvas_size': [SIDE, SIDE],
         'hud': {'bx': cal[0], 'by': cal[1], 'k': f32(1/cal[2])},
@@ -399,7 +423,7 @@ def convert(mw_root, carbon_root, out, layout='rockport', world=None):
     destination.mkdir(parents=True, exist_ok=True)
     for pack in packs:
         canvas = (rockport.resize((SIDE, SIDE), Image.Resampling.BILINEAR) if layout == 'rockport'
-                  else composite(stock_canvas(pack), rockport, link))
+                  else composite(stock_canvas(pack), rockport, link, shift))
         pixels = encode_canvas(canvas, pack.base)
         written = write_pack(pack, pixels)
         (destination/(pack.base+'.bin')).write_bytes(written)
@@ -527,9 +551,17 @@ def check(out):
             all(math.isclose(a, b, rel_tol=0, abs_tol=1e-10) for a, b in
                 zip((hud['bx'], hud['by'], hud['k']), (bx, by, f32(1/size)))), 'checked HUD calibration/vertical flip')
     require(world == {'+AC': bx, '+B0': f32(-by-size), '+B4': size}, 'checked world-map calibration')
-    shift = [0., 0.] if layout == 'rockport' else [0., 8192.]
-    require(manifest['shift_physics_xz'] == shift, 'checked physics shift')
-    points = {'rockport': (EXAMPLE, shift, (.6212168932, .7370389700, 185) if layout == 'rockport' else SHARED_EXAMPLES[0])}
+    shift = manifest['shift_physics_xz']
+    if layout == 'rockport':
+        require(shift == [0., 0.], 'checked physics shift')
+    else:
+        rockport_inside(shift)
+        # An export written into a built world must use that world's own shift.
+        if (out/'proof.json').is_file():
+            require(shift == list(world_shift(out/'TRACKS')), 'checked physics shift against the world proof')
+    expected = ((.6212168932, .7370389700, 185) if layout == 'rockport' else
+                SHARED_EXAMPLES[0] if shift == list(WORLD_SHIFT) else None)
+    points = {'rockport': (EXAMPLE, shift, expected)}
     if layout == 'shared':
         points['palmont'] = (PALMONT_EXAMPLE, (0., 0.), SHARED_EXAMPLES[1])
     for name, (point, (dx, dz), expected) in points.items():
@@ -538,6 +570,8 @@ def check(out):
         v = 1+(hud['by']-(-point[0]-dx))*hud['k']
         tile = 16*int(v*16)+int(u*16)
         row = manifest['examples'][name]
+        # Pinned constants exist for the fixed layouts; another shift is checked against the spelled-out transform.
+        expected = expected or (u, v, tile)
         require(row['physics_xyz'] == list(point) and tile == expected[2] == row['tile'] and
                 abs(u-expected[0]) < 1e-6 and abs(v-expected[1]) < 1e-6 and
                 abs(row['u']-u) < 1e-10 and abs(row['v']-v) < 1e-10, 'checked fixed-point projection')

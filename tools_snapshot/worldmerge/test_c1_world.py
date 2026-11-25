@@ -481,7 +481,7 @@ class Private(unittest.TestCase):
         self.assertEqual(self.report['files']['L5RA.BUN']['sha256'],
                          'cc154fc5746163678b855231301857105de67c50644527171228973172fa3b7e')
         self.assertEqual(self.report['files']['STREAML5RA.BUN']['sha256'],
-                         '0ccd820a2d83a1a6c95b3393f26d59cd030644e244cf06c2c7e0f419de9148b7')
+                         'd557254bd412fd8033c717cde955d54f823f9330894e10e01f59e4f38bb57bcd')
         self.assertEqual(self.zones_report['files']['L5RA.BUN']['sha256'],
                          'b32d7c45a83176d464bf8f1d5518c9bebacfc8ffec3a5667d933beb4c9c48aa6')
         self.assertEqual(self.zones_report['files']['STREAML5RA.BUN'],self.report['files']['STREAML5RA.BUN'])
@@ -684,7 +684,7 @@ class Private(unittest.TestCase):
         def unshifted(*args, **kwargs):
             return converter(*args, **dict(kwargs, shift=(0.,0.)))
         with patch.object(w.convert,'convert_section',side_effect=unshifted),patch.object(w.grid,'move_pack',
-                    side_effect=lambda raw,key,shift:move_pack(raw,key,(0.,0.))):
+                    side_effect=lambda raw,key,shift,base=0:move_pack(raw,key,(0.,0.),base)):
             w._write_pair(w.DEFAULT_MW,w.DEFAULT_CARBON,bad)
         index,stream,_ = w.load_index(bad/'TRACKS','L5RA')
         source,_,_ = w.load_index(w.DEFAULT_MW,'L2RA')

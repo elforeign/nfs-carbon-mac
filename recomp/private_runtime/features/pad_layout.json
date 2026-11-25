@@ -103,7 +103,7 @@
   "bindings": {
     "carbon_pad_layout.c": {
       "source": "carbon_pad_layout.c",
-      "sha256": "a887db85365353fe2c7abb5a20c105e9a8f3a8a1dd68ac6e4ad3f7d9eb088543",
+      "sha256": "b05260ad3fa65527385b6ec442548d3a40d5072f13c64774a8d316c8ce2bb0b3",
       "functions": {}
     },
     "carbon_pad_layout.h": {

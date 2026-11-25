@@ -1,9 +1,44 @@
+/* The catalogue runs before frames start. Compile lacquer off and both material
+ * finishes, including lamp programs. Changing materials while lacquer is off
+ * must not leave the next On toggle with an uncompiled finish. */
+static void shader_preload_finish(Obj *s, const SmOptions *opt, uint32_t variant) {
+    ShaderEntry *current = get_shader_variant(s, opt, variant);
+    extern uint32_t carbon_coat_cache_variant(uint64_t, uint32_t);
+    uint32_t selected = carbon_coat_cache_variant(s->tokens_hash, variant);
+    const char *value = getenv("NFS_CARBON_COAT");
+    char *saved = value ? strdup(value) : NULL;
+    if (value && !saved) return;
+    const char *materials = getenv("NFS_CARBON_MATERIALS");
+    char *saved_materials = materials ? strdup(materials) : NULL;
+    if (materials && !saved_materials) { free(saved); return; }
+    for (int finish = 0; finish < 3; ++finish) {
+        setenv("NFS_CARBON_COAT", finish ? "1" : "0", 1);
+        setenv("NFS_CARBON_MATERIALS", finish == 2 ? "1" : "0", 1);
+        uint32_t other = carbon_coat_cache_variant(s->tokens_hash, variant);
+        if (other == selected) continue;
+        uint64_t key = fnv(&current->opt, sizeof current->opt, s->tokens_hash);
+        if (other) key = fnv(&other, 4, key);
+        int have = 0;
+        for (int i = 0; i < nshaders && !have; ++i) have = shaders[i]->key == key;
+        if (!have) {
+            ShaderEntry *e = new_entry(key, s->tokens, s->ntokens, &current->opt, variant);
+            shader_submit(e);
+            /* Both finishes persist the same untagged recipe; the selected
+             * entry already wrote it. Do not append a duplicate every launch. */
+        }
+    }
+    if (saved) { setenv("NFS_CARBON_COAT", saved, 1); free(saved); }
+    else unsetenv("NFS_CARBON_COAT");
+    if (saved_materials) { setenv("NFS_CARBON_MATERIALS", saved_materials, 1); free(saved_materials); }
+    else unsetenv("NFS_CARBON_MATERIALS");
+}
+
 static void shader_preload_variant(Obj *s, const SmOptions *opt, uint32_t variant) {
     ShaderEntry e = {0}; e.tokens = s->tokens; e.ntokens = s->ntokens;
     e.opt = shader_options(shader_shape(s->tokens, s->ntokens, s->tokens_hash), opt); e.variant = variant;
     if (!sm_translate(e.tokens, e.ntokens, &e.opt, &e.refl)) {
         char *source = shader_replacement(&e);
-        if (source) get_shader_variant(s, opt, variant);
+        if (source) shader_preload_finish(s, opt, variant);
         free(source);
     }
     sm_result_free(&e.refl);
@@ -25,7 +60,7 @@ static void shader_preload_blob(const uint32_t *words, uint32_t count, const cha
             SmOptions opt; sm_default_options(&opt);
             for (int shadow = 0; shadow <= (shape->shadow != 0); ++shadow) {
                 opt.shadow_samplers = shadow ? shape->shadow : 0;
-                get_shader(&s, &opt);
+                shader_preload_finish(&s, &opt, 0);
                 // Additive SSAO coverage can replay any embedded pixel program.
                 // Prepare it at load, before a new light card or flare is drawn.
                 if (v >> 16 == 0xFFFFu) shader_preload_variant(&s, &opt, MAT_VARIANT_AO_GLOW);

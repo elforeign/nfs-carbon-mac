@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_lamplight_cars.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_layouts": {
+        "gatherer": "00746230(list, position) is cdecl and returns the entry count (at most 10). 00746A00 calls it at 00746C3C (return 00746C41) with the list at esp+0x50: record pointers +0..5C, radius fades +60..BC. 007381A0 stores kinds 2/3/5. Kind 2 reaches the car as record +c bytes x fade x 009EA494 (0.75) x 009C77C8 (1/255); the list buffer is reused as the harmonics output (007470B6 -> 00738D70). Records are 96 bytes: +4 kind, +7 enabled, +c RGB8, +3e bounded 34-byte name."
+      }
+    }
+  },
+  "staged_sources": {
+    "carbon_lamplight_cars.c": "carbon_lamplight_cars.h"
+  },
+  "bindings": {
+    "carbon_lamplight_cars.c": {
+      "source": "carbon_lamplight_cars.h",
+      "sha256": "47a06a3e7fb25c5c11b18ad52993984db8aea2c35a66865c78b1cabb971e27fa",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

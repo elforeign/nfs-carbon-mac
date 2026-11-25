@@ -86,12 +86,13 @@ static void carbon_autodrive_sample(uint32_t sim, uint64_t now) {
                carbon_autodrive_top * 2.2369362921, lap, racers, position[0], position[1], position[2]);
 }
 
-/* Continue results and in-game prompts once per controlling appearance.
+/* Continue results and in-game prompts with bounded retries per appearance.
  * The package names are Carbon's native names, not the other image's names. */
 static void carbon_autodrive_popup(uint64_t now) {
     static uint32_t last_package;
     static uint64_t since;
-    static int dismissed;
+    static unsigned attempts;
+    static char last_name[64];
     uint32_t wrapper = M32(0x00A97A78u);
     uint32_t engine = wrapper && wrapper != 0xFFFFFF28u ? M32(wrapper) : 0;
     uint32_t package = 0;
@@ -100,21 +101,24 @@ static void carbon_autodrive_popup(uint64_t now) {
         for (uint32_t p = M32(engine + 0xE4); p && remaining--; p = M32(p + 8))
             if (M32(p + 0x20)) { package = p; break; }
     }
-    if (package != last_package) {
-        last_package = package; since = now; dismissed = 0;
-        uint32_t text = package ? M32(package + 0x0C) : 0;
-        if (diag_on) diag_event("autodrive: package in control %s", text ? (const char *)gptr(text) : "");
-    }
     uint32_t name = package ? M32(package + 0x0C) : 0;
-    if (!name || dismissed || now - since < 1500000000ull) return;
-    const char *text = gptr(name);
+    const char *text = name ? gptr(name) : "";
+    if (package != last_package || strcmp(text, last_name)) {
+        /* A key being sent is not evidence that a native modal accepted it. */
+        if (attempts && diag_on) diag_event("autodrive: dismissed %s after %u attempts", last_name, attempts);
+        last_package = package; since = now; attempts = 0;
+        snprintf(last_name, sizeof last_name, "%s", text);
+        if (diag_on) diag_event("autodrive: package in control %s", text);
+    }
+    if (!name || attempts >= 4 || now - since < 1500000000ull) return;
     if (!strcmp(text, "FePostRaceResults.fng") && carbon_soak_hold_results()) return;
     if (!strcmp(text, "FePostRaceResults.fng") || !strcmp(text, "FePostStages.fng") || !strcmp(text, "FeBusted.fng") ||
         (M32(0x00A99BBCu) == 6 && (!strcmp(text, "InGameDialog.fng") ||
          !strcmp(text, "FeDialog.fng") || !strcmp(text, "FeSmsMessage.fng")))) {
         user32_autoreturn();
-        dismissed = 1;
-        if (diag_on) diag_event("autodrive: dismissed %s", text);
+        since = now;
+        ++attempts;
+        if (diag_on) diag_event("autodrive: Return attempt %u/4 for %s", attempts, text);
     }
 }
 

@@ -6,5 +6,6 @@ void blackbox_game_frame(uint64_t frame, uint32_t flow, const BlackboxTiming *ti
     uint64_t now = blackbox_now_ns();
     carbon_blackbox_fe(frame, flow, now);
     carbon_blackbox_cinematics(frame, now);
+    blackbox_input(frame, now);
     blackbox_record_frame(BLACKBOX_CARBON, frame, flow, timing, now);
 }

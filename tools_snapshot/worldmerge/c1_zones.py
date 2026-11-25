@@ -17,12 +17,17 @@ import zones
 from formats import require, u32
 
 
+# 9: traffic districts (keys rebound to Carbon patterns). 11: neighbourhood names, read at the player by the
+# HUD updater 00761EF0 (zone query type 0xB, key +48) for the location banner; Carbon ships none of its own.
+COAST_KINDS = (9, 11)
+
+
 def merge_districts(carbon_index, source_index, shift, carbon_root):
-    """Add Rockport traffic polygons to Carbon's existing type-9 bucket."""
+    """Add Rockport traffic and neighbourhood polygons to Carbon's type-9 and type-11 buckets."""
     native = zones.read(zones.select(carbon_index))
     keys = districts.key_map(source_index, carbon_root)
     moved = zones.read(zones.convert(source_index, shift=shift, key_map=keys))
-    added = (zone for zone in moved.zones if zone.kind == 9)
+    added = (zone for zone in moved.zones if zone.kind in COAST_KINDS)
     merged = tuple(sorted((*native.zones, *added), key=lambda zone: zone.kind))
     return next(c for c in replace(native, zones=merged).encode() if c.kind == zones.ZONES)
 
@@ -41,19 +46,28 @@ def reread_districts(chunks, carbon_index, source_index, shift, carbon_root):
     require(actual.markers == native.markers and actual.marker_padding == native.marker_padding,
             'native markers changed')
     require(actual.barriers == native.barriers, 'native barriers changed')
-    originals = [zone for zone in source.zones if zone.kind == 9]
-    start = sum(zone.kind <= 9 for zone in native.zones)
-    end = start + len(originals)
-    appended = actual.zones[start:end]
-    require(actual.zones[:start] + actual.zones[end:] == native.zones and
-            len(appended) == len(originals) and all(zone.kind == 9 for zone in appended),
-            'expected only a complete Rockport type-9 suffix in the native zone table')
+    originals = [zone for zone in source.zones if zone.kind in COAST_KINDS]
+    rest, appended = list(actual.zones), []
+    for kind in COAST_KINDS:
+        # Earlier blocks are already cut from rest, so native counts give the position.
+        start = sum(zone.kind <= kind for zone in native.zones)
+        count = sum(zone.kind == kind for zone in originals)
+        block = rest[start:start+count]
+        require(len(block) == count and all(zone.kind == kind for zone in block),
+                f'expected a complete Rockport type-{kind} suffix in the native zone table')
+        appended += block
+        del rest[start:start+count]
+    require(tuple(rest) == native.zones, 'expected only Rockport type-9/11 suffixes in the native zone table')
     patterns = districts.traffic_patterns(carbon_root)
-    resolved = sum(zone.key in patterns for zone in appended)
-    require(resolved == len(originals), f'Rockport traffic patterns resolve {resolved}/{len(originals)}')
+    traffic = [(o, w) for o, w in zip(originals, appended) if o.kind == 9]
+    resolved = sum(written.key in patterns for _, written in traffic)
+    require(resolved == len(traffic), f'Rockport traffic patterns resolve {resolved}/{len(traffic)}')
     targets = {districts.bstring_hash(name): target for name, target in districts.ROCKPORT_TO_CARBON.items()}
     for original, written in zip(originals, appended):
-        require(patterns[written.key] == targets.get(original.key), 'wrong Rockport traffic pattern')
+        if original.kind == 9:
+            require(patterns[written.key] == targets.get(original.key), 'wrong Rockport traffic pattern')
+        else:
+            require(written.key == original.key, 'Rockport neighbourhood key changed')
         expected = bytearray(original.encode())
         struct.pack_into('<I', expected, 48, written.key)
         for first in (4, 32, 40, *range(68, len(expected), 8)):
@@ -62,8 +76,9 @@ def reread_districts(chunks, carbon_index, source_index, shift, carbon_root):
                     coordinate = struct.unpack_from('<f', expected, offset)[0]
                     struct.pack_into('<f', expected, offset, coordinate + delta)
         require(written.encode() == expected, 'Rockport district translation/source bytes differ')
-    return dict(**measured, mode='districts', rockport_districts=len(originals),
-                resolved_rockport_districts=resolved)
+    return dict(**measured, mode='districts', rockport_districts=len(traffic),
+                resolved_rockport_districts=resolved,
+                rockport_neighbourhoods=sum(zone.kind == 11 for zone in appended))
 
 
 def merge(carbon_index, source_index, mapping):

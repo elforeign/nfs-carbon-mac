@@ -10,6 +10,9 @@ truncated display hashes (266/512 correct vs good 512/512); missing tile
 Native stream regression: old first destination 0 decodes 32768/65684 bytes,
 record hash absent; corrected order decodes 65684/65684, record hash present.
 Old serialization fails the native terminator check; stock identity is pinned.
+World shift: the shared atlas reads Rockport's shift from the world's proof.json.
+Coast world (5056, -1728): green probe 255 placed by the proof vs 0 at the old
+fixed (0, 8192); Palmont road probe in the overlap 255 vs 0 with the old order.
 Synthetic checks run without private inputs, then exit 3.
 """
 from contextlib import contextmanager
@@ -153,13 +156,46 @@ class SyntheticTests(unittest.TestCase):
             for y in range(20, 44):
                 for x in range(20, 44):
                     image.putpixel((x, y), colour)
-        canvas = m.composite(native, rock)
-        for image, cal, dz, channel in ((native, m.PALMONT, 0, 0), (rock, m.ROCKPORT, 8192, 1)):
-            source_x, source_y = 31.5/image.width, 31.5/image.height
-            z = cal[0] + source_x*cal[2]+dz
-            x = (source_y-1)*cal[2]-cal[1]
-            u, v = (z+7300)/20992, (14000+x)/20992
-            self.assertGreater(canvas.getpixel((int(u*4096), int(v*4096)))[channel], 240)
+        # Both built layouts: the straight link (0, 8192) and the coast link (5056, -1728), each read from the
+        # world's own proof.json. Old code placed Rockport at (0, 8192) for every world: on the coast world the
+        # green probe read 0 there (good: 255).
+        for dx, dz in ((0., 8192.), (5056., -1728.)):
+            with tempfile.TemporaryDirectory() as root:
+                (Path(root)/'TRACKS').mkdir()
+                (Path(root)/'proof.json').write_text(json.dumps({'roads': {'shift_physics_xyz': [dx, 0., dz]}}))
+                shift = m.world_shift(Path(root)/'TRACKS')
+            self.assertEqual(shift, (dx, dz))
+            canvas = m.composite(native, rock, (), shift)
+            for image, cal, sx, sz, channel in ((native, m.PALMONT, 0, 0, 0), (rock, m.ROCKPORT, dx, dz, 1)):
+                source_x, source_y = 31.5/image.width, 31.5/image.height
+                z = cal[0] + source_x*cal[2]+sz
+                x = (source_y-1)*cal[2]-cal[1]+sx
+                u, v = (z+7300)/20992, (14000+x)/20992
+                self.assertGreater(canvas.getpixel((int(u*4096), int(v*4096)))[channel], 240)
+
+    def test_palmont_roads_above_overlapping_rockport(self):
+        # Coast shift: Rockport's opaque square overlaps Palmont's south edge. A Palmont road pixel at world
+        # (u .4, v .7) must stay drawn: old paste order read red 0 there (11636 lit Palmont pixels hidden on the
+        # real map), good 255; the (0, 8192) layout has no lit overlap and stays pixel-identical.
+        native = Image.new('RGBA', (160, 160), (0, 0, 0, 255))
+        rock = Image.new('RGBA', (64, 64), (0, 255, 0, 255))
+        for y in range(142, 152):
+            for x in range(80, 90):
+                native.putpixel((x, y), (255, 0, 0, 255))
+        canvas = m.composite(native, rock, (), (5056., -1728.))
+        z, x = .4*20992-7300, .7*20992-14000
+        # That world point is inside the painted native block (source pixels 80..89, 142..151).
+        source = ((z-m.PALMONT[0])/m.PALMONT[2]*160, (1+(x+m.PALMONT[1])/m.PALMONT[2])*160)
+        self.assertTrue(80 <= source[0] < 90 and 142 <= source[1] < 152, source)
+        self.assertEqual(canvas.getpixel((int(.4*4096), int(.7*4096)))[:2], (255, 0))
+        self.assertEqual(canvas.getpixel((int(.4*4096), int(.9*4096)))[:2], (0, 255))
+
+    def test_world_shift_must_fit_and_match(self):
+        with self.assertRaisesRegex(FormatError, 'outside the shared atlas'):
+            m.rockport_inside((0., 20480.))
+        with tempfile.TemporaryDirectory() as root:
+            with self.assertRaisesRegex(FormatError, 'proof.json absent'):
+                m.world_shift(Path(root)/'TRACKS')
 
 
 @unittest.skipUnless(ASSETS, 'private minimap inputs absent')

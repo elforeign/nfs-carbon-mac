@@ -29,6 +29,7 @@ static uint32_t hashes[GLYPHS], private_hashes[GLYPHS], textures[GLYPHS];
 static int initialized;
 #include "carbon_padprompts_xbox.h"
 static _Atomic int active_pad=-1;
+static _Atomic int physical_input, pad_connected;
 static int prompt_mode=-1;
 static int mode(void) {
     if (prompt_mode<0) {
@@ -37,27 +38,43 @@ static int mode(void) {
     }
     return prompt_mode;
 }
-void prompts_input(int pad) {
+/* Controller input hides the system pointer once per takeover. Events that
+ * can show it again re-arm the request, including fractional mouse movement. */
+void user32_hide_pointer(void);
+static _Atomic int pointer_hidden;
+void prompts_pointer_visible(void) { atomic_store(&pointer_hidden,0); }
+static void prompts_activity(int pad, int physical) {
     static float moved;
+    if (pad!=1) prompts_pointer_visible();
     if (pad<0) { moved+=1; if (moved<16) return; pad=0; }
-    moved=0; int previous=atomic_exchange(&active_pad,pad==1);
+    moved=0;
+    if (pad==1 && !atomic_exchange(&pointer_hidden,1)) user32_hide_pointer();
+    if(physical)atomic_store_explicit(&physical_input,pad==1,memory_order_relaxed);
+    int previous=atomic_exchange(&active_pad,pad==1);
     if(diag_on && previous!=(pad==1))diag_event("carbon prompts input=%s",pad==1?"controller":"keyboard");
 }
+void prompts_input(int pad) {
+    prompts_activity(pad,1);
+}
 void prompts_mouse_moved(float points) {
+    if (points>0) prompts_pointer_visible();
     for (float n=points;n>=1;n-=1) prompts_input(-1);
 }
 void prompts_pad_seen(int connected) {
-    if (connected && atomic_load(&active_pad)<0) prompts_input(1);
+    atomic_store_explicit(&pad_connected,!!connected,memory_order_relaxed);
+    if (connected && atomic_load(&active_pad)<0) prompts_activity(1,0);
     if (!connected) atomic_store(&active_pad,0);
 }
-void prompts_pointer_visible(void) { }
-/* Preserve prompt activity observation before the shared text overlay filters input. */
+/* Physical activity only: prompt defaults and disconnects retain the last source. */
+int prompts_physical_input(void) { return atomic_load_explicit(&physical_input,memory_order_relaxed); }
+/* UI callers retain the existing prompt-state semantics. */
 int prompts_last_input(void) { return atomic_load(&active_pad); }
+int prompts_pad_connected(void) { return atomic_load_explicit(&pad_connected,memory_order_relaxed); }
 int carbon_addons_host_osk_pad(int, uint32_t, int, int, int, int, float, float, int, int);
 int osk_pad(int port,uint32_t buttons,int up,int down,int left,int right,
             float lx,float ly,int connected,int xbox) {
     if(port==0) {
-        if(!connected)prompts_input(0);
+        if(!connected)prompts_activity(0,0);
         else if(buttons || up || down || left || right || fabsf(lx)>.2f || fabsf(ly)>.2f)prompts_input(1);
     }
     return carbon_addons_host_osk_pad(port, buttons, up, down, left, right, lx, ly, connected, xbox);

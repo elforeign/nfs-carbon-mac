@@ -8,6 +8,9 @@ not presented-frame game proof. Faint flare glow (receiver mask 250, alpha 2%): 
 flare quads into the lamp pools) gives 0, rejected (exit 1).
 not presented-frame game proof. Authored colour: adapted xy (.290067899,.313228432),
 no-adaptation dxy .004602300 (rejected at .003). No Metal or private image: exit 3.
+Warm option (NFS_CARBON_LAMP_WARM=on, Neutral D65 only): declared 2700 K source reaches
+xy (.432855,.395925), dxy .000000 (limit .003), authored Y kept; the broken control without the
+15% D65 mix gives dxy .030285 (rejected). Warm locality 28.6572 / shifted -6.2716 (1x and 4x).
 At 150 m the old cull gives 0 against stock's 1. Reach samples at
 150/175/195/200 m now match stock: 1/.9375/.1975/0.
 At noon the tunnel fixture gains 9.1324 code values (1x and 4x);
@@ -71,6 +74,15 @@ static id<MTLRenderPipelineState> pipeline_build(MTLRenderPipelineDescriptor *d,
  NSError *e=nil;id<MTLRenderPipelineState> p=[mtl newRenderPipelineStateWithDescriptor:d error:&e];
  if(!p){fprintf(stderr,"pipeline: %s\n",e.localizedDescription.UTF8String);exit(1);}return p;
 }
+// Broken control source: the same Planckian white without the 15% D65 mix.
+static void planck_white_unadapted(float t,float out[3]){
+ float inv=1/t,inv2=inv*inv,inv3=inv2*inv;
+ float x=t<=4000?-0.2661239e9f*inv3-0.2343589e6f*inv2+0.8776956e3f*inv+0.179910f:-3.0258469e9f*inv3+2.1070379e6f*inv2+0.2226347e3f*inv+0.240390f;
+ float y=t<=4000?-0.9549476f*x*x*x-1.37418593f*x*x+2.09137015f*x-0.16748867f:3.0817580f*x*x*x-5.87338670f*x*x+3.75112997f*x-0.37001483f;
+ float X=x/y,Z=(1-x-y)/y;
+ out[0]=3.2404542f*X-1.5371385f-0.4985314f*Z;out[1]=-0.9692660f*X+1.8760108f+0.0415560f*Z;out[2]=0.0556434f*X-0.2040259f+1.0572252f*Z;
+ float s=1/(.2126f*out[0]+.7152f*out[1]+.0722f*out[2]);for(int i=0;i<3;i++)out[i]*=s;
+}
 SHADERS
 static const char *render_contact_source(int n){return contact;}
 PRODUCTION
@@ -107,6 +119,8 @@ int main(int argc,char **argv){@autoreleasepool{
  M32(0xB479D4)=0x1000;M32(0x1000)=0xB479D4;M32(0x1018)=0x2000;M32(0x101c)=1;
  M8(0x2004)=2;M8(0x2007)=1;M32(0x200c)=0xffffff;MF32(0x2018)=8;MF32(0x201c)=25;MF32(0x2030)=10;strcpy((char *)guest+0x203e,"Street_Fixture");
  unsetenv("NFS_CARBON_LAMPLIGHT");carbon_lamplight_init();CHECK(carbon_lamplight_on);
+ // The warm option acts only under Neutral D65 (this process has no lighting profile).
+ setenv("NFS_CARBON_LAMP_WARM","on",1);carbon_lamplight_init();CHECK(!carbon_lamplight_warm);unsetenv("NFS_CARBON_LAMP_WARM");
  lamp_level=0;carbon_lamplight_apply();CHECK(!lookups);lamp_level=1;
  mask=texture(MTLPixelFormatR8Unorm,1);unsigned char coverage[256*128];memset(coverage,255,sizeof coverage);[mask replaceRegion:MTLRegionMake2D(0,0,256,128) mipmapLevel:0 withBytes:coverage bytesPerRow:256];
  for(unsigned samples=1;samples<=4;samples*=4){
@@ -120,6 +134,13 @@ int main(int argc,char **argv){@autoreleasepool{
    CHECK(pixels[4*(64*256+128)+3]==94);
   }
   printf("samples=%u local_gain=%.6f shifted_control=%.6f\n",samples,measured[0],measured[1]);CHECK(measured[0]>=8);CHECK(measured[1]<2);
+  carbon_lamplight_warm=1;carbon_lamps_signature=0;
+  for(int shifted=0;shifted<2;shifted++){
+   carbon_lamplight_shift=shifted;cmd=[queue commandBuffer];clear_targets();carbon_lamplight_apply();read_pixels();
+   measured[shifted]=(luma(128)-base[0])-(luma(208)-base[1]);
+  }
+  printf("samples=%u warm_local_gain=%.6f warm_shifted_control=%.6f\n",samples,measured[0],measured[1]);CHECK(measured[0]>=8);CHECK(measured[1]<2);
+  carbon_lamplight_warm=0;carbon_lamplight_shift=0;carbon_lamps_signature=0;
   memset(coverage,0,sizeof coverage);[mask replaceRegion:MTLRegionMake2D(0,0,256,128) mipmapLevel:0 withBytes:coverage bytesPerRow:256];
   cmd=[queue commandBuffer];clear_targets();carbon_lamplight_shift=0;carbon_lamplight_apply();read_pixels();CHECK(luma(128)==base[0]);
   /* A flare's faint glow tail (alpha 2%, receiver mask 250) keeps the light it leaves. */
@@ -171,6 +192,16 @@ int main(int argc,char **argv){@autoreleasepool{
  double broken=hypot(X/(X+sy+Z)-expected[0],sy/(X+sy+Z)-expected[1]);
  printf("authored 158/204/240 adapted_linear=%.9f,%.9f,%.9f xy=%.9f,%.9f dxy=%.9f no_adaptation_dxy=%.9f\n",rgb[0],rgb[1],rgb[2],x/(x+y+z),y/(x+y+z),dxy,broken);
  CHECK(dxy<.003 && broken>.003);CHECK(fabs(lighting_colour_luminance(rgb)-Y)<1e-6);
+ // Warm option: declared 2700 K source after the 15% D65 mix; reference xy from the design.
+ carbon_lamplight_warm=1;carbon_lamps_signature=0;
+ CHECK(carbon_lamplight_select(0x3000,1,&colour,&colour_overflow)==1);
+ x=.4124564*rgb[0]+.3575761*rgb[1]+.1804375*rgb[2];
+ y=.2126729*rgb[0]+.7151522*rgb[1]+.0721750*rgb[2];
+ z=.0193339*rgb[0]+.1191920*rgb[1]+.9503041*rgb[2];
+ double warm_dxy=hypot(x/(x+y+z)-.432855,y/(x+y+z)-.395925);
+ printf("warm 2700 K linear=%.6f,%.6f,%.6f xy=%.6f,%.6f dxy=%.6f Y=%.6f authored_Y=%.6f\n",rgb[0],rgb[1],rgb[2],x/(x+y+z),y/(x+y+z),warm_dxy,lighting_colour_luminance(rgb),Y);
+ CHECK(warm_dxy<.003);CHECK(fabs(lighting_colour_luminance(rgb)-Y)<1e-5);
+ carbon_lamplight_warm=0;carbon_lamps_signature=0;
  diag_on=1;variant="lamplightoff";lookups=0;carbon_lamplight_apply();CHECK(!lookups);
  variant="lamplightshift";CHECK(carbon_lamplight_select(0x3000,1,&colour,&colour_overflow)==1);CHECK(colour.lamps[0].position[0]==40);
  diag_on=0;CHECK(carbon_lamplight_select(0x3000,1,&colour,&colour_overflow)==1);CHECK(colour.lamps[0].position[0]==0);variant="";
@@ -231,6 +262,14 @@ def main():
         assert control.returncode == 1
         assert 'dxy<.003' in control.stderr, control.stderr
         print('BROKEN production without adaptation (rejected):', control.stdout.strip().splitlines()[-1])
+        unadapted = production.replace('lighting_colour_white(CARBON_LAMP_WARM_K,w);', 'planck_white_unadapted(CARBON_LAMP_WARM_K,w);')
+        assert unadapted != production
+        (path / 'fixture.m').write_text(HARNESS.replace('SHADERS', shaders).replace('PRODUCTION', unadapted))
+        warm_build = subprocess.run(['clang', '-I', str(ROOT / 'runtime'), '-O1', '-w', '-fobjc-arc', str(path / 'fixture.m'), '-framework', 'Foundation', '-framework', 'Metal', '-o', str(path / 'warm')], capture_output=True, text=True)
+        assert warm_build.returncode == 0, warm_build.stderr[-4000:]
+        warm = subprocess.run([str(path / 'warm'), str(path)], capture_output=True, text=True, timeout=90)
+        assert warm.returncode == 1 and 'warm_dxy<.003' in warm.stderr, (warm.stdout, warm.stderr)
+        print('BROKEN warm lamp without D65 adaptation (rejected):', [l for l in warm.stdout.splitlines() if 'warm 2700' in l][-1])
         cut = ('"float raw=ao_depth(z,i.uv,c.k);if(raw>=0.999999||mask.sample(pt,c.k.rect.xy+i.uv*c.k.rect.zw).r<0.999)return float4(0);"\n'
                '"float3 p=ao_point(i.uv,raw,c.k),n=ao_normal(z,i.uv,c.k),energy=float3(0);"')
         assert hashlib.sha256(cut.encode()).hexdigest() == 'b41052984b48254b4928d6333ed5182c84e16ca7400b8336ec8218353fa9b3b2', hashlib.sha256(cut.encode()).hexdigest()

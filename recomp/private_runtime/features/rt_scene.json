@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "game_rt_scene.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_layouts": {
+        "view": "Primary color/depth owners AB04F4/AB04F8; racing flow A99BBC=6. B4AF90 points to the primary row-vector camera block; VP at +80. Pinned rigid WORLDREFLECT SM3 clip position is dot(v0,c0..c3)."
+      }
+    }
+  },
+  "staged_sources": {
+    "game_rt_scene.h": "game_rt_scene.h"
+  },
+  "bindings": {
+    "game_rt_scene.h": {
+      "source": "game_rt_scene.h",
+      "sha256": "d524baf7993223b96e0a0390cae10dbf8cfee36c34b4c8501bdf39ec1738c0ac",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

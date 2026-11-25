@@ -12,6 +12,10 @@ Broken: unshifted packs 0/4,385 grounded (correct 2,522); missing offset
 17,344/17,344 source family-3 words wrong; duplicate pack id rejected;
 64 m / 251x540 = 135,540 slots rejected (>65,536); dropped native cell
 4,164 instead of 4,165 rejected. Each is a serialized, otherwise valid mutant.
+Scenery groups: imported instances keep their group numbers and Carbon's own
+scenery switches 1..629 on, so 755 grouped Rockport instances (7,014 walls)
+were invisible walls in free roam; after the lift, 0 imported grouped
+instances carry a number <= 629 (broken control: group_base 0 gives 755).
 Private inputs absent: synthetic checks run, exit 3. No game or residency proof.
 """
 from dataclasses import replace
@@ -134,6 +138,12 @@ def source_check(result, carbon, source):
         require(record[:4] == prefix, 'opaque cell prefix differs')
         for k in range(4):
             require(words(record, k) == tuple(refs[k]), f'family-{k} source coverage differs')
+    # Carbon's highest group number, read straight from its instance rows.
+    top = max(struct.unpack_from('<H', pack, p+24)[0] for pack in carbon.packs.values()
+              for p in range(16+r.collision_tags(pack[16:], c.ARTI)[c.CI][3],
+                             16+r.collision_tags(pack[16:], c.ARTI)[c.CI][3]
+                             + 64*r.collision_tags(pack[16:], c.ARTI)[c.CI][2], 64))
+    require(top == 629, 'Carbon highest scenery group changed')
     packs = {u32(pack, 4): pack for pack in result.packs}
     require(packs.keys() == set(carbon.packs) | set(mapping.values()), 'pack completeness differs')
     require(all(packs[key] == pack for key, pack in carbon.packs.items()), 'native pack bytes differ')
@@ -150,6 +160,9 @@ def source_check(result, carbon, source):
                     not struct.unpack_from('<H', pack, p+18)[0] & 3, 'retail basis changed')
             tx = struct.unpack_from('<f', pack, p+48)[0]
             struct.pack_into('<f', expected_pack, p+48, tx-20480.)
+            lifted = struct.unpack_from('<H', pack, p+24)[0]
+            if lifted:
+                struct.pack_into('<H', expected_pack, p+24, lifted+top)
         require(moved == expected_pack, 'shifted pack bytes/bounds differ')
     return expected, native_ids, source_ids
 
@@ -209,6 +222,19 @@ class SyntheticTests(unittest.TestCase):
         self.assertEqual(u32(moved, 4), 2699)
         self.assertEqual(c.move_pack(original, 101, (0., 0.)), original)
 
+    def test_group_numbers_lift_and_overflow(self):
+        pack = pack_bytes(basis=((0., .6, .8), (.6, -.64, .48)), translation=(1., 2., 3.))
+        tag = r.collision_tags(pack[16:], c.ARTI)[c.CI]
+        at = 16+tag[3]+24
+        self.assertEqual(struct.unpack_from('<H', pack, at)[0], 0)
+        grouped = bytearray(pack)
+        struct.pack_into('<H', grouped, at, 7)
+        self.assertEqual(struct.unpack_from('<H', c.move_pack(bytes(grouped), 5, (0., 0.), 629), at)[0], 636)
+        self.assertEqual(c.move_pack(pack, 5, (0., 0.), 629)[at:at+2], b'\0\0')
+        struct.pack_into('<H', grouped, at, 4000)
+        with self.assertRaisesRegex(FormatError, 'group'):
+            c.move_pack(bytes(grouped), 5, (0., 0.), 629)
+
     def test_u8_counts_and_bad_grid_extents(self):
         with self.assertRaisesRegex(FormatError, 'u8'):
             c.cell_record(bytes(4), 0, 2500, [list(range(256)), [], [], []])
@@ -262,6 +288,20 @@ class ArchiveTests(unittest.TestCase):
         cls.mw_nodes = g.road_nodes(cls.mw_index)
         cls.carbon_nodes = g.road_nodes(cls.carbon_index)
         cls.shifted_nodes = [(x+20480., y, z) for x, y, z in cls.mw_nodes]
+
+    def test_imported_groups_clear_carbon_numbers(self):
+        def clashing(result):
+            n = 0
+            for key in result.pack_ids.values():
+                pack = next(p for p in result.packs if u32(p, 4) == key)
+                ci = r.collision_tags(pack[16:], c.ARTI)[c.CI]
+                n += sum(1 for p in range(16+ci[3], 16+ci[3]+64*ci[2], 64)
+                         if 0 < struct.unpack_from('<H', pack, p+24)[0] <= 629)
+            return n
+        self.assertEqual(clashing(self.result), 0)
+        with patch.object(c, 'highest_group', return_value=0):
+            old = c.merge(self.carbon_index, self.carbon_stream, self.mw_index, self.mw_stream)
+        self.assertEqual(clashing(old), 755)
 
     def test_premise_counts_references_and_limits(self):
         native = c.read_city(self.carbon_index, self.carbon_stream)

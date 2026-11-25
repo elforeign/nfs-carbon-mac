@@ -36,7 +36,7 @@ import visibility
 
 PAIR_SHA256 = {
     'L5RA.BUN': 'cc154fc5746163678b855231301857105de67c50644527171228973172fa3b7e',
-    'STREAML5RA.BUN': '0ccd820a2d83a1a6c95b3393f26d59cd030644e244cf06c2c7e0f419de9148b7',
+    'STREAML5RA.BUN': 'd557254bd412fd8033c717cde955d54f823f9330894e10e01f59e4f38bb57bcd',
 }
 # C3 pair includes converted prop rows and GlossyWindow GLASS_REFLECT with
 # retained/reordered normals and the source-effect-5/1 identity words.

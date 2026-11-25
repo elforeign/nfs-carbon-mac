@@ -81,12 +81,12 @@
   "bindings": {
     "game_widescreen.h": {
       "source": "game_widescreen.h",
-      "sha256": "5493576eef6f0175a46737ac14d014df1bdd8fdd69a48e282069bc9cb5a123e2",
+      "sha256": "7292365314b6f4e4bbdce1bb0f5880e8e7f4d2f8ee5a2d2c341564cd4cbb588a",
       "functions": {}
     },
     "game_frontend_matrix.h": {
       "source": "game_frontend_matrix.h",
-      "sha256": "86e737a54faca8f6755cf66ae8c09368bba2a72f2525abd2d5d03fdf6eec9cde",
+      "sha256": "5a65650a6632a35af72007ff2f42efd1f7e6c95a55497aab9da970b5a0dc0e0e",
       "functions": {}
     },
     "game_frontend_begin.h": {
@@ -101,7 +101,7 @@
     },
     "game_frontend_clip.h": {
       "source": "game_frontend_clip.h",
-      "sha256": "c69987d221b4cf13cb09d40997e85b90d6bf6551bf97cbad5c2040d2c5dca1d1",
+      "sha256": "4899cf4f349b17601617b79a356573033ded9f0dbe85882044ae2273f5be26a5",
       "functions": {}
     },
     "game_camera_wide.c": {

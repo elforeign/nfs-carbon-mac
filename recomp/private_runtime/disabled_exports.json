@@ -966,12 +966,6 @@
     "type": "int (uint64_t)"
   },
   {
-    "name": "roam_online_active",
-    "source": "roam_game.c",
-    "kind": "data",
-    "type": "atomic_int"
-  },
-  {
     "name": "rumble_close",
     "source": "rumble.m",
     "kind": "function",

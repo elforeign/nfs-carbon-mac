@@ -18,17 +18,19 @@
 extern int diag_on;
 extern void diag_event(const char *, ...);
 extern float carbon_fe_kx(void);
+extern float carbon_fe_ky(void);
 
 void carbon_pipquad_build(Cpu *c, void (*original)(Cpu *)) {
     uint32_t caller = M32(c->esp), quad = M32(c->esp + 4);
     original(c);
     if (caller != 0x00750DFFu) return;
-    float kx = carbon_fe_kx();
+    float kx = carbon_fe_kx(), ky = carbon_fe_ky();
     if (kx >= 1.0f) return;
     float native = MF32(quad);
     for (unsigned vertex = 0; vertex < 4; ++vertex) {
         uint32_t x = quad + vertex * 0x18u;
         MF32(x) = (MF32(x) - 120.0f / 320.0f) * kx;
+        if (ky < 1.0f) MF32(x + 4) *= ky;   // follow the fitted HUD frame vertically too
     }
     if (diag_on) {
         static unsigned shown;

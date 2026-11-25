@@ -592,6 +592,27 @@ int main(int argc,char**argv){
             self.assertIn('loaded gameplay.bin', run.stderr)
 
 
+    def test_cli_takes_the_built_worlds_shift(self):
+        # A coast world (physics 5056, 0, -1728) needs render (-1728, -5056); the old CLI wrote its
+        # fixed (8192, 0) into any world unless the shift was passed by hand.
+        import json
+        with tempfile.TemporaryDirectory() as root:
+            world = Path(root)
+            (world/'proof.json').write_text(json.dumps({'roads': {'shift_physics_xyz': [5056., 0., -1728.]}}))
+            out = world/'GLOBAL/GAMEPLAY.BIN'
+            cli = [sys.executable, '-I', str(HERE/'gameplay.py'), '--out', str(out)]
+            run = subprocess.run(cli, capture_output=True, text=True)
+            self.assertEqual(run.returncode, 0, run.stderr)
+            self.assertEqual(json.loads(run.stdout)['position_shift'], [-1728., -5056., 0])
+            self.assertEqual(out.read_bytes(), g.convert(self.source_bytes, self.target_bytes, (-1728., -5056.))[0])
+            run = subprocess.run(cli + ['--shift', '8192,0'], capture_output=True, text=True)
+            self.assertNotEqual(run.returncode, 0)
+            self.assertIn('differs from the world proof', run.stderr)
+            # The Setup world's (0, 8192) gives the default render shift.
+            (world/'proof.json').write_text(json.dumps({'roads': {'shift_physics_xyz': [0., 0., 8192.]}}))
+            self.assertEqual(g.world_shift(out), g.SHIFT)
+
+
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument('--on-log', type=Path)

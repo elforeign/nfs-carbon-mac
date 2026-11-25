@@ -24,8 +24,8 @@ Watch the demo: [Carbon on a Mac (YouTube)](https://www.youtube.com/watch?v=Hp7f
 
 ## Install
 
-1. Download the **Setup app** from the [latest release](https://github.com/elforeign/nfs-carbon-mac/releases/latest)
-   and open it. The first time, macOS asks you to allow it once (System Settings > Privacy & Security > Open Anyway).
+1. Download the **Setup** disk image from the [latest release](https://github.com/elforeign/nfs-carbon-mac/releases/latest)
+   and open the Setup app inside it. The first time, macOS asks you to allow it once (System Settings > Privacy & Security > Open Anyway).
 2. Choose your PC game using one of the options above, optionally add your Xbox 360 files, and click **Build**.
    Setup offers to install Apple's free Command Line Tools if you need them.
 3. Play **NFS Carbon Native** from Applications.

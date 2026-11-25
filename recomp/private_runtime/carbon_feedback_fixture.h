@@ -36,6 +36,7 @@ void diag_event(const char *fmt, ...) {
 void diag_event_ring(const char *fmt, ...) { (void)fmt; }
 void padfx_stop(void) {}
 /* Model-only fixture: production now selects the real shared host units. */
+void rumble_stop_slot(unsigned slot) { (void)slot; rumble_stop(); }
 void rumble_stop(void) {}
 void rumble_suppress(int on) { (void)on; }
 void padfx_poll(void) {}
@@ -138,8 +139,8 @@ static void tick(int hooked) {
     CHECK(c.esp==0x80004);CHECK(c.top==0);CHECK(M32(0x2054)==0x9000);
 }
 static void reset(void) {
-    memset(&S,0,sizeof S);memset(ncalls,0,sizeof ncalls);memset(provider_counts,0,sizeof provider_counts);
-    last_tick=clock_ns;shift_state=nos_state=0;effects_valid=0;speed=20;sampler_calls=0;
+    memset(&feedback_states[0].model,0,sizeof feedback_states[0].model);memset(ncalls,0,sizeof ncalls);memset(provider_counts,0,sizeof provider_counts);
+    feedback_states[0].last_tick=clock_ns;shift_state=nos_state=0;feedback_states[0].effects_valid=0;speed=20;sampler_calls=0;
 }
 static unsigned unbound_calls;
 static void unbound_original(Cpu *c) { CHECK(M32(c->ecx+0x54)==0x9000);++unbound_calls;c->esp+=4; }
@@ -216,10 +217,10 @@ int main(int argc,char **argv) {
     CHECK(level()>0);CHECK(wheel_calls==1);CHECK(surf_index(0x8000)==0);CHECK(sampler_calls==1);
     float road_speed,road_surface;feedback_road_state(&road_speed,&road_surface);CHECK(road_speed==20 && fabsf(road_surface-.1f)<.0001f); /* collection at +0 */
     printf("TICK Begin/End=%u/%u speed/skid/slip=%u/%u/%u model=%.3f\n",provider_counts[4],provider_counts[5],provider_counts[6],provider_counts[7],provider_counts[8],level());
-    unsigned char model[sizeof S];memcpy(model,&S,sizeof S);
+    unsigned char model[sizeof feedback_states[0].model];memcpy(model,&feedback_states[0].model,sizeof feedback_states[0].model);
     for (unsigned i=9;i<17;++i) if (i==9 || i>=14) {
         Cpu c=initial();for(unsigned a=0;a<3;++a)M32(c.esp+4+4*a)=123;
-        dispatch(&c,M32(FEEDBACK_VTABLE+4*i));CHECK(!memcmp(model,&S,sizeof S));
+        dispatch(&c,M32(FEEDBACK_VTABLE+4*i));CHECK(!memcmp(model,&feedback_states[0].model,sizeof feedback_states[0].model));
     }
     reset();active_pad=0;tick(1);CHECK(wheel_calls==2);CHECK(provider_counts[4]==0);CHECK(sampler_calls==0);active_pad=1;
     reset();prompts_input(0);tick(1);CHECK(wheel_calls==3);CHECK(provider_counts[4]==0);CHECK(sampler_calls==0);CHECK(activity_forwards==1);
@@ -236,7 +237,7 @@ int main(int argc,char **argv) {
     reset();tick(1);Cpu gear=initial();M32(gear.esp+4)=1;dispatch(&gear,M32(FEEDBACK_VTABLE+0x34));CHECK(level()>0);
     reset();tick(1);collide();float hit=level();CHECK(hit>0);CHECK(provider_counts[17]==1);
     unsigned begins=provider_counts[4];M32(0xA631A8)=0;shift_state=3;nos_state=1;tick(1);
-    CHECK(!S.active && level()==0);CHECK(provider_counts[4]==begins && provider_counts[1]==1);
+    CHECK(!feedback_states[0].model.active && level()==0);CHECK(provider_counts[4]==begins && provider_counts[1]==1);
     CHECK(real_opens==0 && real_writes==0);
     printf("EDGES collision=%.3f shift=%.3f nos=%.3f real-opens=%u real-writes=%u\n",hit,shift,nos,real_opens,real_writes);
     printf("FEEDBACK %s checks=%u failures=%u\n",failures ? "FAIL" : "PASS",checks,failures);

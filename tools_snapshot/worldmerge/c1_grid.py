@@ -30,6 +30,7 @@ from region import collision_body, collision_cells, collision_tags, one
 ROOT = HERE.parents[1]
 ARTI, CI, RNSG = 0x41727469, 0x63690000, 0x524e7367
 PACK_LIMIT, SEGMENT_LIMIT = 2700, 12328
+GROUP_LIMIT = 4096
 
 
 @dataclass(frozen=True)
@@ -67,6 +68,16 @@ def grid_fields(descriptor):
     require(0 < rows <= 65535 and 0 < columns <= 65535 and rows*columns <= 65536,
             'grid address space exceeds u16')
     return origin, cell, rows, columns
+
+
+def highest_group(packs):
+    """Highest scenery-group number any instance of these packs carries."""
+    top = 0
+    for pack in packs:
+        tag = instance_tag(pack)
+        for p in range(16+tag[3], 16+tag[3]+(tag[1] >> 8), 64):
+            top = max(top, struct.unpack_from('<H', pack, p+24)[0])
+    return top
 
 
 def instance_tag(pack):
@@ -144,7 +155,7 @@ def allocate_ids(carbon, source, requested=None):
     return dict(sorted(mapping.items()))
 
 
-def move_pack(pack, key, shift):
+def move_pack(pack, key, shift, group_base=0):
     """Rebase world->local translation, retaining local extents and articles.
 
     Inverse basis vectors occupy +0/+32, middle is their cross product.
@@ -153,6 +164,9 @@ def move_pack(pack, key, shift):
     compares local query X/Z with +/- extents at +12/+44; 008127B0 uses the
     same center and local radius +60 (and +20 for tilted instances). Thus no
     bound field stores an absolute world position requiring another addition.
+    +24 is the u16 scenery-group number indexing a 4096-entry table; group_base
+    lifts every non-zero number above the target city's own numbers so the
+    source's groups are never switched on by the target's scenery.
     """
     out = bytearray(pack)
     struct.pack_into('<I', out, 4, key)
@@ -165,6 +179,10 @@ def move_pack(pack, key, shift):
         require(all(math.isfinite(v) and abs(v) < 3.4028235e38 for v in values),
                 'shifted instance translation not float32')
         struct.pack_into('<3f', out, p+48, *values)
+        group, = struct.unpack_from('<H', pack, p+24)
+        if group and group_base:
+            require(group+group_base < GROUP_LIMIT, 'shifted group number exceeds table')
+            struct.pack_into('<H', out, p+24, group+group_base)
     return bytes(out)
 
 
@@ -197,6 +215,7 @@ def merge(carbon_index, carbon_stream, mw_index, mw_stream, *, shift=(20480.0, 0
             'family-3 offset must follow native segment array')
     require(segment_offset + source.segments <= SEGMENT_LIMIT, 'combined segment array exceeds limit')
     mapping = allocate_ids(carbon.packs, source.packs, pack_ids)
+    group_base = highest_group(carbon.packs.values())
     # Expand on Carbon's lattice, enclosing both *full* source descriptors.
     ox = co[0] + min(0, math.floor((so[0]+shift[0]-co[0])/spacing))*spacing
     oz = co[2] + min(0, math.floor((so[2]+shift[1]-co[2])/spacing))*spacing
@@ -240,7 +259,7 @@ def merge(carbon_index, carbon_stream, mw_index, mw_stream, *, shift=(20480.0, 0
     tile = bytearray(make_tile(records))
     struct.pack_into('<I', tile, 4, tile_section)
     packs = tuple(carbon.packs[k] for k in sorted(carbon.packs)) + tuple(
-        move_pack(source.packs[k], mapping[k], shift) for k in sorted(source.packs))
+        move_pack(source.packs[k], mapping[k], shift, group_base) for k in sorted(source.packs))
     source_maxima = [max(len(bins[cid][1][k]) for cid in source_bins) for k in range(4)]
     report = dict(cell=spacing, origin=[ox, co[1], oz], rows=rows, columns=columns,
                   addressable=rows*columns, id_margin=65536-rows*columns,
@@ -248,7 +267,7 @@ def merge(carbon_index, carbon_stream, mw_index, mw_stream, *, shift=(20480.0, 0
                   rebinned_mw_cells=len(source_bins), occupied=len(records),
                   mw_family_maxima=source_maxima, tile_bytes=len(tile),
                   pack_ids_reassigned=sum(k != v for k, v in mapping.items()),
-                  physics_shift=list(shift), render_shift=[shift[1], -shift[0], 0.],
+                  physics_shift=list(shift), group_base=group_base, render_shift=[shift[1], -shift[0], 0.],
                   segment_offset=segment_offset, cell_section=cell_section, tile_section=tile_section,
                   opaque=['surfaces/scenery groups and scene activation', 'family-3 consumer inferred',
                           '365-column runtime rectangle acceptance and residency not tested'])

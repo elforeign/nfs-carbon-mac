@@ -432,15 +432,32 @@ def convert(source, destination, shift=SHIFT):
     return result, report
 
 
+def world_shift(out):
+    """Rockport's render (x, y) shift for an overlay written into a built world.
+
+    The world builder records Rockport's physics (X, 0, Z) translation in proof.json beside
+    GLOBAL; render x is physics Z and render y is -X (c1_world.RENDER_SHIFT). Without a proof
+    the overlay is not inside a built world and keeps SHIFT."""
+    proof = Path(out).parent.parent/'proof.json'
+    if not proof.is_file():
+        return None
+    x, y, z = json.loads(proof.read_text())['roads']['shift_physics_xyz']
+    require(y == 0 and all(math.isfinite(v) for v in (x, z)), 'combined world shift')
+    return (float(z), -float(x))
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--mw', type=Path, default=DEFAULT_MW.parent/'GLOBAL/GAMEPLAY.BIN')
     ap.add_argument('--carbon', type=Path, default=DEFAULT_CARBON.parent/'GLOBAL/gameplay.bin')
     ap.add_argument('--out', type=Path, required=True, help='overlay GLOBAL/GAMEPLAY.BIN')
-    ap.add_argument('--shift', default='%g,%g' % SHIFT, help="Rockport's render x,y offset in the pair")
+    ap.add_argument('--shift', help="Rockport's render x,y offset in the pair "
+                    "(default: the world's proof.json beside GLOBAL, else %g,%g)" % SHIFT)
     args = ap.parse_args()
-    shift = tuple(float(v) for v in args.shift.split(','))
+    world = world_shift(args.out)
+    shift = tuple(float(v) for v in args.shift.split(',')) if args.shift else world or SHIFT
     require(len(shift) == 2 and all(math.isfinite(v) for v in shift), 'shift is x,y')
+    require(world is None or shift == world, f'shift {shift} differs from the world proof {world}')
     require(args.carbon.name.lower() == 'gameplay.bin', 'destination must be the loaded gameplay.bin')
     require(args.out.resolve() not in (args.mw.resolve(), args.carbon.resolve()), 'output would replace an input')
     if not args.mw.is_file() or not args.carbon.is_file():

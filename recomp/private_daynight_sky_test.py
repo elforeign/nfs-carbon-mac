@@ -403,6 +403,7 @@ def fixtures(out, tokens):
     (out/'carbon_daynight_shader.h').write_bytes((HERE/'private_runtime/carbon_daynight_shader.h').read_bytes())
     (out/'carbon_worldreflect_shader.inc').write_bytes((HERE/'private_runtime/carbon_worldreflect_shader.inc').read_bytes())
     (out/'carbon_daynight_grade.h').write_bytes((HERE/'private_runtime/carbon_daynight_grade.h').read_bytes())
+    (out/'carbon_mw_grade.h').write_bytes((HERE/'private_runtime/carbon_mw_grade.h').read_bytes())
     shaders = ROOT/'host/shaders'
     assert hashlib.sha256(OLD_GRADIENT.encode()).hexdigest() == OLD_GRADIENT_SHA256
     for name, text in [('good', variant), ('no-lerp', variant.replace('0x04000012u, 0x80070800u, 0xa0ff000eu, 0x80e4000bu, 0x80e4000au', '0x02000001u, 0x80070800u, 0x80e4000bu, 0x00000000u, 0x00000000u')),

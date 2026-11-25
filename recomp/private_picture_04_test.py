@@ -7,6 +7,8 @@ second: 59 units (native carry boundary), close-menu catch-up zero. Sticky-hold 
 units and fails. Startup without an apply callback follows the loaded row;
 detached startup-value mutant exit=1. Good exit=0; three native mutants exit=1.
 AA diagnostic polls: disabled=0, enabled=1; removed-poll mutant exit=1.
+SMS sound restoration: old code/mutant leaves 34 (one sound call), fixed code
+restores 32 (two calls); genuine native-pause overlap retains its sound bit.
 Held LOOK_AB variants: zero ticks; missing-hold mutant 59 ticks, rejected.
 Translated originals and their constant bytes are pinned independently of
 the implementation registry. Native pause ownership, wraparound, x87 carry,
@@ -169,6 +171,19 @@ int main(void) {
     prepare(1.0f/60);CHECK(!postfx_look_variant("lamplightshift"));
     for(int i=0;i<60;i++){prepare(1.0f/60);advance(MF32(0xA99A5C));}
     printf("look_resume_ticks=%u\n",M32(0xA62EE8));CHECK(M32(0xA62EE8)==59);diag_on=0;
+    /* A native SMS already holds the simulation without PauseMenu sound. */
+    reset();M32(0x100024)=2;M32(0xA8AD18)=1;M32(0xA8BAE4)=32;sound_calls=0;
+    is_open=1;prepare(0.01f);CHECK(M32(0xA8BAE4)==34);
+    is_open=0;prepare(0.01f);
+    printf("sms_sound=%u expected=32 calls=%d\n",M32(0xA8BAE4),sound_calls);
+    CHECK(M32(0xA8BAE4)==32 && sound_calls==2);
+    CHECK(M32(0x100024)==2 && M32(0xA8AD18)==1);
+    /* Reopening over the same modal must not inherit stale ownership. */
+    is_open=1;prepare(0.01f);is_open=0;prepare(0.01f);
+    CHECK(M32(0xA8BAE4)==32 && sound_calls==4);
+    reset();M32(0x100024)=2;M32(0xA8BAE4)=34;sound_calls=0;
+    is_open=1;prepare(0.01f);is_open=0;prepare(0.01f);
+    CHECK(M32(0xA8BAE4)==34 && sound_calls==0);
     /* Native pause before F10; then F10 before native pause. */
     reset();M32(0xA8BAE4)=2;M32(0x100024)=2;sound_calls=0;
     is_open=1;prepare(0.01f);is_open=0;prepare(0.01f);
@@ -223,12 +238,13 @@ def main():
     present = (PRIVATE / 'game_picture_present.h').read_text()
     assert 'if (*carbon_frame_limit_choice || carbon_simrate_enabled()) carbon_picture_wait();' in present
     assert present.index('present();') < present.index('carbon_picture_wait();', present.index('present();'))
-    for variant in ('good', 'minimum-one', 'sticky-hold', 'startup-latch', 'aa-no-poll', 'no-look-hold'):
+    for variant in ('good', 'minimum-one', 'sticky-hold', 'startup-latch', 'aa-no-poll', 'no-look-hold', 'prepaused-sound-leak'):
         with tempfile.TemporaryDirectory(prefix='picture04-') as td:
             tmp = Path(td)
             selected = source
             pacing = (PRIVATE / 'game_pacing_settings.h').read_text()
             selected_present = present
+            selected_hold = hold
             if variant == 'minimum-one':
                 selected = selected.replace('if (c->ecx == 0)', 'if (0)')
             elif variant == 'sticky-hold':
@@ -239,8 +255,11 @@ def main():
                 selected = selected.replace('held |= postfx_ab_hold();', '(void)0;')
             elif variant == 'aa-no-poll':
                 selected_present = selected_present.replace('    if (diag_on) (void)aa_game_get();', '')
+            elif variant == 'prepaused-sound-leak':
+                selected_hold = hold.replace(' && !native_paused_on_take', '')
+                assert selected_hold != hold, 'sound ownership mutant must change the guard'
             (tmp / 'clock.c').write_text(selected)
-            (tmp / 'hold.inc').write_text(hold)
+            (tmp / 'hold.inc').write_text(selected_hold)
             (tmp / 'present.inc').write_text(selected_present)
             (tmp / 'pacing.inc').write_text(pacing)
             (tmp / 'fixture.c').write_text(harness)
@@ -253,7 +272,9 @@ def main():
                 assert result.returncode == 0, result.stderr[-4000:]
             else:
                 assert result.returncode == 1 and 'CLOCK CHECK' in result.stderr, result.stderr[-4000:]
-    print('PRIVATE PICTURE 04 PASS native clock/hold/cap and diagnostic poll; five mutants rejected')
+                if variant == 'prepaused-sound-leak':
+                    assert 'sms_sound=34 expected=32 calls=1' in result.stdout, result.stdout
+    print('PRIVATE PICTURE 04 PASS native clock/hold/cap and diagnostic poll; six mutants rejected')
     return 0
 
 

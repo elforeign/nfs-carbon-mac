@@ -3,8 +3,12 @@
 #include "settings.h"
 #include <strings.h>
 #include <stdlib.h>
+#include <stdatomic.h>
 
 
+/* Resolved by ordinary controller/prompt paths, never by recorder sampling. */
+static _Atomic int observed_layout;
+int carbon_pad_layout_observed(void) { return atomic_load_explicit(&observed_layout,memory_order_relaxed); }
 static const char *const tokens[] = {"playstation", "xbox", "pc"};
 static const char *const names[] = {"PlayStation", "Xbox", "PC"};
 int carbon_pad_layout_parse(const char *token) {
@@ -26,6 +30,7 @@ CarbonPadLayoutChoice carbon_pad_layout_resolve(unsigned pad) {
     int value = carbon_pad_layout_parse(env), preference = carbon_pad_layout_parse(saved);
     if (preference >= 0) { choice.layout = preference; choice.origin = CARBON_LAYOUT_APP; }
     if (value >= 0) { choice.layout = value; choice.origin = CARBON_LAYOUT_ENV; }
+    if (!pad) atomic_store_explicit(&observed_layout,choice.layout+1,memory_order_relaxed);
     Setting *row = settings_find("controls.pad_layout");
     if (!pad && row) row->value = choice.layout;
     if (diag_on) {

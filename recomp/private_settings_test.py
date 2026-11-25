@@ -166,6 +166,7 @@ int user32_fullscreen(void) { return fullscreen; }
 void user32_toggle_fullscreen(void) { fullscreen=!fullscreen; }
 void user32_fullscreen_mode_changed(void) { ++mode_changes; }
 void user32_notch_fill_changed(void) { ++notch_changes; }
+int user32_notch_fill(void) { return 0; }
 void app_quit_game(int v) { (void)v; ++quits; }
 void portmenu_open_folder(const char *p) { opened=p; }
 const char *log_dir(void) { return "log-fixture"; }

@@ -25,10 +25,20 @@ Update**, or run `xcode-select --install`, then build again. The macOS SDK must 
 disc images or copied disc folders together and select the official update for your disc edition and a compatible `NFSC.exe`.
 
 **"NFSC.exe is not the supported PC release of Need for Speed Carbon"** — the port is a translation of one release of
-the PC game. Other releases contain different code and would not work. Setup changed nothing.
+the PC game, the compatible version 1.4 `NFSC.exe`. Other releases contain different code and would not work. The
+message shows the version your file states. The executable on the Carbon disc is copy-protected and can't be used.
+Setup changed nothing.
 
-**"There is not enough free disk space"** — free some space on the volumes you chose for the app and for Setup's
-work folder, then build again.
+**"This disc isn't a supported Carbon PC disc edition"** or **"Setup can't read this .mdf"** — Setup reads one Carbon
+PC disc edition, as an `.iso`, an ISO-compatible `.mdf` or the disc's files. Raw-sector `.mdf`/`.bin` images can't be
+read. Choose your installed Carbon folder (updated to 1.4) instead. If you report it, include the disc id the message shows.
+
+**"macOS did not allow Setup to read ..."** — macOS protects Desktop, Documents, Downloads and external drives. Open
+**System Settings > Privacy & Security > Files and Folders** and allow Setup (or Terminal, if you run `setup.sh`); for an
+external drive, allow **Removable Volumes**. Or move the game folder somewhere else, then try again.
+
+**"Not enough space on ...: N GB more needed"** or **"There is not enough free disk space ..."** — free that much space
+on the volume the message names (the Review page shows how much each volume needs), then press **Retry**.
 
 **"Another Setup is using this work or cache folder"** — wait for the other Setup to finish, or quit it.
 

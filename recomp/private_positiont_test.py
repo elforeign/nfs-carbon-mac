@@ -28,7 +28,7 @@ def main():
 #include <math.h>
 #include <stdlib.h>
 Device dev;uint8_t *G;static Obj declaration;
-int carbon_fe_scope;float carbon_fe_kx(void){return 1;}
+int carbon_fe_scope;float carbon_fe_kx(void){return 1;}float carbon_fe_ky(void){return 1;}
 Obj *obj(uint32_t g){return g==0x3000?&declaration:NULL;}
 typedef struct {uint8_t stream,type,usage,index;uint16_t offset;} Elem;
 '''+ 'static int decl_elems(Elem*out)'+body(render,'decl_elems')+'\n'+ff+r'''

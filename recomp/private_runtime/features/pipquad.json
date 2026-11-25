@@ -14,7 +14,7 @@
       "required_providers": [],
       "guest_accesses": {},
       "guest_layouts": {
-        "quad": "00750B30 cdecl: [esp+4] out, four vertices of 0x18 bytes, x first, in clip units (-1..1); [esp] return address 00750DFF for the crew picture (00750D40), 00750D0B for the mirror (00750C30). Only the four x values of the crew picture's quad are rewritten, after the native builder."
+        "quad": "00750B30 cdecl: [esp+4] out, four vertices of 0x18 bytes, x first, in clip units (-1..1); [esp] return address 00750DFF for the crew picture (00750D40), 00750D0B for the mirror (00750C30). Only the four x values of the crew picture's quad are rewritten, after the native builder. When the notch HUD fits vertically, the four y values follow its centered scale too."
       }
     }
   },
@@ -24,7 +24,7 @@
   "bindings": {
     "carbon_pipquad.c": {
       "source": "carbon_pipquad.c",
-      "sha256": "0b2032635a02b585f4295e0abafddb11b1fc7e81df2bb99aa64872044443d39f",
+      "sha256": "5459dcc2159050d93dc358035a6b94416ac12a100a3631b17ab9b861695f105c",
       "functions": {}
     }
   },

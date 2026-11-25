@@ -40,6 +40,7 @@ static int fixture_clock(clockid_t id, struct timespec *t) {
 #include "blackbox.c"
 #undef clock_gettime
 void carbon_blackbox_fe(uint64_t f, uint32_t flow, uint64_t now) { (void)f; (void)flow; (void)now; }
+void blackbox_input(uint64_t f, uint64_t now) { (void)f; (void)now; }
 #ifndef BENCH
 static unsigned guest_reads, clock_reads;
 static uint32_t cin_read32(uint32_t a) {

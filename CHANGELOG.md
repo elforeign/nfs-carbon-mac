@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.4.0
+
+- **Pause when the controller drops:** if your controller disconnects during a race, or the Mac sleeps and wakes, the race pauses in the F10 menu.
+- **Low DualSense battery:** at 10 % or less, the F10 menu shows a line about it and a race starts with a short note.
+- **Signed updates:** from this version on, Update now accepts only updates signed for this project.
+- **Fixed:** Fill notch area also fills the screen in races; changing car reflection, paint or contact shadow options during a race no longer freezes the game for up to a second; the mouse pointer hides while you use a controller; problem reports also hide your Mac's name and user name; Setup says exactly which `NFSC.exe` it accepts.
+- **Going back to an older version:** run that version's Setup again.
+
 ## 1.3.0
 
 - **Fill notch area:** new F10 > Display option, off by default, for borderless full screen beside the camera notch (applies at the next start).

@@ -129,6 +129,7 @@ def main():
     code += 'static void shader_submit(ShaderEntry *e)' + body(source, 'shader_submit')
     code += 'static void cache_path' + span('static void cache_path', '// Lookup cache in front')
     code += 'typedef struct { uint32_t serial, variant;' + span('typedef struct { uint32_t serial, variant;', '// The game\'s fx_2_0 resources')
+    code += 'static void shader_preload_finish(Obj *s, const SmOptions *opt, uint32_t variant)' + body(source, 'shader_preload_finish')
     code += 'static void shader_preload_variant(Obj *s, const SmOptions *opt, uint32_t variant)' + body(source, 'shader_preload_variant')
     code += 'static void shader_preload_blob(const uint32_t *words, uint32_t count, const char *name)' + body(source, 'shader_preload_blob')
     code += MAIN

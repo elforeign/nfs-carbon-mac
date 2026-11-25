@@ -18,7 +18,7 @@
         "clock": "A98284 race status +6A14 active race, +6A18 mode (3 Career), +6A1C event identity; B4CFE0 simulation +24 state 4 paused. Clock settings are environment-only.",
         "facade": "0071ECB0 receives draw at stack+10, draw+1C material. Material+30 word 00050019 selects source effect 5; native loader resolves low ushort 25. Device slots 94/109 upload reserved VS c243 and PS c31 before CommitChanges. Live Neutral ambient RGB times the record W and brightness=2; c243.w / c31.x carry the day weight (1 - clock night; 0 with the clock absent, unready or outside flow 6), blending over the native colour. Material+30 word 00060000 marks source trees on native effect 0: unless NFS_DAYNIGHT_TREES=0/off, VS c250/c251 carry the source tree terms around that draw only (c251.w wrap > 0) and are zeroed after it.",
         "reflect": "Material+30 word 00010001 selects source reflective transport on native effect 1. Draw+0C/+14 retain normal/specular texture handles from material+19/+1B; device slots 65/69 bind reserved s5/s6. VS c248 light, PS c21..25 live world Neutral terms, c31.y day weight (1 - clock night; 0 with the clock absent, unready or outside flow 6) blending over the native output. Native effect 1 resets the weight; fog and native beams remain. Native weather is active view AB08F4+4, B4AF7C+view*80 pointer, +28C rain scalar, as read by 00748B50; A650E0 is pass brightness. VS c247.w selects the road position transform from this exact material tag on every effect-1 draw, independently of clock/day weight; native draws reset it.",
-        "grade": "0071D4E0(this, technique, effect) is called only by the final treatment 00726AF0, just before its full-screen draw; B42FE8 is the visual-treatment effect. Unless NFS_DAYNIGHT_GRADE=0/off the visualtreatment (3879B8C8D72DF0CB) and visualtreatment_enchanced (5AD9EA49CAC6D49B) programs blend their 3D grade toward saturate(input) by PS c31.z, uploaded after 0071D4E0: the day weight inside converted Rockport (overlay, A73358 sky enabled, camera visibility row contains reserved section 2100 and native primary dome B77918 = ED85BA82), else 0. Neutral D65 uses weight 1 in every view and preserves float highlights above code value 1. Grade proof is independent of presenter transfer: both cities/programs retain reference grey and computed Neutral noon; shared sRGB transport is checked separately, without establishing float composition parity.",
+        "grade": "0071D4E0(this, technique, effect) is called only by the final treatment 00726AF0, just before its full-screen draw; B42FE8 is the visual-treatment effect. Unless NFS_DAYNIGHT_GRADE=0/off the visualtreatment (3879B8C8D72DF0CB) and visualtreatment_enchanced (5AD9EA49CAC6D49B) programs blend their 3D grade toward saturate(input) by PS c31.z, uploaded after 0071D4E0: the day weight inside converted Rockport (overlay, A73358 sky enabled, camera visibility row contains reserved section 2100 and native primary dome B77918 = ED85BA82), else 0. Neutral D65 uses weight 1 in every view and preserves float highlights above code value 1. Grade proof is independent of presenter transfer: both cities/programs retain reference grey and computed Neutral noon; shared sRGB transport is checked separately, without establishing float composition parity. Optional NFS_DAYNIGHT_MW_GRADE=on with Retail MW uses source record 3, point/clamp s7 SPLINE R/G, c26..28 source constants, and r6..11 scratch. Native bloom RGB dot (.6125,.5154,.0721) adapts filtered luminance; native bloom alpha is not source filtered luminance. Ordinary bloom is added after the replacement grade. Enhanced replaces its desaturation block before bloom/fade/exposure. The existing Rockport daylight scope applies; Off preserves previous token bytes.",
         "view": "007AFB70 stack +4 view/+8 sky mode; view+40 camera, camera+40 render XYZ. 007A3290 this=B69CD0 returns row +10 u16 count/+12 u16 sections. Section 2100 marks imported scenery for the colour grade only; no sky model is rebound."
       }
     },
@@ -61,6 +61,16 @@
       "constructors": "forbidden",
       "generated_data": null,
       "required_providers": []
+    },
+    "carbon_mw_grade.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
     }
   },
   "staged_sources": {
@@ -68,12 +78,13 @@
     "carbon_daynight_shader.h": "carbon_daynight_shader.h",
     "carbon_daynight_sky.h": "carbon_daynight_sky.h",
     "carbon_worldreflect_shader.inc": "carbon_worldreflect_shader.inc",
-    "carbon_daynight_grade.h": "carbon_daynight_grade.h"
+    "carbon_daynight_grade.h": "carbon_daynight_grade.h",
+    "carbon_mw_grade.h": "carbon_mw_grade.h"
   },
   "bindings": {
     "carbon_daynight.c": {
       "source": "carbon_daynight.h",
-      "sha256": "885d6660438db2fbd34d5f3f2f5f4208c92a5e797ad081f8143f3cf6fe4208a6",
+      "sha256": "51668c735e72b4d00a6ea503bced7cc0e6b7dae8b129708a977a26ab26981ad0",
       "functions": {
         "carbon_dn_world_record": {
           "read": [
@@ -106,7 +117,7 @@
     },
     "carbon_daynight_grade.h": {
       "source": "carbon_daynight_grade.h",
-      "sha256": "c8492d5457ca54dab45da4a12214de6648c74875ce320de3fae0be350549edd6",
+      "sha256": "261509da984a3accd765f6ab48d0c2e882cfbaed65ca6e1be828bac5f6d404d6",
       "functions": {
         "carbon_dn_grade_weight": {
           "read": [
@@ -114,6 +125,11 @@
           ]
         }
       }
+    },
+    "carbon_mw_grade.h": {
+      "source": "carbon_mw_grade.h",
+      "sha256": "f0a59084885eeb5814f6ef126124f9b6eca4ba9f07e5bd7116c2ba4ca1ff0c75",
+      "functions": {}
     }
   },
   "enabled_providers": []

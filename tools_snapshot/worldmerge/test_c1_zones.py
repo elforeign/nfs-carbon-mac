@@ -168,8 +168,11 @@ class Private(unittest.TestCase):
         with patch.object(c, 'merge_districts', side_effect=AssertionError('reader used writer')), \
              patch.object(z, 'convert', side_effect=AssertionError('reader used converter')):
             report = c.reread_districts(result, self.carbon, self.source, shift, w.DEFAULT_CARBON)
-        self.assertEqual((report['zones'], report['markers'], report['barriers']), (453, 155, 1238))
+        # 461 = 453 + Rockport's 8 type-11 neighbourhoods (the banner's zone query 00761EF0 type 0xB);
+        # the old coast merge carried type 9 only: 453 zones, no type 11, no banner in Rockport.
+        self.assertEqual((report['zones'], report['markers'], report['barriers']), (461, 155, 1238))
         self.assertEqual((report['resolved_rockport_districts'], report['rockport_districts']), (11, 11))
+        self.assertEqual(report['rockport_neighbourhoods'], 8)
 
         table = z.read(result)
         native = z.read(z.select(self.carbon))
@@ -187,7 +190,14 @@ class Private(unittest.TestCase):
         broken = replace(table, zones=table.zones[:start] + control + table.zones[end:])
         with self.assertRaisesRegex(FormatError, 'Rockport traffic patterns resolve 0/11'):
             c.reread_districts(broken.encode(), self.carbon, self.source, shift, w.DEFAULT_CARBON)
-        print('ACCEPT coast districts resolve 11/11; original MW keys resolve 0/11')
+        names = [zone.key for zone in table.zones if zone.kind == 11]
+        self.assertEqual(names, [zone.key for zone in source.zones if zone.kind == 11])
+        self.assertTrue({0x4CA802EC, 0x2485871E, 0xCCBCE907, 0x9F3316E5, 0x9A43A1D1, 0x890E0C19,
+                         0xCAC1155C} <= set(names))
+        dropped = replace(table, zones=tuple(zone for zone in table.zones if zone.kind != 11))
+        with self.assertRaisesRegex(FormatError, 'type-11 suffix'):
+            c.reread_districts(dropped.encode(), self.carbon, self.source, shift, w.DEFAULT_CARBON)
+        print('ACCEPT coast districts resolve 11/11, neighbourhoods 8/8; original MW keys resolve 0/11')
 
 
 if __name__ == '__main__':

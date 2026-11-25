@@ -28,6 +28,7 @@ PRE = r'''
 uint8_t *G;
 const char *game_dir;
 int diag_on;
+void user32_hide_pointer(void) {}
 int carbon_addons_host_osk_pad(int p,uint32_t b,int u,int d,int l,int r,float x,float y,int c,int xb) { (void)p;(void)b;(void)u;(void)d;(void)l;(void)r;(void)x;(void)y;(void)c;(void)xb;return 0; }
 
 static unsigned heap=0x1000000, uploads;

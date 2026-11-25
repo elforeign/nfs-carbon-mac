@@ -181,7 +181,7 @@
     },
     "game_menu_support.c": {
       "source": "game_menu_support.c",
-      "sha256": "53e0ab954106e07fb5a87ceebf2ebed86c2b7918c734914b8c88cb39390befee",
+      "sha256": "f5cc2e4bafd897c255bd07d10c6a5db000769895ce658a558527b4c17f020c3e",
       "functions": {}
     },
     "game_menu_title.h": {
@@ -213,7 +213,6 @@
     "replay_controls_disconnect",
     "gpuclients_cached",
     "save_timing_enter",
-    "save_timing_leave",
-    "roam_online_active"
+    "save_timing_leave"
   ]
 }

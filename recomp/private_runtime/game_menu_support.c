@@ -1,9 +1,6 @@
 /* Host diagnostics needed by the shared window and preferences callbacks. */
 #include "host.h"
 #include "gpuclients.h"
-#include "roam_online.h"
-/* No native online session is installed for this image. */
-atomic_int roam_online_active;
 #include <errno.h>
 #include <math.h>
 #include <stdarg.h>

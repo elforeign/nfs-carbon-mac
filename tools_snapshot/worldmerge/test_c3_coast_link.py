@@ -1380,5 +1380,36 @@ class DriveThreeArchives(unittest.TestCase):
         print(f'COAST pack header chunks {len(sizes)} all 144 bytes; old 80-byte control 10 short', flush=True)
 
 
+class RoadSelectorTest(unittest.TestCase):
+    """The link's road segments go into the grid's road selectors (family 3) of the cells
+    under them, after the native ones. Control: the builder without them (the coast world
+    of 11-23 had 0 of its 21 chain segments listed, and a chasing cop stopped at the mouth)
+    lists 0 of 2 here, and road_index's rule reports both missing."""
+
+    def tile(self, segments):
+        import c1_grid as grid
+        import c3_link
+        from region import collision_cells, collision_tags
+        descriptor = struct.pack('<3f4xf4x2I4x', 0., 0., 0., 96., 4, 4)
+        native = grid.cell_record(bytes(4), 0, 2600, [[1 << 16], [], [], [7]])
+        tile = bytes(grid.make_tile([native]))
+        pack = SimpleNamespace(instances=b'', key=1)
+        out = c3_link.cells(tile, descriptor, pack, segments)
+        body = out[16:]
+        records = collision_cells(body, collision_tags(body, grid.ARTI)[grid.CGCN])
+        return {struct.unpack_from('<H', r, 4)[0]: [[v for v, in struct.iter_unpack('<I', f)]
+                                                   for f in grid.families(r)] for r in records}
+
+    def test_chain_segments_listed_under_their_cells(self):
+        chain = [(100, (10., 0., 10.), (50., 0., 10.)), (101, (50., 0., 10.), (150., 0., 10.))]
+        cells = self.tile(chain)
+        self.assertEqual(cells[0], [[1 << 16], [], [], [7, 100, 101]])
+        self.assertEqual(cells[1][3], [101])
+        old = self.tile(())
+        listed = {v for refs in old.values() for v in refs[3]}
+        self.assertEqual([s for s, _, _ in chain if s not in listed], [100, 101])
+        print('COAST road selectors: chain listed 2/2; old builder 0/2', flush=True)
+
+
 if __name__ == '__main__':
     unittest.main()

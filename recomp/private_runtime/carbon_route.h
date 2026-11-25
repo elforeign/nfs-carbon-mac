@@ -40,6 +40,34 @@ static uint32_t carbon_route_call(Cpu *c, uint32_t self, uint32_t fn,
     return call_guest(c, fn, count, args);
 }
 
+/* "gps": engage the native GPS (00433AB0, what script NavigatePlayerTo
+ * 0064B8C0 calls) from the player to the probe's Rockport node 5691, then log
+ * its state. GPS object A83E3C: +40 goal, +6C state (2 = route found,
+ * 00433A8C), road navigator at +70 (count +374, list +378). */
+static unsigned carbon_route_frames, carbon_route_engaged;
+
+static void carbon_route_gps(Cpu *live) {
+    uint32_t gps = M32(0x00A83E3Cu), nodes = M32(0x00B77EC8u);
+    ++carbon_route_frames;
+    if (!gps || !nodes || M32(0x00B77E84u) <= 5790) return;
+    if (!carbon_route_engaged && carbon_route_frames % 60 == 0) {
+        Cpu query = *live;
+        uint32_t goal = gmalloc(16);
+        memcpy((void *)gptr(goal), gptr(nodes + 32 * 5691), 12);
+        uint32_t args[] = {goal, 0x43160000u, 1};
+        unsigned ok = call_guest(&query, 0x00433AB0u, 3, args) & 255;
+        gfree(goal);
+        carbon_route_engaged = ok;
+        diag_event("carbon_route: gps engage=%u try=%u state=%u count=%u goal=%.1f,%.1f,%.1f",
+                   ok, carbon_route_frames / 60, M32(gps + 0x6C), M32(gps + 0x374),
+                   (double)MF32(gps + 0x40), (double)MF32(gps + 0x44), (double)MF32(gps + 0x48));
+    }
+    if (carbon_route_engaged && carbon_route_frames % 600 == 0)
+        diag_event("carbon_route: gps state=%u count=%u at=%.1f,%.1f,%.1f",
+                   M32(gps + 0x6C), M32(gps + 0x374),
+                   (double)MF32(gps + 0x50), (double)MF32(gps + 0x54), (double)MF32(gps + 0x58));
+}
+
 static uint64_t carbon_route_flags(uint32_t segments, unsigned count,
                                    unsigned char *saved, int action) {
     uint64_t hash = UINT64_C(14695981039346656037);
@@ -162,8 +190,10 @@ static void carbon_route_probe(Cpu *live) {
 
 static int carbon_route_present(Cpu *c) {
     dispatch(c, carbon_route_present_target);
-    if (!carbon_route_done && M32(0x00A99BBCu) == 6 &&
-        M32(0x00B77EFCu) && M32(0x00B77EC8u) && M32(0x00B77ECCu)) {
+    const char *probe = getenv("NFS_CARBON_ROUTE_PROBE");
+    int in_game = M32(0x00A99BBCu) == 6 && M32(0x00B77EFCu) && M32(0x00B77EC8u) && M32(0x00B77ECCu);
+    if (in_game && probe && !strcmp(probe, "gps")) carbon_route_gps(c);
+    else if (!carbon_route_done && in_game) {
         carbon_route_done = 1;
         carbon_route_probe(c);
     }
@@ -185,7 +215,7 @@ void carbon_route_construct(Cpu *c, void (*original)(Cpu *)) {
         }
     }
     const char *probe = getenv("NFS_CARBON_ROUTE_PROBE");
-    if (!diag_on || !probe || strcmp(probe, "1")) return;
+    if (!diag_on || !probe || (strcmp(probe, "1") && strcmp(probe, "gps"))) return;
     uint32_t device = M32(0x00AB0ABCu), vt = device ? M32(device) : 0;
     if (vt && (!carbon_route_present_callback || M32(vt + 0x44) == carbon_route_present_target)) {
         carbon_route_present_target = M32(vt + 0x44);

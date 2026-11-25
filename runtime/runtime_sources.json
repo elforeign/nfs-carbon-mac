@@ -709,6 +709,18 @@
       "generated_data": null,
       "required_providers": []
     },
+    "d3d9_constant_state.h": {
+      "class": "shared",
+      "kind": "include",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
     "d3d9_internal.h": {
       "class": "mixed",
       "kind": "include",
@@ -1521,36 +1533,6 @@
       "generated_data": null,
       "required_providers": []
     },
-    "natmap.c": {
-      "class": "mw",
-      "kind": "unit",
-      "targets": [
-        "mw-private",
-        "mw-public"
-      ],
-      "constructors": "forbidden",
-      "generated_data": null,
-      "required_providers": []
-    },
-    "natmap.h": {
-      "class": "mw",
-      "kind": "include",
-      "targets": [],
-      "constructors": "forbidden",
-      "generated_data": null,
-      "required_providers": []
-    },
-    "natpmp.c": {
-      "class": "mw",
-      "kind": "unit",
-      "targets": [
-        "mw-private",
-        "mw-public"
-      ],
-      "constructors": "forbidden",
-      "generated_data": null,
-      "required_providers": []
-    },
     "offline_stubs.c": {
       "class": "mw",
       "kind": "unit",
@@ -1705,17 +1687,6 @@
       "class": "mw",
       "kind": "include",
       "targets": [],
-      "constructors": "forbidden",
-      "generated_data": null,
-      "required_providers": []
-    },
-    "pcp.c": {
-      "class": "mw",
-      "kind": "unit",
-      "targets": [
-        "mw-private",
-        "mw-public"
-      ],
       "constructors": "forbidden",
       "generated_data": null,
       "required_providers": []
@@ -1957,6 +1928,14 @@
       "required_providers": [],
       "role": "auxiliary; not linked by either game runtime"
     },
+    "pub_update_keys.h": {
+      "class": "shared",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
     "pub_update_launch.m": {
       "class": "shared",
       "kind": "unit",
@@ -1965,6 +1944,14 @@
         "mw-public",
         "private"
       ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "pub_update_manifest.h": {
+      "class": "shared",
+      "kind": "include",
+      "targets": [],
       "constructors": "forbidden",
       "generated_data": null,
       "required_providers": []
@@ -2097,6 +2084,30 @@
     "render_target.m": {
       "class": "mixed",
       "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "rt_scene.m": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "rt_scene.h": {
+      "class": "mixed",
+      "kind": "include",
       "targets": [
         "mw-private",
         "mw-public",
@@ -2274,185 +2285,6 @@
         "mw-private",
         "mw-public"
       ],
-      "constructors": "forbidden",
-      "generated_data": null,
-      "required_providers": []
-    },
-    "roam_admission.h": {
-      "class": "mw",
-      "kind": "include",
-      "targets": [],
-      "constructors": "forbidden",
-      "generated_data": null,
-      "required_providers": []
-    },
-    "roam_auth.c": {
-      "class": "mw",
-      "kind": "unit",
-      "targets": [
-        "mw-private",
-        "mw-public"
-      ],
-      "constructors": "forbidden",
-      "generated_data": null,
-      "required_providers": []
-    },
-    "roam_auth.h": {
-      "class": "mw",
-      "kind": "include",
-      "targets": [],
-      "constructors": "forbidden",
-      "generated_data": null,
-      "required_providers": []
-    },
-    "roam_code.c": {
-      "class": "mw",
-      "kind": "unit",
-      "targets": [
-        "mw-private",
-        "mw-public"
-      ],
-      "constructors": "forbidden",
-      "generated_data": null,
-      "required_providers": []
-    },
-    "roam_core.c": {
-      "class": "mw",
-      "kind": "unit",
-      "targets": [
-        "mw-private",
-        "mw-public"
-      ],
-      "constructors": "forbidden",
-      "generated_data": null,
-      "required_providers": []
-    },
-    "roam_core.h": {
-      "class": "mw",
-      "kind": "include",
-      "targets": [],
-      "constructors": "forbidden",
-      "generated_data": null,
-      "required_providers": []
-    },
-    "roam_game.c": {
-      "class": "mw",
-      "kind": "unit",
-      "targets": [
-        "mw-private",
-        "mw-public"
-      ],
-      "constructors": "forbidden",
-      "generated_data": null,
-      "required_providers": []
-    },
-    "roam_hud.c": {
-      "class": "mw",
-      "kind": "unit",
-      "targets": [
-        "mw-private",
-        "mw-public"
-      ],
-      "constructors": "forbidden",
-      "generated_data": null,
-      "required_providers": []
-    },
-    "roam_load.c": {
-      "class": "mw",
-      "kind": "unit",
-      "targets": [],
-      "constructors": "forbidden",
-      "generated_data": null,
-      "required_providers": [],
-      "role": "auxiliary; not linked by either game runtime"
-    },
-    "roam_loopback_fixture.c": {
-      "class": "mw",
-      "kind": "unit",
-      "targets": [],
-      "constructors": "forbidden",
-      "generated_data": null,
-      "required_providers": [],
-      "role": "auxiliary; not linked by either game runtime"
-    },
-    "roam_moderation.c": {
-      "class": "mw",
-      "kind": "unit",
-      "targets": [
-        "mw-private",
-        "mw-public"
-      ],
-      "constructors": "forbidden",
-      "generated_data": null,
-      "required_providers": []
-    },
-    "roam_moderation.h": {
-      "class": "mw",
-      "kind": "include",
-      "targets": [],
-      "constructors": "forbidden",
-      "generated_data": null,
-      "required_providers": []
-    },
-    "roam_online.c": {
-      "class": "mw",
-      "kind": "unit",
-      "targets": [
-        "mw-private",
-        "mw-public"
-      ],
-      "constructors": "forbidden",
-      "generated_data": null,
-      "required_providers": []
-    },
-    "roam_online.h": {
-      "class": "shared",
-      "kind": "include",
-      "targets": [
-        "mw-private",
-        "mw-public",
-        "private"
-      ],
-      "constructors": "forbidden",
-      "generated_data": null,
-      "required_providers": [],
-      "review": "Included host helpers: no guest access in compiler-expanded target; provider closure audited."
-    },
-    "roam_relay.c": {
-      "class": "mw",
-      "kind": "unit",
-      "targets": [
-        "mw-private",
-        "mw-public"
-      ],
-      "constructors": "forbidden",
-      "generated_data": null,
-      "required_providers": []
-    },
-    "roam_relay_main.c": {
-      "class": "mw",
-      "kind": "unit",
-      "targets": [],
-      "constructors": "forbidden",
-      "generated_data": null,
-      "required_providers": [],
-      "role": "auxiliary; not linked by either game runtime"
-    },
-    "roam_server.c": {
-      "class": "mw",
-      "kind": "unit",
-      "targets": [
-        "mw-private",
-        "mw-public"
-      ],
-      "constructors": "forbidden",
-      "generated_data": null,
-      "required_providers": []
-    },
-    "roam_shared_endpoint.h": {
-      "class": "mw",
-      "kind": "include",
-      "targets": [],
       "constructors": "forbidden",
       "generated_data": null,
       "required_providers": []
@@ -3076,17 +2908,6 @@
       "generated_data": null,
       "required_providers": []
     },
-    "upnp.c": {
-      "class": "mw",
-      "kind": "unit",
-      "targets": [
-        "mw-private",
-        "mw-public"
-      ],
-      "constructors": "forbidden",
-      "generated_data": null,
-      "required_providers": []
-    },
     "user32.m": {
       "class": "mixed",
       "kind": "unit",
@@ -3470,7 +3291,39 @@
       "generated_data": null,
       "required_providers": []
     },
+    "blackbox_input.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
     "blackbox_render.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "blackbox_errors.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "mw-private",
+        "mw-public",
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
+    "blackbox_errors.h": {
       "class": "mixed",
       "kind": "include",
       "targets": [],
@@ -3566,6 +3419,7 @@
         "render_present.m",
         "render_post.m",
         "render_thread.m",
+        "rt_scene.m",
         "gpupass.m",
         "dsound.c",
         "audio_limiter.c",
@@ -3588,7 +3442,9 @@
         "report_github.m",
         "report_submit.m",
         "blackbox.c",
-        "blackbox_render.m"
+        "blackbox_errors.c",
+        "blackbox_render.m",
+        "blackbox_input.c"
       ],
       "extra_units": [
         "guide.m",

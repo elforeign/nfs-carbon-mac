@@ -225,7 +225,7 @@ def c3_tests():
 # Default shift, zones off. These are the converter's independently verified pins.
 GENERATED_PAIR = {
     'L5RA.BUN': 'cc154fc5746163678b855231301857105de67c50644527171228973172fa3b7e',
-    'STREAML5RA.BUN': '0ccd820a2d83a1a6c95b3393f26d59cd030644e244cf06c2c7e0f419de9148b7',
+    'STREAML5RA.BUN': 'd557254bd412fd8033c717cde955d54f823f9330894e10e01f59e4f38bb57bcd',
 }
 
 

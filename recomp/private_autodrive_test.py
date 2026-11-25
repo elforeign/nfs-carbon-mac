@@ -5,7 +5,10 @@ Broken wrong-player and omitted-call variants: player0=0 versus required 1;
 both exit 1, good exits 0. Pursuit Results (FePostStages.fng) is dismissed like race results:
 returns 3 versus 2 without it (no-poststages variant, exit 1). Native control flag prevents repeated handovers.
 Busted: returns 4 versus 3 without its name (no-busted variant, exit 1);
-no key before 1.5 seconds and exactly one key per controlling appearance.
+no key before 1.5 seconds; at most four attempts, spaced 1.5 seconds apart.
+Ignored-first fixture: old code exits 1 (false departure); fixed code sends two
+Returns, records one actual departure and then one resumed sample.
+No-retry, premature-success and unbounded mutants each exit 1.
 C3 ramp mock: target=45, full throttle/no brake, steer along the deck line
 (dead zone added); Old-cap target=36 and omitted aim mutants exit 1.
 Tick log repeats=0, new cumulative tick=1 with dispatch counter fixed at1;
@@ -58,7 +61,7 @@ HARNESS = r'''
 uint8_t *G;
 int diag_on = 1;
 static HostFn present_callback;
-static unsigned registrations, handovers[2], returns, samples, census_samples;
+static unsigned registrations, handovers[2], returns, samples, census_samples, departures;
 static uint64_t now = 1000000000ull;
 static char line[1024];
 static int hold_results;
@@ -67,6 +70,7 @@ static unsigned c3ticks;
 uint64_t host_ticks(void) {return now;}
 void diag_event(const char *format,...) {
  va_list ap;va_start(ap,format);vsnprintf(line,sizeof line,format,ap);va_end(ap);
+ if(strstr(line,"autodrive: dismissed"))++departures;
  if(strstr(line,"speed="))++samples;
  if(strstr(line,"c3tick:"))++c3ticks;
  if(strstr(line,"census:"))++census_samples;
@@ -231,6 +235,27 @@ static void log_only(void) {
  printf("C3 LOG-ONLY PASS controls=untouched pad=0 trace=1\n");
  setenv("BOOT_PAD","sim",1);setenv("BOOT_AUTODRIVE","1",1);
 }
+/* First Return is deliberately ignored; only the second lets the native
+ * modal relinquish control. A third case never accepts any input. */
+static void popup_retry(void) {
+ M32(0x13020)=0;frame();
+ strcpy(gptr(0x14000),"FeSmsMessage.fng");M32(0x13020)=1;M32(0xB024)=4;
+ unsigned before=returns, left=departures, sampled=samples;
+ frame();now+=1500000000ull;frame();CHECK(returns==before+1);
+ CHECK(departures==left);CHECK(samples==sampled);
+ now+=1499999999ull;frame();CHECK(returns==before+1);
+ now+=1;frame();CHECK(returns==before+2);CHECK(departures==left);
+ /* Model the accepted Return's native screen departure and resume separately. */
+ M32(0x13020)=0;frame();CHECK(departures==left+1);CHECK(samples==sampled);
+ M32(0xB024)=3;MF32(0xB4CFD8)+=.016666667f;M32(0xB4CFD4)++;
+ MF32(0xF010)+=1;now+=1000000000ull;frame();CHECK(samples==sampled+1);
+ CHECK(M32(0xB4CFD4)>0&&MF32(0xB4CFD8)>0);
+ M32(0x13020)=1;M32(0xB024)=4;frame();before=returns;left=departures;
+ for(unsigned i=0;i<10;++i){now+=1500000000ull;frame();}
+ CHECK(returns==before+4&&departures==left);
+ M32(0x13020)=0;frame();M32(0xB024)=3;
+ printf("POPUP RETRY PASS ignored_first=1 attempts=2 departure=1 resumed_samples=1 bounded=4\n");
+}
 int main(void) {
  setenv("NFS_CARBON_CENSUS","1",1);
  setup();unsetenv("BOOT_AUTODRIVE");Cpu c=cpu();carbon_autodrive_construct(&c,original);
@@ -254,17 +279,18 @@ int main(void) {
  CHECK(strstr(line,"lap=3 racers=8"));
  M32(0xA97A78)=0x11000;M32(0x11000)=0x12000;M32(0x120E4)=0x13000;
  M32(0x13020)=1;M32(0x1300C)=0x14000;strcpy(gptr(0x14000),"FePostRaceResults.fng");
- M32(0xB024)=2;frame();now+=1500000000;frame();CHECK(returns==1);now+=2000000000;frame();CHECK(returns==1);
+ M32(0xB024)=2;frame();now+=1500000000;frame();CHECK(returns==1);frame();CHECK(returns==1);
  M32(0x13020)=0;frame();M32(0x13020)=1;frame();now+=1500000000;frame();CHECK(returns==2);
  strcpy(gptr(0x14000),"MainMenu.fng");now+=2000000000;frame();CHECK(returns==2);
  M32(0x13020)=0;frame();M32(0x13020)=1;strcpy(gptr(0x14000),"FePostStages.fng");frame();now+=1500000000;frame();CHECK(returns==3);
  M32(0x13020)=0;frame();M32(0x13020)=1;strcpy(gptr(0x14000),"FeBusted.fng");frame();CHECK(returns==3);
  now+=1499999999;frame();CHECK(returns==3);now+=1;frame();CHECK(returns==4);
- now+=2000000000;frame();CHECK(returns==4);
+ frame();CHECK(returns==4);
  M32(0x13020)=0;frame();hold_results=1;M32(0x13020)=1;
  strcpy(gptr(0x14000),"FePostRaceResults.fng");frame();now+=2000000000;frame();CHECK(returns==4);
  hold_results=0;frame();CHECK(returns==5);
  printf("PRIVATE AUTODRIVE PASS handovers=%u/%u unset=0 paused=0 NIS=0 distance=%.0f samples=%u returns=%u\n",handovers[0],handovers[1],carbon_autodrive_distance,samples,returns);
+ popup_retry();
  CHECK(carbon_c3drive_direction()==0);
  CHECK(carbon_c3drive_steer(2,10,0,1)>0);
  CHECK(carbon_c3drive_steer(-2,10,0,1)<0);
@@ -408,6 +434,9 @@ def main():
         (tmp / 'carbon_c3drive.h').write_text(follower)
         variants = {
             'good': source,
+            'no-retry': source.replace('attempts >= 4', 'attempts >= 1'),
+            'unbounded': source.replace('attempts >= 4', 'attempts >= 100'),
+            'premature-success': source.replace('++attempts;', '++attempts; if (diag_on) diag_event("autodrive: dismissed %s", text);'),
             'wrong-player': source.replace('uint32_t args[] = {0};', 'uint32_t args[] = {1};'),
             'no-busted': source.replace(' || !strcmp(text, "FeBusted.fng")', ''),
             'no-poststages': source.replace(' || !strcmp(text, "FePostStages.fng")', ''),

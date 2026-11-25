@@ -36,7 +36,9 @@ static void carbon_first_mode(Cpu *c) {
         carbon_startup_mode = 0;
         for (unsigned i = 0; i < 6; ++i) {
             uint32_t w = carbon_modes[i][0], h = carbon_modes[i][1];
-            if (w > 3840 || h > 2160 || w > (uint32_t)dw || h > (uint32_t)dh) continue;
+            int notch_native = user32_notch_fill() && w == (uint32_t)dw && h == (uint32_t)dh &&
+                               (uint64_t)w * h <= 3840u * 2160u;
+            if (w > 3840 || (h > 2160 && !notch_native) || w > (uint32_t)dw || h > (uint32_t)dh) continue;
             if (w*h > area) { area = w*h; carbon_startup_mode = i; }
         }
         void boot_reg_set_dword(const char *, uint32_t);

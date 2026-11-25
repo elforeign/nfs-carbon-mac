@@ -19,6 +19,8 @@ static int carbon_dn_grade_on(void) {
     return enabled;
 }
 
+#include "carbon_mw_grade.h"
+
 /* The ordinary visual treatment samples its colour LUT after bloom, then applies vignette and exposure.
  * The enhanced visual treatment blends its two colour LUTs, then applies
  * desaturation, fade and exposure. After the grade, insert
@@ -37,6 +39,7 @@ static uint32_t *carbon_dn_grade_variant(const uint32_t *tokens, uint32_t count,
         case 0x5ad9ea49cac6d49bull: pattern = blend; length = 5; grade = 5; temp = 6; break;
         default: return NULL;
     }
+    if (carbon_mw_grade_on()) return carbon_mw_grade_variant(tokens,count,patched_count,grade==5);
     if (count < 2 || tokens[0] != 0xffff0200u || tokens[count-1] != 0xffffu) return NULL;
     uint32_t insert = 0, matches = 0;
     for (uint32_t i = 1; i + length < count; ++i)
@@ -77,6 +80,7 @@ void carbon_daynight_grade_draw(Cpu *c, void (*original)(Cpu *)) {
     uint32_t device = M32(0x00AB0ABCu), vt = device ? M32(device) : 0;
     if (!vt) return;
     float weight[4] = {0,0,carbon_dn_grade_weight(),0};
+    if (carbon_mw_grade_on() && !carbon_mw_grade_bind(c,device,vt)) weight[2]=0;
     if (diag_on) {
         static unsigned long long day, zero;
         static uint64_t last;

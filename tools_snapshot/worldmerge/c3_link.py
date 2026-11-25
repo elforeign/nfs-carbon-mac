@@ -523,7 +523,9 @@ def replace_articles(raw, changed):
     return bytes(header)+bytes(out)
 
 
-def cells(tile, descriptor, pack):
+def cells(tile, descriptor, pack, segments=()):
+    """Add the link pack's instances (family 0) and new road segments (family 3, the
+    per-cell road-segment selectors) to the tile's cells. segments: (id, end a, end b)."""
     body = tile[16:]
     records = collision_cells(body, collision_tags(body, grid.ARTI)[grid.CGCN])
     bins = {struct.unpack_from('<H', r, 4)[0]:
@@ -539,9 +541,19 @@ def cells(tile, descriptor, pack):
             for c in range(math.floor((lo[0]-origin[0])/size), math.floor((hi[0]-origin[0])/size)+1):
                 require(0 <= r < rows and 0 <= c < cols, 'link footprint outside grid')
                 additions.setdefault(r*cols+c, []).append(pack.key<<16 | i)
+    roads_in = {}
+    for sid, a, b in segments:
+        lo, hi = bounds([a, b])
+        for r in range(math.floor((lo[2]-origin[2])/size), math.floor((hi[2]-origin[2])/size)+1):
+            for c in range(math.floor((lo[0]-origin[0])/size), math.floor((hi[0]-origin[0])/size)+1):
+                require(0 <= r < rows and 0 <= c < cols, 'link road segment outside grid')
+                roads_in.setdefault(r*cols+c, []).append(sid)
     for cid, refs in additions.items():
         prefix, families = bins.setdefault(cid, (bytes(4), [[], [], [], []]))
         families[0].extend(refs)
+    for cid, sids in roads_in.items():
+        prefix, families = bins.setdefault(cid, (bytes(4), [[], [], [], []]))
+        families[3].extend(sids)
     result = bytearray(grid.make_tile([grid.cell_record(prefix, cid, 2600, refs)
                                       for cid, (prefix, refs) in sorted(bins.items())]))
     struct.pack_into('<I', result, 4, 2600)

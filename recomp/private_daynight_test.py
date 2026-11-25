@@ -16,6 +16,9 @@ Live Neutral upload cards (world/normal map, glass, road, facade, tree):
 three high-sun weights and noon/+5 deg; max dxy 1.54e-8 (limit .003), max
 RGB error 2.99e-8 versus the actual MW Neutral setters. Frozen-noon direct
 control dxy .0795883, 120 failed cards per dataset (same .003 limit).
+Retail MW (NFS_WORLD_LIGHTING=original): the same 540 cards per dataset
+against the authored record as MW Original uploads it: max dxy 1.26e-8,
+RGB error 2.98e-8; the old always-Neutral blend fails 536/540, max dxy .1766.
 Cards isolate direct/ambient before bake, fog, specular and post composition;
 retail shader transport and Metal checks above prove the material gains.
 Private assets absent: exit 3; no game is launched.
@@ -437,6 +440,7 @@ def native_fixture(out):
     (out/'carbon_daynight_sky.h').write_text((HERE/'private_runtime/carbon_daynight_sky.h').read_text())
     (out/'carbon_worldreflect_shader.inc').write_text((HERE/'private_runtime/carbon_worldreflect_shader.inc').read_text())
     (out/'carbon_daynight_grade.h').write_text((HERE/'private_runtime/carbon_daynight_grade.h').read_text())
+    (out/'carbon_mw_grade.h').write_bytes((HERE/'private_runtime/carbon_mw_grade.h').read_bytes())
     (out/'native.c').write_text(NATIVE_HARNESS)
     controls = {'good': source, 'late-pass-overwrite': source.replace('carbon_dn_constants(c); \\\n', '/* missing refresh */ \\\n')}
     assert controls['late-pass-overwrite'] != source
@@ -559,6 +563,9 @@ int main(void) {
     carbon_dn_write(SUN_SCALE,1);
     const char *choice=getenv("NFS_LIGHT_DATA");
     int data=choice && !strcmp(choice,"pc") ? 0 : 1;
+    /* Retail MW: the reference is the authored record, as MW Original setters upload it. */
+    const char *profile=getenv("NFS_WORLD_LIGHTING");
+    int retail_mw=profile && !strcmp(profile,"original");
     for (int quartet=0;quartet<2;++quartet) {
         M32(0xA65394)=quartet==0;
         for(int r=0;r<4;++r) {
@@ -597,6 +604,7 @@ int main(void) {
             memcpy(G+ref+0x20,expected.diffuse,12);memcpy(G+ref+0x30,expected.ambient,16);
             memcpy(G+ref+0x180,carbon_dn_clock.sample.light,12);
             float D[3],A[3];neutral_sun(ref,D);ambient_rgb(ref,A);
+            if(retail_mw) for(int k=0;k<3;++k){D[k]=expected.diffuse[k];A[k]=expected.ambient[k];}
             carbon_dn_constants(&c);
             card(vs[241],D,.18f);card(vs[242],A,.18f); /* world + normal map */
             card(vs[241],D,.09f);card(vs[242],A,.09f); /* glass */
@@ -621,7 +629,7 @@ int main(void) {
             }
         }
     }
-    printf("NEUTRAL CARDS data=%s cards=%u max_dxy=%.9g max_rgb_error=%.9g frozen_noon_dxy=%.9g failures=%u\n",data?"x360":"pc",cards,max_dxy,max_rgb_error,control_dxy,failures);
+    printf("%s CARDS data=%s cards=%u max_dxy=%.9g max_rgb_error=%.9g frozen_noon_dxy=%.9g failures=%u\n",retail_mw?"RETAIL-MW":"NEUTRAL",data?"x360":"pc",cards,max_dxy,max_rgb_error,control_dxy,failures);
     free(G);
     return failures || !(control_dxy>.003) || max_rgb_error>2e-6 ? 1 : 0;
 }
@@ -690,6 +698,20 @@ def colour_fixture(out):
         for data in ('pc','x360'):
             env=dict(os.environ,NFS_DAYNIGHT='on',NFS_LIGHT_DATA=data,NFS_WORLD_LIGHTING='neutral')
             print(name+': '+run([binary],env=env,expected=0 if name=='good' else 1))
+            if name=='good':
+                env['NFS_WORLD_LIGHTING']='original'
+                print('retail-mw: '+run([binary],env=env))
+    # Retail MW broken control: the old blend, Neutral at every profile.
+    always=source.replace('if (!carbon_dn_retail_mw()) carbon_dn_neutral(record);','carbon_dn_neutral(record);')
+    assert always!=source
+    (out/'native.inc').write_text(always)
+    binary=out/'colour-always-neutral'
+    run(['clang','-DNFS_GAME=2','-O1','-g','-w','-fsanitize=address,undefined',
+         '-I',ROOT/'runtime','-I',HERE,'-I',out, '-I',HERE/'out/carbon/runtime',
+         out/'colour.c',ROOT/'runtime/daynight.c',ROOT/'runtime/daynight_clock.c','-o',binary])
+    for data in ('pc','x360'):
+        env=dict(os.environ,NFS_DAYNIGHT='on',NFS_LIGHT_DATA=data,NFS_WORLD_LIGHTING='original')
+        print('always-neutral retail-mw: '+run([binary],env=env,expected=1))
     (out/'native.inc').write_text(source)
 
 def main(effects=HERE/'out/carbon/effects'):

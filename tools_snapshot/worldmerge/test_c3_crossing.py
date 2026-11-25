@@ -279,13 +279,13 @@ class Private(unittest.TestCase):
     def test_other_placement_hashes(self):
         pins = (
             (w.DEFAULT_SHIFT,False,'cc154fc5746163678b855231301857105de67c50644527171228973172fa3b7e',
-             '0ccd820a2d83a1a6c95b3393f26d59cd030644e244cf06c2c7e0f419de9148b7'),
+             'd557254bd412fd8033c717cde955d54f823f9330894e10e01f59e4f38bb57bcd'),
             (w.DEFAULT_SHIFT,True,'b32d7c45a83176d464bf8f1d5518c9bebacfc8ffec3a5667d933beb4c9c48aa6',
-             '0ccd820a2d83a1a6c95b3393f26d59cd030644e244cf06c2c7e0f419de9148b7'),
+             'd557254bd412fd8033c717cde955d54f823f9330894e10e01f59e4f38bb57bcd'),
             ((4096,-8192),False,'b28990b1deb95623b54d56f47b738aa13f83c094d505886331c5033ebbe2ec3f',
-             '8767d6f340620151948687085dd10f91e6c1baa2d7aa673b4370c769250484dc'),
+             '2481ff9cc0a007313e8f64a2a6dd3ff62538b6d283ddc4fd49eeec847c739709'),
             ((4096,-8192),True,'ac4b982d5720b9d61788f3fa13ede7cd5fe71f58221f256e68722748e00ffdbb',
-             '8767d6f340620151948687085dd10f91e6c1baa2d7aa673b4370c769250484dc'))
+             '2481ff9cc0a007313e8f64a2a6dd3ff62538b6d283ddc4fd49eeec847c739709'))
         for shift,zones,index_hash,stream_hash in pins:
             with self.subTest(shift=shift,zones=zones), tempfile.TemporaryDirectory(dir=self.root) as tmp:
                 report = w.build(w.DEFAULT_MW,w.DEFAULT_CARBON,Path(tmp)/'pair',shift=shift,zones=zones)

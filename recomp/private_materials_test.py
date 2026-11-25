@@ -31,6 +31,15 @@ import sys
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
+def switch_registry(root):
+    """runtime/switches.tsv, or None in a public copy. The registry is dev-only (tools/publish/denylist.txt keeps it out
+    of the public repos), so only a tree without tools/publish may lack it; in the dev repo a missing file still fails."""
+    path = root / 'runtime/switches.tsv'
+    if path.is_file() or (root / 'tools/publish').is_dir():
+        return path.read_text()
+    print('skip: switch registry checks (runtime/switches.tsv is not exported to the public repo)', flush=True)
+    return None
+
 sys.path.insert(0, str(HERE))
 from build_private import ignored_output
 
@@ -273,8 +282,8 @@ def main():
     data = exe.parent/'GLOBAL/GLOBALB.BUN'
     if not exe.is_file() or not data.is_file():
         print('SKIP: private executable or data absent'); return 3
-    switches = (ROOT/'runtime/switches.tsv').read_text()
-    assert '\nNFS_CARBON_MATERIALS\tprivate\t1\t' in switches
+    switches = switch_registry(ROOT)
+    assert switches is None or '\nNFS_CARBON_MATERIALS\tprivate\t1\t' in switches
     rows = records(data.read_bytes())
     counts = {}
     for _, kind, _, _ in rows:

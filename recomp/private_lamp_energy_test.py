@@ -23,6 +23,15 @@ import sys
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
+def switch_registry(root):
+    """runtime/switches.tsv, or None in a public copy. The registry is dev-only (tools/publish/denylist.txt keeps it out
+    of the public repos), so only a tree without tools/publish may lack it; in the dev repo a missing file still fails."""
+    path = root / 'runtime/switches.tsv'
+    if path.is_file() or (root / 'tools/publish').is_dir():
+        return path.read_text()
+    print('skip: switch registry checks (runtime/switches.tsv is not exported to the public repo)', flush=True)
+    return None
+
 sys.path.insert(0, str(HERE))
 from build_private import ignored_output
 from private_coat_test import HARNESS as COAT_HARNESS
@@ -158,8 +167,8 @@ def main():
     exe = Path(json.loads(image.read_text())['exe'])
     if not exe.is_file():
         print('SKIP: private executable absent'); return 3
-    switches = (ROOT/'runtime/switches.tsv').read_text()
-    assert '\nNFS_CARBON_REFLECT_HDR\tprivate\t1\t' in switches
+    switches = switch_registry(ROOT)
+    assert switches is None or '\nNFS_CARBON_REFLECT_HDR\tprivate\t1\t' in switches
     out = ignored_output(HERE/'out/carbon/lamp_energy_check')
     (out/'coat.inc').write_bytes((HERE/'private_runtime/carbon_coat.h').read_bytes())
     support=COAT_HARNESS[COAT_HARNESS.index('struct ShaderEntry'):COAT_HARNESS.index('static uint64_t key_of')]

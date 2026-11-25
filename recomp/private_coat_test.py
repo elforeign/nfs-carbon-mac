@@ -14,16 +14,30 @@ Live lookup: 2 rows x 2 starting states x 5 VS/PS pairs, 60 transitions;
 360 checks, recipe/prewarm/lookup identities agree, exact entry/output restoration,
 0 failures. Original cache identity: 140 failures, exit 1 vs good 0.
 Original recipe keys without resolution: 40 failures, exit 1 vs good 0.
+Finish warmup: 12 paint/lamp programs, 18 startup/material/HDR scenarios,
+144 toggles including material changes: 0 draw compiles, 0 environment
+restoration failures. Original catalogue: 384 draw compiles; warming only the
+startup material choice: 180, both exit 1. Compiler double; no frame timing claim.
 Private executable or translator absent: exit 3; no game is launched.
 """
 from pathlib import Path
 import json
+import hashlib
 import os
 import subprocess
 import sys
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
+def switch_registry(root):
+    """runtime/switches.tsv, or None in a public copy. The registry is dev-only (tools/publish/denylist.txt keeps it out
+    of the public repos), so only a tree without tools/publish may lack it; in the dev repo a missing file still fails."""
+    path = root / 'runtime/switches.tsv'
+    if path.is_file() or (root / 'tools/publish').is_dir():
+        return path.read_text()
+    print('skip: switch registry checks (runtime/switches.tsv is not exported to the public repo)', flush=True)
+    return None
+
 sys.path.insert(0, str(HERE))
 from build_private import ignored_output
 
@@ -171,6 +185,33 @@ static int live(std::map<uint64_t,Program> &original) {
     printf("LIVE shader rows=2 starts=2 pairs=5 transitions=60 checks=%u failures=%u exact restore=20\n",checks,failures);
     return failures?1:0;
 }
+static int warm(std::map<uint64_t,Program> &original) {
+    unsigned misses=0, restores=0;
+    SmOptions options;sm_default_options(&options);
+    for(const char *hdr:{"0","1","ldr"})for(const char *materials:{"0","1"})for(int start=0;start<3;++start) {
+        shaders.clear();nshaders=0;memset(vcache,0,sizeof vcache);
+        setenv("NFS_CARBON_REFLECT_HDR",hdr,1);setenv("NFS_CARBON_MATERIALS",materials,1);
+        if(start==2)unsetenv("NFS_CARBON_COAT");else setenv("NFS_CARBON_COAT",start?"1":"0",1);
+        std::vector<Obj> objects;
+        for(auto &item:original) {
+            Obj s={};s.tokens=item.second.tokens.data();s.ntokens=item.second.tokens.size();
+            s.tokens_hash=item.first;preload_finish(s,options);objects.push_back(s);
+        }
+        const char *restored=getenv("NFS_CARBON_COAT");
+        restores+=start==2?restored!=nullptr:(!restored||strcmp(restored,start?"1":"0"));
+        restored=getenv("NFS_CARBON_MATERIALS");
+        restores+=!restored||strcmp(restored,materials);
+        compiled=0;
+        for(int step=0;step<8;++step) {
+            setenv("NFS_CARBON_COAT",step&1?"1":"0",1);
+            setenv("NFS_CARBON_MATERIALS",step&2?"1":"0",1);
+            for(Obj &s:objects)get_shader_variant(&s,&options,0);
+        }
+        misses+=compiled;
+    }
+    printf("WARM programs=%zu scenarios=18 toggles=144 draw_compiles=%u restore_failures=%u\n",original.size(),misses,restores);
+    return misses||restores?1:0;
+}
 int main(int argc, char **argv) {
     if (argc != 3) return 2;
     bool retail = !strcmp(argv[2], "retail");
@@ -186,6 +227,7 @@ int main(int argc, char **argv) {
         uint64_t key = key_of(blob.data()+k, count);
         bool wanted = false;
         for (const Pair &p : pairs) wanted |= key == p.vs || key == p.ps;
+        if(!strcmp(argv[2],"warm"))wanted|=key==0xb53b3a3b390249b4ull||key==0x89aa56e4826ec0d2ull;
         if (!wanted || original.count(key)) continue;
         uint32_t *tokens = blob.data()+k, patched_count = 0;
         uint32_t *variant = carbon_coat_variant(tokens, count, &patched_count);
@@ -205,6 +247,7 @@ int main(int argc, char **argv) {
         if (compiled != 1 || entry.tokens != tokens || entry.ntokens != count || carbon_coat_shader(tokens, count, &ignored)) return 2;
     }
     if (!strcmp(argv[2],"live")) return live(original);
+    if (!strcmp(argv[2],"warm")) return original.size()==12?warm(original):2;
     if (original.size() != 10) { fprintf(stderr, "programs found: %zu of 10\n", original.size()); return 2; }
     const Record paint = {0, 0, 1, -0.75f, 1}, chrome = {1, 0, 0.5f, 0, 1}, chrome_paint = {0, 0.75f, 1.5f, 0, 1},
                  matte = {0, 0, 0, 0, 1}, glass = {1, 0, 0.875f, -0.25f, 0.5f};
@@ -258,8 +301,8 @@ def main():
     exe = Path(json.loads(image.read_text())['exe'])
     if not exe.is_file():
         print('SKIP: private executable absent'); return 3
-    switches = (ROOT/'runtime/switches.tsv').read_text()
-    assert '\nNFS_CARBON_COAT\tprivate\t1\t' in switches
+    switches = switch_registry(ROOT)
+    assert switches is None or '\nNFS_CARBON_COAT\tprivate\t1\t' in switches
     out = ignored_output(HERE/'out/carbon/coat_check')
     (out/'coat.inc').write_bytes((HERE/'private_runtime/carbon_coat.h').read_bytes())
     (out/'submit.inc').write_bytes((HERE/'private_runtime/game_compat_shader_submit.h').read_bytes())
@@ -273,12 +316,28 @@ def main():
     prewarm=(HERE/'private_runtime/game_pipeline_prewarm.h').read_text()
     mapping=prewarm[prewarm.index('            extern uint64_t carbon_coat_recipe_key'):prewarm.index('            NSData *key=')]
     lookup+=warm+'struct Recipe { uint64_t vertex,fragment; };\nstatic Recipe live_recipe(Recipe r) {\n'+mapping+'return r;\n}\n'
+    catalogue=(HERE/'private_runtime/game_shader_catalogue.h').read_text()
+    from private_render import body
+    if 'static void shader_preload_finish(' in catalogue:
+        lookup+='static void shader_preload_finish(Obj *s,const SmOptions *opt,uint32_t variant)'+body(catalogue,'shader_preload_finish')+'\n'
+    call=catalogue.split('opt.shadow_samplers = shadow ? shape->shadow : 0;',1)[1].splitlines()[1].strip()
+    original_call='get_shader(&s, &opt);'
+    assert hashlib.sha256(original_call.encode()).hexdigest()=='17c2b5664d32029a9d429b693f51af909c32e7ffd7c70a7ea2462af07e554cb6'
+    assert call=='shader_preload_finish(&s, &opt, 0);'
+    assert 'if (source) shader_preload_finish(s, opt, variant);' in catalogue
+    lookup+='static ShaderEntry *get_shader(Obj *s,const SmOptions *opt) { return get_shader_variant(s,opt,0); }\n'
+    lookup+='static void preload_finish(Obj s,SmOptions opt) { '+call+' }\n'
     (out/'lookup.inc').write_text(lookup)
     (out/'coat.cpp').write_text(HARNESS)
     binary = out/'coat'
     run(['clang++', '-std=c++17', '-O1', '-w', '-DNFS_GAME=2', '-DNFS_GAME_PRIVATE=2', '-I', shaders, '-I', out, out/'coat.cpp',
          shaders/'tests/sm_interp.cpp', library, '-framework', 'Foundation', '-framework', 'Metal', '-o', binary])
     print(run([binary, exe, 'live']))
+    print(run([binary, exe, 'warm']))
+    (out/'lookup.inc').write_text(lookup.replace('static void preload_finish(Obj s,SmOptions opt) { '+call,'static void preload_finish(Obj s,SmOptions opt) { '+original_call))
+    run(['clang++', '-std=c++17', '-O1', '-w', '-DNFS_GAME=2', '-DNFS_GAME_PRIVATE=2', '-I', shaders, '-I', out, out/'coat.cpp',
+         shaders/'tests/sm_interp.cpp', library, '-framework', 'Foundation', '-framework', 'Metal', '-o', out/'old-finish-warm'])
+    print(run([out/'old-finish-warm', exe, 'warm'], expected=1))
     old_lookup=lookup.replace('variant = carbon_coat_cache_variant(s->tokens_hash, variant);','(void)0;')
     assert old_lookup!=lookup
     (out/'lookup.inc').write_text(old_lookup)

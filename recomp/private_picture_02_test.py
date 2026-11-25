@@ -3,7 +3,8 @@
 First-run quality: prior startup fragment exit=1; AA-Off mutant exit=1; good exit=0.
 Twelve fields, full/lower caps, saved profile, BOOT_REG and process restart covered.
 First-run display selection: old-code exit=1; smallest-slot mutant exit=1; good exit=0.
-3840x2160 -> slot4; 5120x2880 -> slot4; 3456x2234 -> slot3; saved slot2 unchanged.
+3840x2160 -> slot4; 5120x2880 -> slot4; 3456x2234 -> slot3 Off / slot5 On;
+saved slot2 unchanged. Notch first-launch slot survives native save/reload.
 Fresh marker-only, saved without marker, BOOT_REG and second-process persistence covered.
 Six legacy slots / zero HD targets -> six valid slots / two HD targets.
 Good exit=0; unwritten sixth slot exit=1; F10 omits g_FSAALevel write exit=1.
@@ -113,7 +114,9 @@ const char *settings_game_language(void) { return "English US"; }
 HOST_REGISTRY
 IMPORT_SLOTS
 static int display_w=3024, display_h=1896;
+static int notch;
 void user32_display_pixels(int *w,int *h) { *w=display_w; *h=display_h; }
+int user32_notch_fill(void) { return notch; }
 uint32_t render_msaa_levels(uint32_t *counts) { if(counts)for(unsigned i=0;i<supported;i++)counts[i]=2u<<i; return supported; }
 uint32_t galloc(uint32_t n) { uint32_t a=alloc_next;alloc_next+=n;return a; }
 uint32_t gstr(const char *s) { uint32_t a=galloc((uint32_t)strlen(s)+1);strcpy((char*)G+a,s);return a; }
@@ -293,7 +296,8 @@ int main(int argc,char **argv) {
  }
  if(argc==4 && strncmp(argv[3],"first:",6)==0) {
   int saved, expected;
-  CHECK(sscanf(argv[3],"first:%d:%d:%d:%d",&display_w,&display_h,&saved,&expected)==4);
+  int fields=sscanf(argv[3],"first:%d:%d:%d:%d:%d",&display_w,&display_h,&saved,&expected,&notch);
+  CHECK(fields==4||fields==5);
   reg_load();
   if(saved>=0)boot_reg_set_dword("g_RacingResolution",(uint32_t)saved);
   /* Emulate the startup marker even on a fresh registry. */
@@ -308,7 +312,7 @@ int main(int argc,char **argv) {
   c=initial();M32(c.esp+4)=0x2000;M32(c.esp+8)=0x2004;f_00712AC0(&c);
   uint32_t w=M32(0x2000),h=M32(0x2004);
   CHECK(w==carbon_modes[expected][0]&&h==carbon_modes[expected][1]);
-  CHECK(w<=3840&&h<=2160&&w<=(uint32_t)display_w&&h<=(uint32_t)display_h);
+  CHECK(w<=3840&&(h<=2160||(notch&&w==(uint32_t)display_w&&h==(uint32_t)display_h&&w*h<=3840u*2160u))&&w<=(uint32_t)display_w&&h<=(uint32_t)display_h);
   c=initial();M32(c.esp+4)=1;carbon_first_mode_detect(&c,native_0071D0A0);
   CHECK(M32(0xA65388)==(uint32_t)expected&&M32(0xAB0AE8)==5&&M32(0xA6537C)==1);
   c=initial();native_00711BD0(&c);
@@ -484,7 +488,7 @@ def main():
                 if variant!='good':continue
             if variant in ('good','firstres-old','firstres-smallest'):
                 for scenario in ('first:3840:2160:-1:4','first:5120:2880:-1:4','first:3456:2234:-1:3',
-                                 'first:3456:2234:2:2','first:3024:1896:-1:5'):
+                                 'first:3456:2234:2:2','first:3024:1896:-1:5','first:3456:2234:-1:5:1'):
                     fresh=profile/scenario.replace(':','-');fresh.mkdir()
                     result=subprocess.run([str(tmp/'fixture'),str(fresh),str(tmp/'guest.bin'),scenario],capture_output=True,text=True,
                         env={k:v for k,v in os.environ.items() if k not in ('BOOT_REG','NFS_CARBON_RES')})
@@ -492,7 +496,7 @@ def main():
                     assert result.returncode==expected,(variant,scenario,result.returncode,result.stderr[-1800:])
                     print(variant,scenario,'exit='+str(result.returncode),result.stdout.strip())
                     if variant!='good':break
-                    restart=subprocess.run([str(tmp/'fixture'),str(fresh),str(tmp/'guest.bin'),'native-restart:'+scenario.rsplit(':',1)[1]],
+                    restart=subprocess.run([str(tmp/'fixture'),str(fresh),str(tmp/'guest.bin'),'native-restart:'+scenario.split(':')[4]],
                         capture_output=True,text=True,env={k:v for k,v in os.environ.items() if k not in ('BOOT_REG','NFS_CARBON_RES')})
                     assert restart.returncode==0,(scenario,restart.stderr[-1800:])
                     print(restart.stdout.strip())

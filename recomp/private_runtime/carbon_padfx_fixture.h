@@ -29,6 +29,10 @@ void feedback_trigger_state(float slip[2], float hz[2], int *nos) {
 void feedback_road_state(float *speed, float *surface) { *speed = model_speed; *surface = model_surface; }
 void feedback_levels(float *heavy, float *light) { *heavy = model_heavy; *light = model_light; }
 void feedback_invalidate_effects(void) { ++invalidations; model_heavy = model_light = 0; }
+void feedback_levels_slot(unsigned slot, float *heavy, float *light) {
+    if (slot == 0) feedback_levels(heavy, light); else *heavy = *light = 0;
+}
+void feedback_invalidate_slot(unsigned slot) { if (slot == 0) feedback_invalidate_effects(); }
 void report_note(const char *fmt, ...) { (void)fmt; }
 void diag_event(const char *fmt, ...) { (void)fmt; }
 IOHIDManagerRef test_manager_create(CFAllocatorRef a, IOOptionBits b) {

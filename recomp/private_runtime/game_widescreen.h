@@ -16,10 +16,23 @@ static float carbon_wide_kx(uint32_t w, uint32_t h) {
     if (!w || !h || (float)w * 3.0f <= (float)h * 4.0f * 1.001f) return 1.0f;
     return (4.0f / 3.0f) * (float)h / (float)w;
 }
+/* The wide race packages occupy 853 1/3 x 480 units. A notch panel is
+ * narrower than 16:9: fit that whole layer, keeping the camera strip clear.
+ * Existing layouts remain unchanged with notch fill Off. */
+static int carbon_notch_hud_fit(uint32_t w, uint32_t h) {
+    return user32_notch_fill() && M32(0x00A99BBCu) == 6 && w && h &&
+           w * 3u > h * 4u && w * 9u < h * 16u;
+}
 float carbon_fe_kx(void) {
     uint32_t w, h;
     carbon_output_size(&w, &h);
+    if (carbon_notch_hud_fit(w, h)) return 0.75f;
     return carbon_wide_kx(w, h);
+}
+float carbon_fe_ky(void) {
+    uint32_t w, h;
+    carbon_output_size(&w, &h);
+    return carbon_notch_hud_fit(w, h) ? 0.5625f * (float)w / (float)h : 1.0f;
 }
 /* The chyron object broadcasts its mode only when it is built (005B69F0); after
  * an aspect change, send the same native message to the same package list. */
@@ -66,4 +79,11 @@ void carbon_wide_cursor(Cpu *c, void (*original)(Cpu *)) {
     int32_t x = 320 + (int32_t)(v >= 0 ? v + 0.5f : v - 0.5f);
     M32(self + 4) = (uint32_t)x;
     M32(self + 0x14) = (uint32_t)(x - (int32_t)M32(self + 0xC));
+    float ky = carbon_fe_ky();
+    if (ky < 1.0f) {
+        v = (float)((int32_t)M32(self + 8) - 240) / ky;
+        int32_t y = 240 + (int32_t)(v >= 0 ? v + 0.5f : v - 0.5f);
+        M32(self + 8) = (uint32_t)y;
+        M32(self + 0x18) = (uint32_t)(y - (int32_t)M32(self + 0x10));
+    }
 }
