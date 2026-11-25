@@ -131,8 +131,15 @@ def prepare(out, tables):
     native = set(re.findall(r'(?:IS|FP|CI)\("([^"\n]+)"', crt_source))
     # An MW import-table name does not prove a host implementation exists.
     extra = set(re.findall(r'IS\("([^"\n]+)"', (dst / 'private_win32.c').read_text() + (dst / 'security.h').read_text()))
-    native_ws = set(re.findall(r'!strcmp\(fn, "([^"\n]+)"',
-                               (dst / 'game_ws2.h').read_text()))
+    ws_source = (dst / 'ws2_32.c').read_text()
+    # Names are covered only when their dispatch target has an implementation.
+    ws_cases = set(re.findall(r'\bcase\s+(\d+)\s*:', ws_source))
+    ws_names = set(re.findall(r'!strcmp\(fn, "([^"\n]+)"', ws_source))
+    ws_aliases = dict(re.findall(r'!strcmp\(fn, "([^"\n]+)"\)\) fn = "([^"\n]+)"',
+                                 (dst / 'game_ws2.h').read_text()))
+    native_ws = {name for name, target in ws_aliases.items()
+                 if target.startswith('#') and target[1:] in ws_cases}
+    native_ws |= ws_names - ws_aliases.keys()
     source_all = '\n'.join((dst / f).read_text() for f in ('boot.c','threads.c','heap.c','d3dx.c','d3dx_effect.c','ws2_32.c','user32.m','dsound.c','dinput.c','d3d9.m'))
     source_all += '\n' + (dst / 'game_d3dx.h').read_text()
     literal = set(re.findall(r'(?:strcmp\(fn,|\{)\s*"([^"\n]+)"', source_all))
@@ -141,8 +148,9 @@ def prepare(out, tables):
         dll,fn=name.split('!',1)
         if dll.lower().startswith(('msvcr','msvcp')):
             status='native-crt' if fn in native else 'stub'
-        elif dll.lower().startswith('ws2_32') and fn in native_ws:
-            status='runtime-name-to-ordinal'
+        elif dll.lower().startswith('ws2_32'):
+            implemented = fn in native_ws or (fn.startswith('#') and fn[1:] in ws_cases)
+            status=('runtime-name-to-ordinal' if fn in ws_aliases else 'runtime') if implemented else 'stub'
         else:
             status='native-private-win32' if fn in extra else 'runtime' if fn in literal else 'stub'
         coverage.append({'import':name,'status':status})

@@ -9,7 +9,6 @@ int private_ws2(Cpu *c, const char *fn) {
     if (!strcmp(fn, "getsockopt")) fn = "#7";
     if (!strcmp(fn, "htonl")) fn = "#8";
     if (!strcmp(fn, "htons")) fn = "#9";
-    if (!strcmp(fn, "inet_addr")) fn = "#10";
     if (!strcmp(fn, "inet_ntoa")) fn = "#11";
     if (!strcmp(fn, "ioctlsocket")) fn = "#12";
     if (!strcmp(fn, "listen")) fn = "#13";

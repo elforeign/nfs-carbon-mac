@@ -3,10 +3,19 @@
  * c26..28 carry luminance, desaturation/black terms and tint/colour intensity.
  * The filtered input is adapted from the native bloom RGB, not its alpha
  * (which is not the source treatment's filtered-luminance contract). */
+/* The table comes from Most Wanted's attributes.bin: a Carbon-only build has none, so the grade stays off. */
+#if __has_include("gen/look_pc.inc")
 #include "gen/look_pc.inc"
+#else
+static const float LOOK_PC[5][14];
+#define CARBON_MW_GRADE_NO_TABLE 1
+#endif
 
 static int carbon_dn_retail_mw(void);
 static int carbon_mw_grade_on(void) {
+#ifdef CARBON_MW_GRADE_NO_TABLE
+    return 0;
+#endif
     const char *setting = getenv("NFS_DAYNIGHT_MW_GRADE");
     if (!setting || (strcmp(setting,"1") && strcasecmp(setting,"on"))) return 0;
     return carbon_dn_on() && carbon_dn_retail_mw() && carbon_dn_grade_on();
