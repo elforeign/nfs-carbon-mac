@@ -1,3 +1,4 @@
+#include "carbon_spliteffects.h"
 /* Optional local world lighting from loaded street and imported tunnel records. */
 #include "lighting_colour.h"
 extern int postfx_look_variant(const char *);
@@ -8,7 +9,7 @@ static void carbon_lamplight_init(void) {
     const char *e=getenv("NFS_CARBON_LAMPLIGHT");
     carbon_lamplight_on=!(e && !strcmp(e,"off"));
     e=getenv("NFS_CARBON_LAMP_WARM");
-    carbon_lamplight_warm=e && !strcmp(e,"on") && lighting_mode_d65();
+    carbon_lamplight_warm=!(e && !strcmp(e,"off")) && lighting_mode_d65();
     e=diag_on?getenv("BOOT_DIAG_LAMPLIGHT_SHIFT"):NULL;
     carbon_lamplight_shift=e && !strcmp(e,"1");
 }
@@ -204,12 +205,12 @@ static void carbon_lamplight_proof(id<MTLTexture> z,id<MTLTexture> mask,uint32_t
         fclose(f);
     }];
 }
-static void carbon_lamplight_apply(void) {
+static void carbon_lamplight_view(uint32_t view, const uint32_t requested[4]) {
     if(!carbon_lamplight_on)return;
     if(diag_on && postfx_look_variant("lamplightoff"))return;
     if(M32(0x00A99BBCu)!=6)return;
     float level=carbon_dn_lamps_level();
-    uint32_t platform=M32(0x00B4AF90u);if(!platform)return;
+    uint32_t platform=M32(view);if(!platform)return;
     float px=MF32(platform+0x40),py=MF32(platform+0x54),a=MF32(platform+0x68),b=MF32(platform+0x78);
     float zn=-b/a,zf=-b/(a-1);
     if(!isfinite(px)||!isfinite(py)||fabsf(px)<0.01f||fabsf(py)<0.01f||!(zn>0&&zf>zn&&zf<1e7))return;
@@ -223,16 +224,20 @@ static void carbon_lamplight_apply(void) {
     end_pass();msaa_resolve(depth);ensure_cmd();
     id<MTLTexture> z=depth->tex,target=world->ms?:world->tex;
     if(!z||!target||z.width!=target.width||z.height!=target.height)return;
+    uint32_t viewport[4]; memcpy(viewport,requested,sizeof viewport);
+    if(!viewport[2]){viewport[2]=(uint32_t)target.width;viewport[3]=(uint32_t)target.height;}
     id<MTLTexture> receivers=carbon_ao_receiver(z);if(!receivers)return;
     id<MTLRenderPipelineState> pipeline=carbon_lamplight_pipeline(target.pixelFormat,target.sampleCount);if(!pipeline)return;
-    NSUInteger w=target.width,h=target.height;
+    NSUInteger w=viewport[2],h=viewport[3];
     float proj[]={1/px,1/py,zn,zf},size[]={1.0f/w,1.0f/h,0,0},rect[]={0,0,1,1},bounds[]={0.5f/w,0.5f/h,1-0.5f/w,1-0.5f/h};
     memcpy(k.proj,proj,sizeof proj);memcpy(k.size,size,sizeof size);memcpy(k.rect,rect,sizeof rect);memcpy(k.bounds,bounds,sizeof bounds);
+    carbon_effect_bounds(viewport,target.width,target.height,k.rect,k.bounds);
     if(diag_on)carbon_lamplight_proof(z,receivers,platform,&k);
     MTLRenderPassDescriptor *rp=[MTLRenderPassDescriptor renderPassDescriptor];
     rp.colorAttachments[0].texture=target;rp.colorAttachments[0].loadAction=MTLLoadActionLoad;rp.colorAttachments[0].storeAction=MTLStoreActionStore;
     if(gpt_on)gpt_render(rp,"lamplight");
     id<MTLRenderCommandEncoder> e=[cmd renderCommandEncoderWithDescriptor:rp];e.label=@"lamplight";if(gpt_on)gpt_name(e);
+    carbon_effect_clip(e,viewport);
     [e setRenderPipelineState:pipeline];[e setFragmentTexture:z atIndex:1];[e setFragmentTexture:receivers atIndex:3];
     [e setFragmentBytes:&k length:sizeof k atIndex:0];[e drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:0 vertexCount:3];[e endEncoding];
     world->stale=world->ms!=nil;
@@ -240,5 +245,17 @@ static void carbon_lamplight_apply(void) {
         static unsigned max_selected,max_overflow;
         if(count>max_selected)max_selected=count;if(overflow>max_overflow)max_overflow=overflow;
         if(diag_shot_due(diag_current_frame()+1))diag_event("lamplight frame=%llu selected=%u max_selected=%u overflow=%u max_overflow=%u selection_ms=%.6f resolution=%lux%lu level=%.4f shift=%d",(unsigned long long)(diag_current_frame()+1),count,max_selected,overflow,max_overflow,selection_ms,(unsigned long)w,(unsigned long)h,level,carbon_lamplight_shift);
+    }
+}
+
+static void carbon_lamplight_apply(void) {
+    if(!carbon_lamplight_on || M32(0x00A99BBCu)!=6)return;
+    /* Preserve Off/diagnostic early exits before target lookup. */
+    if(diag_on && postfx_look_variant("lamplightoff"))return;
+    uint32_t r[4];
+    for(unsigned i=0;;++i) {
+        uint32_t view=carbon_effect_view(i,r,0,0);
+        if(!view)break;
+        carbon_lamplight_view(view,r);
     }
 }

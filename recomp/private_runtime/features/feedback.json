@@ -179,7 +179,7 @@
     },
     "carbon_feedback_bindings.h": {
       "source": "carbon_feedback_bindings.h",
-      "sha256": "c17a53be1f215741470af9149e6120cc63c89433b6b3aeae4b32e9a65cba062d",
+      "sha256": "f7b533de20460dad5fd7674caff62def08ec0f77cfcf0eb9fae42de99c013b8b",
       "functions": {}
     },
     "carbon_feedback_collision.h": {
@@ -204,12 +204,12 @@
     },
     "carbon_feedback_pause.h": {
       "source": "carbon_feedback_pause.h",
-      "sha256": "fbdd83c96f6bbf5d0d258f3def540467972947d98748c308092582fdaef82f7f",
+      "sha256": "adcd899e5e4a51f398e5bdd859a75733f21ce334ab482a8aeb68ced1772e0739",
       "functions": {}
     },
     "carbon_feedback_provider.h": {
       "source": "carbon_feedback_provider.h",
-      "sha256": "7c8334d1386c37349c43dff298ea5cfa62cc64352105b3a0612ef62191bc3d5a",
+      "sha256": "1b12095da38cf1e8960c2917b3bbaeaf8ae806e3e12768b0f786873bdf8d4ee0",
       "functions": {
         "feedback_setup": {
           "read": [

@@ -453,11 +453,13 @@ def native_fixture(out):
             (out/'native.inc').write_text(text)
             binary = out/('native-'+name)
             run([*base, ROOT/'runtime/daynight.c', ROOT/'runtime/daynight_clock.c', '-o', binary])
-            os.environ.pop('NFS_DAYNIGHT', None)
+            os.environ['NFS_DAYNIGHT'] = 'off'
             print(name+': '+run([binary]))
             os.environ['NFS_DAYNIGHT'] = 'on'
             for hour, n, phase in [(12, 0, 0.5), (0, 1, 0.05), (18, 0.5, 0.95), (24, 1, 0.05)]:
                 os.environ['NFS_TEST_DAYNIGHT_HOUR'] = str(hour)
+                if hour == 12: os.environ.pop('NFS_DAYNIGHT', None)
+                else: os.environ['NFS_DAYNIGHT'] = 'on'
                 print(name+': '+run([binary, n, phase], expected=0 if name == 'good' else 1))
         (out/'native.inc').write_text(source)
         for hour, isolate in ((12,False), (6.379999,False), (0,False), (0,True)):
@@ -490,7 +492,7 @@ def native_fixture(out):
         (out/'native.inc').write_text(source)
         binary = out/'unlinked'
         run([*base, '-o', binary])
-        os.environ.pop('NFS_DAYNIGHT', None)
+        os.environ['NFS_DAYNIGHT'] = 'off'
         print('unlinked Off: '+run([binary]))
         os.environ['NFS_DAYNIGHT'] = 'on'
         run([binary], expected=2)

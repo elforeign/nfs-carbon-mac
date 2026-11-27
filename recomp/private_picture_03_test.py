@@ -76,6 +76,9 @@ HARNESS = r'''
 #include <stdlib.h>
 #include <math.h>
 uint8_t *G;
+/* This fixture exercises the shared FE path; split scopes have their own test. */
+int carbon_splithud_transform(float *t) { (void)t; return 0; }
+void carbon_splithud_clip(Cpu *c) { (void)c; }
 #define CHECK(x) do { if (!(x)) { fprintf(stderr,"WIDE CHECK %d: %s\n",__LINE__,#x); exit(1); } } while(0)
 static uint32_t mode_w = 640, mode_h = 480;
 static int notch;
@@ -98,6 +101,7 @@ typedef struct { char name[64]; uint32_t cls, rows, cols; } Param;
 static float source_matrix[16];
 static void get_matrix(Param *q, float *m, int t) { (void)q; (void)t; memcpy(m, source_matrix, 64); }
 static uint32_t pack(Param *q, uint16_t ccls, float regs[256][4]) {
+    Cpu *c = NULL;
     uint32_t nreg = 0, nmax = 4;
     memset(regs, 0, 16 * 4);
     for (int once = 0; once < 1; ++once) {

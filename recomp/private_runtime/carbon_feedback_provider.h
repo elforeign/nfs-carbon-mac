@@ -1,3 +1,4 @@
+#include "game_image.h"
 /* Slots 38/3C/40 intentionally have no assigned event meaning. */
 static int carbon_feedback_slot38(Cpu *c) { COUNT(0x38); RET(0, 1); }
 static int carbon_feedback_slot3c(Cpu *c) { COUNT(0x3C); RET(0, 1); }
@@ -31,13 +32,27 @@ void feedback_setup(void) {
 }
 static _Atomic int carbon_feedback_active_input = -1;
 void carbon_feedback_input(int pad) { carbon_feedback_active_input = pad == 1; }
+void carbon_feedback_trigger_state(unsigned slot, float slip[2], float hz[2], int *nos) {
+    Feedback *f = slot < 2 ? &feedback_states[slot] : &unowned_feedback;
+    if (slot >= 2 || !f->effects_valid) {
+        memset(slip, 0, sizeof f->slip_pub); memset(hz, 0, sizeof f->hz_pub); *nos = 0; return;
+    }
+    memcpy(slip, f->slip_pub, sizeof f->slip_pub); memcpy(hz, f->hz_pub, sizeof f->hz_pub); *nos = f->nos_on;
+}
+void carbon_feedback_road_state(unsigned slot, float *speed, float *surface) {
+    Feedback *f = slot < 2 ? &feedback_states[slot] : &unowned_feedback;
+    *speed = slot < 2 && f->effects_valid ? f->road_speed_pub : 0;
+    *surface = slot < 2 && f->effects_valid ? f->road_surface_pub : 0;
+}
 void carbon_feedback_tick(Cpu *c, void (*original)(Cpu *)) {
     if (!carbon_feedback_image_ok) { original(c); return; }
     ++carbon_feedback_ticks;
     uint32_t self = c->ecx;
+    int slot = carbon_feedback_player_slot(self);
     /* Identity is cached by the input provider; no extra input poll. A wheel or
      * keyboard selection retains the original native wheel dispatch. */
-    int gamepad = pad_identity(NULL, 0) != PAD_KIND_NONE && carbon_feedback_active_input != 0;
+    int gamepad = slot >= 0 && pad_identity_n(slot, NULL, 0) != PAD_KIND_NONE &&
+        (slot != 0 || carbon_feedback_active_input != 0);
     uint32_t wheel = self ? M32(self + 0x54) : 0;
     if (gamepad && self) M32(self + 0x54) = 0;
     original(c);
@@ -45,5 +60,6 @@ void carbon_feedback_tick(Cpu *c, void (*original)(Cpu *)) {
     if (gamepad && self && padfx_wanted()) padfx_game_tick(c, self);
     /* Advance even with the physical transport disabled or not yet selected. */
     float heavy, light;
-    feedback_levels(&heavy, &light);
+    if (slot >= 0) feedback_levels_slot((unsigned)slot, &heavy, &light);
+    else feedback_poll_pause();
 }

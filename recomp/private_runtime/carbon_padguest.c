@@ -10,6 +10,15 @@ static uint32_t carbon_padguest_call(Cpu *c, uint32_t address, uint32_t self,
     return call_guest(&q, address, n, args);
 }
 
+void carbon_padguest_ports(Cpu *c, void (*original)(Cpu *)) {
+    /* The PC FE wrapper allocates one 136-byte input history. Its native
+     * poller and package edge detector both stop at that count, so a second
+     * logical queue alone cannot deliver a port-1 START to the join screen. */
+    if (pad_count() == 2 && M32(c->esp) == 0x00572144u && arg(c, 0) == 1)
+        M32(c->esp + 4) = 2;
+    original(c);
+}
+
 void carbon_padguest_backend(Cpu *c, void (*original)(Cpu *)) {
     uint32_t caller = M32(c->esp), io = c->esi;
     original(c);
@@ -54,8 +63,48 @@ void carbon_padguest_initialize(Cpu *c, void (*original)(Cpu *)) {
     c->esp += 4;
 }
 
+static uint64_t carbon_padguest_evaluations[2];
+/* Observe the last evaluated scalar frame without changing input ownership. */
+static void carbon_padguest_sample(uint32_t device) {
+    static uint64_t second;
+    uint64_t now = host_ticks();
+    if (second && now - second < 1000000000ull) return;
+    second = now;
+    unsigned port = M32(device + 0x24);
+    PadState pad = {0};
+    pad_read_n((int)port, &pad);
+    uint32_t fe = M32(0x00A97814u), queue = carbon_padguest_queue(fe, port);
+    uint32_t output = M32(device + 0x20);
+    uint32_t physical = M32(0x00A986D4u), binding = M32(0x00A98704u);
+    uint32_t list = M32(0x00A9FF5Cu), count = M32(0x00A9FF64u);
+    double speed = -1;
+    uint32_t sim = 0;
+    for (unsigned i = 0; list && count <= 2 && i < count; ++i) {
+        uint32_t player = M32(list + 4*i), vt = player ? M32(player) : 0;
+        if (player < 8 || !vt || M32(vt + 4) != 0x0076E810u || M32(player + 0x18) != port) continue;
+        sim = M32(player - 8);
+        uint32_t sv = sim ? M32(sim) : 0, body = sv && M32(sv + 0x60) == 0x006D7EA0u ? M32(sim + 0x4C) : 0;
+        uint32_t bv = body ? M32(body) : 0, holder = bv && M32(bv + 0x20) == 0x006C6FF0u ? M32(body + 0x30) : 0;
+        uint32_t state = holder ? M32(holder) : 0;
+        if (state) {
+            double x = MF32(state + 0x20), y = MF32(state + 0x24), z = MF32(state + 0x28);
+            speed = sqrt(x*x + y*y + z*z);
+        }
+    }
+    diag_event("padguest sample: port=%u connected=%d rt=%.3f device=%08X throttle=%.3f brake=%.3f queue=%08X enabled=%u sim=%08X speed=%.3f_mps capture=%u active=%u physical=%08X count=%u cache_rt=%u binding=%u/%u/%u evaluations=%llu",
+               port, pad.connected, pad.rt, device, output ? MF32(output) : -1,
+               output ? MF32(output + 4) : -1, queue, queue ? M32(queue + 0x26C) : 0, sim, speed,
+               M8(device + 0x183C), M32(0x00AB0AD0u), physical, M32(0x00A98948u),
+               physical && physical != 0xFFFFFFFCu ? M32(physical + 0x448) : 0,
+               binding ? M32(binding + 48) : 0, binding ? M32(binding + 52) : 0,
+               binding ? M32(binding + 56) : 0, (unsigned long long)carbon_padguest_evaluations[1]);
+}
+
 void carbon_padguest_evaluate(Cpu *c, void (*original)(Cpu *)) {
     uint32_t device = c->ecx, port = M32(device + 0x24);
+    if (diag_on && port < 2) ++carbon_padguest_evaluations[port];
+    if (diag_on && pad_count() == 2 && !port && M32(0x00A991E4u))
+        carbon_padguest_sample(M32(0x00A991E4u));
     if (pad_count() != 2 || port > 1 || !M32(0x00AB0AD0u) || M8(device + 0x183C)) {
         original(c); return;
     }

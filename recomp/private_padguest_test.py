@@ -29,6 +29,7 @@ HARNESS = r'''
 #include <stdlib.h>
 uint8_t *G;
 int diag_on;
+uint64_t host_ticks(void){return 1000000000ull;}
 static unsigned checks, failures, originals, backend_calls, init_calls, factories;
 static unsigned allocs, frees, destructs, fail_alloc, factory_fail, modal;
 static int pads=2, connected[2]={1,1};

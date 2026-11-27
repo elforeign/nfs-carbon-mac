@@ -198,6 +198,17 @@
       },
       "provider": "carbon_padguest_destroy",
       "job": "J4"
+    },
+    {
+      "address": "005F25F0",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "005F25F0",
+        "length": 16,
+        "sha256": "6acaacb58896d85427dcbcc2f661564ef636e7f00d203d05c2c6b8c3e9cd8e59"
+      },
+      "provider": "carbon_padguest_ports",
+      "job": "J5"
     }
   ]
 }

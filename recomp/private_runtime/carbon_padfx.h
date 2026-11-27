@@ -9,9 +9,12 @@ int carbon_padfx_fake(void);
 void carbon_padfx_count(int kind);
 void carbon_padfx_counts(uint64_t out[FX_COUNT]);
 void carbon_padfx_log(int force);
-void carbon_padfx_output(void *controller, CarbonPadfxFrame frame, uint64_t token);
+void carbon_padfx_output(unsigned slot, void *controller, CarbonPadfxFrame frame, uint64_t token);
 void carbon_padfx_release(uint64_t token);
 void carbon_padfx_attach(void *controller, int connected);
 /* A successful lock protects the final generation/freshness check through the sink. */
-int carbon_padfx_lock(uint64_t token, int active);
+int carbon_padfx_lock(unsigned slot, uint64_t token, int active);
 void carbon_padfx_unlock(void);
+void carbon_padfx_update(unsigned slot, void *controller, int dualsense, float lt, float rt);
+void carbon_feedback_trigger_state(unsigned slot, float slip[2], float hz[2], int *nos);
+void carbon_feedback_road_state(unsigned slot, float *speed, float *surface);

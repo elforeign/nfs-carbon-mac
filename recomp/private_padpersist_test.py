@@ -165,7 +165,7 @@ def main():
         (tmp/'image.bin').write_bytes(memory)
         (tmp/'native.inc').write_text('\n\n'.join(native)+'\n')
         fixture=(PRIVATE/'carbon_padpersist_fixture.h').read_text()
-        fixture=fixture.replace('#include \"carbon_padbind.c\"', 'int pad_count(void){return 1;}\nint pad_read_n(int n,PadState *s){(void)n;memset(s,0,sizeof *s);return 0;}\n#include "carbon_padguest.c"\n#include "carbon_padbind.c"')
+        fixture=fixture.replace('#include \"carbon_padbind.c\"', 'uint64_t host_ticks(void){return 1000000000ull;}\nint pad_count(void){return 1;}\nint pad_read_n(int n,PadState *s){(void)n;memset(s,0,sizeof *s);return 0;}\n#include "carbon_padguest.c"\n#include "carbon_padbind.c"')
         (tmp/'fixture.c').write_text(fixture)
         (tmp/'carbon_padbind.c').write_text((PRIVATE/'carbon_padbind.c').read_text())
         dispatch=(PRIVATE/'carbon_pad_layout_bindings.h').read_text()

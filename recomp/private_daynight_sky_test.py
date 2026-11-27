@@ -420,7 +420,7 @@ def fixtures(out, tokens):
             print(name+' D65: '+run([binary, out/'tokens.bin'], 0 if name == 'good' else 1,
                                    env={**os.environ, 'NFS_WORLD_LIGHTING': 'neutral-d65'}))
     env = dict(os.environ)
-    env.pop('NFS_DAYNIGHT', None)
+    env['NFS_DAYNIGHT'] = 'off'
     env.pop('NFS_WORLD_LIGHTING', None)
     for name, text in [('good', source), ('fog-night-ignored', source.replace('haze+n*(native-haze)', 'haze+0*(native-haze)').replace('fog && tod && n < 1', 'fog && tod'))]:
         assert name == 'good' or text != source

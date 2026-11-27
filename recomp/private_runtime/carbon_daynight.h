@@ -51,7 +51,7 @@ static int carbon_dn_on(void) {
     if (carbon_dn_configured) return carbon_dn_enabled;
     carbon_dn_configured = 1;
     const char *setting = getenv("NFS_DAYNIGHT");
-    carbon_dn_enabled = lighting_mode_d65() || (setting && (!strcmp(setting,"1") || !strcasecmp(setting,"on")));
+    carbon_dn_enabled = lighting_mode_d65() || !(setting && (!strcmp(setting,"0") || !strcasecmp(setting,"off")));
     if (!carbon_dn_enabled) return 0;
     setting = diag_on && lighting_mode_d65() ? getenv("NFS_TEST_DAYNIGHT_MOON_ONLY") : NULL;
     if (setting && *setting) {

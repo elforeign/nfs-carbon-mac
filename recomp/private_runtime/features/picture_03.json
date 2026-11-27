@@ -86,22 +86,22 @@
     },
     "game_frontend_matrix.h": {
       "source": "game_frontend_matrix.h",
-      "sha256": "5a65650a6632a35af72007ff2f42efd1f7e6c95a55497aab9da970b5a0dc0e0e",
+      "sha256": "9b0dcfb918f268880dc88807551f1effa0f8f1e740eec8928fb1df4d933990a5",
       "functions": {}
     },
     "game_frontend_begin.h": {
       "source": "game_frontend_begin.h",
-      "sha256": "1eac1d8795fa0faed4ef976f7028a73407fe54cddd39bf04a6280284b5f9a929",
+      "sha256": "4bc761e663b2c7f7204beba7572b33369b833db509cc2412380211ed0981da20",
       "functions": {}
     },
     "game_frontend_end.h": {
       "source": "game_frontend_end.h",
-      "sha256": "1ed4fd6d42515393941a0f7205a370715851bf5684cfc2c7ca530fce27aa204b",
+      "sha256": "1ca0210ad37d573c3a0d25b4108544f46c361c9b5437810c95bdd14da28267d6",
       "functions": {}
     },
     "game_frontend_clip.h": {
       "source": "game_frontend_clip.h",
-      "sha256": "4899cf4f349b17601617b79a356573033ded9f0dbe85882044ae2273f5be26a5",
+      "sha256": "867a64694b213f8b2bc46a544f657b7ecc3f559f0670a648a17234c733f7a2d2",
       "functions": {}
     },
     "game_camera_wide.c": {

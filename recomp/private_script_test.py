@@ -1,9 +1,10 @@
 """Carbon pkg steps through the generated native runtime and synthetic guest bytes.
 
-Good: 10,776 checks / 0 failures, 11 cases (control transfer: 851). Broken first-loaded
+Good: 12 cases / 0 failures (control transfer: 851). Broken first-loaded
 reader: fails check 428 / exit 1. Real parser, fake wall clock, no game/window/GPU.
 Strict/non-strict 1800-tick limits, prefix/case, retry/release, null manager,
 control transfer and dialog precedence run in fresh processes. Absent build: 3.
+Split waits send zero keys through timeout; omitting the barrier sends one and fails.
 Diagnostic fixtures check each key's own tick, copied native UTF-16 labels
 after pending storage is freed, dialog replacement, unchanged guest bytes at
 key sampling and silence when disabled. Missing-key/wrong-source producers
@@ -39,6 +40,7 @@ void private_script_event(const char *format, ...) {
  }
  if(strstr(line,"script step ")&&strstr(line," done after "))++done;
  if(strstr(line,"script: package timeout want="))++timeouts;
+ if(strstr(line,"script: splitwait:")&&strstr(line," timeout; input stopped"))++timeouts;
  puts(line);
 }
 static void tick(Cpu *c,unsigned n) {
@@ -108,6 +110,10 @@ int main(int argc,char **argv) {
   tick(&c,1);CHECK(downs==2);
   tick(&c,4);CHECK(ups==2);
   M32(0xA220)=0;M32(0xA020)=1;tick(&c,10);CHECK(done==1&&downs==3&&ups==3);
+ } else if(!strcmp(argv[1],"splitwait")) {
+  packages();tick(&c,1800);CHECK(done==0&&downs==0&&timeouts==0);
+  tick(&c,1);CHECK(done==0&&downs==0&&timeouts==1);
+  tick(&c,50);CHECK(done==0&&downs==0&&timeouts==1);
  } else if(!strcmp(argv[1],"strict")||!strcmp(argv[1],"nonstrict")) {
   packages();tick(&c,1800);CHECK(done==0&&timeouts==0);
   tick(&c,1);
@@ -150,7 +156,7 @@ def main():
     out = ignored_output(root / 'script_test')
     original_selected = fixture.selected_source
     fixture.HARNESS = HARNESS
-    for mutant in ('good', 'first_loaded', 'no_key_witness', 'wrong_dialog_label'):
+    for mutant in ('good', 'first_loaded', 'no_key_witness', 'wrong_dialog_label', 'no_split_wait'):
         def selected(path):
             source = original_selected(path)
             if path.name == 'user32.m':
@@ -166,15 +172,19 @@ def main():
                 if mutant == 'no_key_witness':
                     assert 'if (diag_on) carbon_script_key_witness();' in source
                     source = source.replace('if (diag_on) carbon_script_key_witness();', '')
+                if mutant == 'no_split_wait':
+                    assert '!strncmp(tok, "splitwait:", 10)' in source
+                    source = source.replace('!strncmp(tok, "splitwait:", 10)', '0')
             return source
         fixture.selected_source = selected
         folder = out / mutant; folder.mkdir(exist_ok=True)
         binary = fixture.build(root, folder, 'good')
-        cases = ('control', 'retry', 'strict', 'nonstrict', 'null', 'order', 'cycle', 'witness', 'replacement', 'frame_witness', 'quiet') if mutant == 'good' else ('control',) if mutant == 'first_loaded' else ('witness',)
+        cases = ('control', 'retry', 'strict', 'nonstrict', 'null', 'order', 'cycle', 'witness', 'replacement', 'frame_witness', 'quiet', 'splitwait') if mutant == 'good' else ('control',) if mutant == 'first_loaded' else ('splitwait',) if mutant == 'no_split_wait' else ('witness',)
         for case in cases:
             want = {'null': 'FeDialog', 'order': 'FeDialog', 'cycle': 'FeMainMenu_Sub', 'witness': 'FeDialog', 'replacement': 'FeDialog', 'quiet': 'FeDialog'}.get(case, 'fEmAiNmEnU.fnG' if case in ('control', 'retry') else 'NeverAppears')
             spec = 'seq:pkg:' + want + (':RETURN' if case == 'retry' else '') + ',RETURN'
             if case == 'frame_witness': spec = '2:RETURN'
+            if case == 'splitwait': spec = 'seq:splitwait:unknown,RETURN'
             env = dict(os.environ, BOOT_HEADLESS='1', BOOT_KEYS=spec, BOOT_KEYS_STRICT='0' if case == 'nonstrict' else '1', BOOT_USERDATA=str(folder / 'userdata'), NFS_AUDIO='null', NFS_RUMBLE='off')
             run = subprocess.run([str(binary), case], env=env, capture_output=True, text=True, timeout=30)
             (folder / (case + '.log')).write_text(run.stdout + run.stderr)

@@ -11,6 +11,10 @@ Global fake bypass traps 1 forbidden open versus the good path's 0.
 Live fake gas/brake: 10,098/10,098; unset control: 0/0; real output 0/0.
 Live shift is unproven: the default bindings do not request its recipe.
 Every device entry point is intercepted; even NFS_RUMBLE=on cannot open hardware.
+J9 original singleton sink: split FAIL 9/28, real opens/writes 0/0.
+J9 queued frames: original 1, fixed 2; good exit 0, all 14 mutants exit 1.
+Fixed: distinct P1 brake/P2 gas frames; all holds, reassignment, unplug debt,
+mode exit, timeout and close neutralize both. Ownership mutants must exit 1.
 The recipe oracle compiles the actual address-free functions from padfx.m.
 Missing private transport selection must fail the desired-motor check.
 """
@@ -85,7 +89,7 @@ def main():
         original_output = (PRIVATE / 'carbon_padfx_output.h').read_text()
         original_backend = (PRIVATE / 'carbon_padfx_backend.h').read_text()
         def execute(label, sampler=source, rumble=original_rumble, output=original_output,
-                    backend=original_backend, queue=False):
+                    backend=original_backend, queue=False, split=False):
             (tmp / 'carbon_padfx.c').write_text(sampler)
             (tmp / 'rumble.m').write_text(rumble)
             (tmp / 'carbon_padfx_output.h').write_text(output)
@@ -93,10 +97,10 @@ def main():
             run([*flags, '-x', 'objective-c', tmp / 'carbon_padfx_fixture.h',
                  '-x', 'none', tmp / 'oracle.o', '-framework', 'Foundation', '-framework', 'IOKit',
                  '-lz', '-o', tmp / label])
-            result = subprocess.run([tmp / label, *(['queue'] if queue else [])], text=True, capture_output=True,
-                                    env=dict(os.environ, NFS_PADFX_FAKE='0' if queue else '1',
-                                             NFS_PAD_TRIGGERS='on' if queue else 'off',
-                                             NFS_PAD_ROAD='on' if queue else 'off'))
+            result = subprocess.run([tmp / label, *(['split'] if split else ['queue'] if queue else [])], text=True, capture_output=True,
+                                    env=dict(os.environ, NFS_PADFX_FAKE='0' if queue or split else '1', NFS_RUMBLE='off',
+                                             NFS_PAD_TRIGGERS='on' if queue or split else 'off',
+                                             NFS_PAD_ROAD='on' if queue or split else 'off'))
             assert result.returncode == (0 if label == 'good' else 1), (label, result.stdout, result.stderr[-3000:])
             assert ('PADFX PASS' if label == 'good' else 'FAIL') in result.stdout + result.stderr
             if label == 'fake-discovery-bypass':
@@ -107,10 +111,13 @@ def main():
                      env=dict(os.environ, NFS_PADFX_FAKE='0', NFS_PAD_TRIGGERS='on', NFS_PAD_ROAD='on'))
         assert 'QUEUE PASS' in result.stdout
         print('real-sink fake-controller: ' + result.stdout.strip())
+        result = run([tmp / 'good', 'split'],
+                     env=dict(os.environ, NFS_PADFX_FAKE='0', NFS_PAD_TRIGGERS='on', NFS_PAD_ROAD='on', NFS_RUMBLE='off'))
+        print('two-player fake-controller: ' + result.stdout.strip())
         execute('wrong-image-offsets', source.replace('player + 0x78', 'player + 0x80').replace('player + 0x7C', 'player + 0x84'))
         execute('stale-generation', source.replace('token == fx_generation && !fx_holds', '1 && !fx_holds'))
-        execute('swapped-roles', source.replace('carbon_padfx_role(0); frame.role[1] = carbon_padfx_role(1)',
-                                               'carbon_padfx_role(1); frame.role[1] = carbon_padfx_role(0)'))
+        execute('swapped-roles', source.replace('carbon_padfx_role((unsigned)slot, 0); frame.role[1] = carbon_padfx_role((unsigned)slot, 1)',
+                                               'carbon_padfx_role((unsigned)slot, 1); frame.role[1] = carbon_padfx_role((unsigned)slot, 0)'))
         execute('fake-bypass', output=original_output.replace('if (carbon_padfx_fake()) {', 'if (0) {'))
         execute('fake-discovery-bypass', backend=original_backend.replace(
             'fx_fake = value && !strcmp(value, "1");', 'fx_fake = 0; (void)value;'))
@@ -121,8 +128,16 @@ def main():
         execute('missing-private-fence', rumble=original_rumble.replace(fake_branch,
                          '#if NFS_GAME == NFS_GAME_MW\n    if (carbon_padfx_fake()) {\n'))
         execute('queue-stale-epoch', sampler=source.replace('token != fx_generation ||', '0 ||'), queue=True)
-        execute('queue-late-stop', output=original_output.replace('if (fx_applied_generation < token)', 'if (1)'), queue=True)
+        execute('queue-late-stop', output=original_output.replace('if (fx_applied_generation[slot] < token)', 'if (1)'), queue=True)
         execute('queue-lost-restoration', output=original_output.replace('[fx_debt addObject:ctl];', '(void)ctl;'), queue=True)
+        execute('split-single-sink', output=original_output.replace('if (slot >= 2) return;', 'if (slot >= 2) return; slot = 0;'), split=True)
+        execute('split-single-sample', sampler=source.replace('int slot = carbon_feedback_player_slot(player);', 'int slot = 0;'), split=True)
+        execute('split-ignored-reassignment', sampler=source.replace('int changed = fx_controller[slot] != gc;',
+                    'int changed = !fx_controller[slot] && fx_controller[slot] != gc;'), split=True)
+        execute('split-one-release', output=original_output.replace('fx_restore(fx_owner[slot]); fx_owner[slot] = nil;',
+                    'if (!slot) fx_restore(fx_owner[slot]); fx_owner[slot] = nil;'), split=True)
+        execute('split-one-motor-reset', sampler=source.replace('feedback_invalidate_slot(slot);',
+                    'feedback_invalidate_slot(0);'), split=True)
         # Audit the real two selected expanded units, including their includes.
         (tmp / 'carbon_padfx.c').write_text(source)
         (tmp / 'rumble.m').write_text(original_rumble)
@@ -134,7 +149,7 @@ def main():
         reads = sum(access == 'read' for unit in audits for row in unit['declarations'] for access, _ in row['accesses'])
         assert reads == 0, reads
         print('expanded shared transports: 2 units, 0 MW reads, 0 forbidden constructors')
-    print('PRIVATE PADFX PASS mutants=9')
+    print('PRIVATE PADFX PASS mutants=14')
     return 0
 
 

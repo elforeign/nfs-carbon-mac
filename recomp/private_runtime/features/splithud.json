@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_splithud.c": {
+      "class": "mixed",
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_layouts": {
+        "packages": "005D4B20 selects type 3/4: HUD_Player1/2.fng. 005982C0 records the current package at A97B2C. 005F9E40 calls BeginPackageRendering before sorting and submitting its objects through 005BB380 -> 005B0A50 -> 005B0920 (including special minimap draws). Name +C, roots +4C; object hash +10, type +18, group children +64, sibling +4. Native split packages contain 152/140 objects; minimap frame root 0F365871 and custom root 00A1A862 exist in P1 only; custom callback 572181E6 descends from 00A1A862. Authored coordinates occupy two 240-unit halves of a 640x480 layer (853 1/3 wide after WIDESCREEN_MODEHUD); never halve them again. Present dimensions AB06FC/AB0700. Device AB0ABC: Get/SetScissorRect +130/+12C, Get/SetRenderState +E8/+E4, SCISSORTESTENABLE=174. 0072C9B0 drains pending guest geometry before changing clip scope.",
+        "probe": "BOOT_DIAG_SPLITWORLD has one simulated player. 0075DA60 sets native HUD type at interface+4C and HUD pointer +28; diagnostic type 1 becomes 3. 006BB820 schedules 009E37A4 (Global/InGameSplitScreen.bun) with the region bundles via cdecl 006B32C0 (5 args), then thiscall 006B5910 (ECX=resource, callback/data args); its final callback precedes player creation. Allocate 348 bytes with 006A1560; 005E7B90 thiscall(type,package,player interface,index) constructs P2 type4/index1, sharing P1 telemetry only in the diagnostic. 005E6F70 updates a HUD with (player,dt); 005E6EE0 destroys it. 0075DA10 releases the normal player HUD; delete the diagnostic P2 before P1, then release the extra bundle via cdecl 006B7BE0 (resource argument). Native split mode 1 bypasses the probe."
+      }
+    },
+    "carbon_splithud.h": {
+      "class": "mixed",
+      "kind": "include",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    }
+  },
+  "staged_sources": {
+    "carbon_splithud.c": "carbon_splithud.c",
+    "carbon_splithud.h": "carbon_splithud.h"
+  },
+  "bindings": {
+    "carbon_splithud.c": {
+      "source": "carbon_splithud.c",
+      "sha256": "da3e51aed9d0882b7ef261efb12855d39ba1684fa6a321fd168e70e1bb75d9ef",
+      "functions": {
+        "carbon_splithud_probe_update": {
+          "read": [
+            10882088,
+            10882100
+          ]
+        }
+      }
+    },
+    "carbon_splithud.h": {
+      "source": "carbon_splithud.h",
+      "sha256": "03f562b35116a106d9794f8e8a1f44ad8b643aba1e41ce2479f246dc30bc79fa",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

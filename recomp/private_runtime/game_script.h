@@ -193,6 +193,16 @@ static void script_seq(const char *spec, uint64_t real_frame, uint64_t draws) {
         float diag_car_speed(void);
         if (diag_on) diag_event("scripted %s down", tok);
         ++step; step_start = 0;
+    } else if (!strncmp(tok, "splitwait:", 10)) {
+        int carbon_autodrive_split_ready(const char *);
+        if (carbon_autodrive_split_ready(tok + 10)) {
+            if (diag_on) diag_event("script: %s reached", tok);
+            ++step; step_start = 0;
+        } else if (frame - step_start >= (!strcmp(tok + 10, "finished") ? 12000u : 1800u)) {
+            sequence_failed = 1;
+            if (diag_on) diag_event("script: %s timeout; input stopped", tok);
+            [NSApp terminate:nil];
+        }
     } else if (!strncmp(tok, "pad:", 4) || !strncmp(tok, "padraw:", 7) || !strncmp(tok, "padaxis:", 8) ||
                !strncmp(tok, "pad2:", 5) || !strncmp(tok, "pad2raw:", 8) || !strncmp(tok, "pad2axis:", 9)) {
         int second = tok[3] == '2';

@@ -243,7 +243,7 @@ def main():
     with tempfile.TemporaryDirectory(prefix='private-lamplight-') as directory:
         path = Path(directory)
         (path / 'fixture.m').write_text(source)
-        build = subprocess.run(['clang', '-I', str(ROOT / 'runtime'), '-O1', '-w', '-fobjc-arc', str(path / 'fixture.m'), '-framework', 'Foundation', '-framework', 'Metal', '-o', str(path / 'fixture')], capture_output=True, text=True)
+        build = subprocess.run(['clang', '-I', str(PRIVATE), '-I', str(ROOT / 'runtime'), '-O1', '-w', '-fobjc-arc', str(path / 'fixture.m'), '-framework', 'Foundation', '-framework', 'Metal', '-o', str(path / 'fixture')], capture_output=True, text=True)
         assert build.returncode == 0, build.stderr[-4000:]
         run = subprocess.run([str(path / 'fixture'), str(path)], capture_output=True, text=True, timeout=90)
         proof = ROOT / '.metal-cache/proof-tests/lamplight.txt'
@@ -256,7 +256,7 @@ def main():
         broken = production.replace('lighting_colour_adapt(lamp.rgb);', '/* missing adaptation */')
         assert broken != production
         (path / 'fixture.m').write_text(HARNESS.replace('SHADERS', shaders).replace('PRODUCTION', broken))
-        control_build = subprocess.run(['clang', '-I', str(ROOT / 'runtime'), '-O1', '-w', '-fobjc-arc', str(path / 'fixture.m'), '-framework', 'Foundation', '-framework', 'Metal', '-o', str(path / 'broken')], capture_output=True, text=True)
+        control_build = subprocess.run(['clang', '-I', str(PRIVATE), '-I', str(ROOT / 'runtime'), '-O1', '-w', '-fobjc-arc', str(path / 'fixture.m'), '-framework', 'Foundation', '-framework', 'Metal', '-o', str(path / 'broken')], capture_output=True, text=True)
         assert control_build.returncode == 0, control_build.stderr[-4000:]
         control = subprocess.run([str(path / 'broken'), str(path)], capture_output=True, text=True, timeout=90)
         assert control.returncode == 1
@@ -265,7 +265,7 @@ def main():
         unadapted = production.replace('lighting_colour_white(CARBON_LAMP_WARM_K,w);', 'planck_white_unadapted(CARBON_LAMP_WARM_K,w);')
         assert unadapted != production
         (path / 'fixture.m').write_text(HARNESS.replace('SHADERS', shaders).replace('PRODUCTION', unadapted))
-        warm_build = subprocess.run(['clang', '-I', str(ROOT / 'runtime'), '-O1', '-w', '-fobjc-arc', str(path / 'fixture.m'), '-framework', 'Foundation', '-framework', 'Metal', '-o', str(path / 'warm')], capture_output=True, text=True)
+        warm_build = subprocess.run(['clang', '-I', str(PRIVATE), '-I', str(ROOT / 'runtime'), '-O1', '-w', '-fobjc-arc', str(path / 'fixture.m'), '-framework', 'Foundation', '-framework', 'Metal', '-o', str(path / 'warm')], capture_output=True, text=True)
         assert warm_build.returncode == 0, warm_build.stderr[-4000:]
         warm = subprocess.run([str(path / 'warm'), str(path)], capture_output=True, text=True, timeout=90)
         assert warm.returncode == 1 and 'warm_dxy<.003' in warm.stderr, (warm.stdout, warm.stderr)
@@ -277,7 +277,7 @@ def main():
         cut_production = production.replace('"float raw=' + weighted + 'energy=float3(0);"', cut).replace('"return float4(energy*cover,0);}', '"return float4(energy,0);}')
         assert cut_production != production and cut_production.count('energy*cover') == 0
         (path / 'fixture.m').write_text(HARNESS.replace('SHADERS', shaders).replace('PRODUCTION', cut_production))
-        cut_build = subprocess.run(['clang', '-I', str(ROOT / 'runtime'), '-O1', '-w', '-fobjc-arc', str(path / 'fixture.m'), '-framework', 'Foundation', '-framework', 'Metal', '-o', str(path / 'cut')], capture_output=True, text=True)
+        cut_build = subprocess.run(['clang', '-I', str(PRIVATE), '-I', str(ROOT / 'runtime'), '-O1', '-w', '-fobjc-arc', str(path / 'fixture.m'), '-framework', 'Foundation', '-framework', 'Metal', '-o', str(path / 'cut')], capture_output=True, text=True)
         assert cut_build.returncode == 0, cut_build.stderr[-4000:]
         cut_run = subprocess.run([str(path / 'cut'), str(path)], capture_output=True, text=True, timeout=90)
         assert cut_run.returncode == 1 and 'faint>=' in cut_run.stderr, (cut_run.stdout, cut_run.stderr)

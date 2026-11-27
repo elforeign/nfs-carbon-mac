@@ -1,6 +1,9 @@
 """Opt-in native player-AI handover on translated Carbon originals (no game).
 
-Good: native handovers player0=1, player1=0; unset=0, paused=0, NIS=0.
+Good: native handovers player0=1, player1=1 in split; single-player=1/0.
+Original P1-only driver: player1=0 versus required 1, exit 1.
+An explicit scripted results wait holds Return at 4; omitted guard gives 5 and fails.
+Unset=0, paused=0, NIS=0.
 Broken wrong-player and omitted-call variants: player0=0 versus required 1;
 both exit 1, good exits 0. Pursuit Results (FePostStages.fng) is dismissed like race results:
 returns 3 versus 2 without it (no-poststages variant, exit 1). Native control flag prevents repeated handovers.
@@ -62,12 +65,17 @@ uint8_t *G;
 int diag_on = 1;
 static HostFn present_callback;
 static unsigned registrations, handovers[2], returns, samples, census_samples, departures;
+static unsigned force_calls[2];
 static uint64_t now = 1000000000ull;
 static char line[1024];
 static int hold_results;
 static unsigned c3ticks;
 #define CHECK(x) do {if(!(x)){fprintf(stderr,"FAIL %d %s (handovers=%u/%u)\n",__LINE__,#x,handovers[0],handovers[1]);exit(1);}}while(0)
 uint64_t host_ticks(void) {return now;}
+int pad_count(void) {return 1;}
+int carbon_splitworld_rect(uint32_t v,uint32_t *r) {(void)v;(void)r;return 0;}
+unsigned carbon_spliteffects_resources(void) {return 0;}
+unsigned threads_handle_count(void) {return 12;}
 void diag_event(const char *format,...) {
  va_list ap;va_start(ap,format);vsnprintf(line,sizeof line,format,ap);va_end(ap);
  if(strstr(line,"autodrive: dismissed"))++departures;
@@ -101,6 +109,7 @@ void dispatch(Cpu *c,uint32_t target) {
  }
 }
 uint32_t call_guest(Cpu *c,uint32_t target,int n,const uint32_t *args) {
+ if(target==0x65C2C0)++force_calls[!!args[0]];
  uint32_t sp=c->esp;for(int i=n-1;i>=0;--i){c->esp-=4;M32(c->esp)=args[i];}
  c->esp-=4;M32(c->esp)=0xFEEDF00D;dispatch(c,target);c->esp=sp;return c->eax;
 }
@@ -270,11 +279,13 @@ int main(void) {
  M32(0xB024)=3;M32(0xB4D964)=1;tick();CHECK(!handovers[0]);
  M32(0xB4D964)=0;M32(0xA9FF64)=0;tick();CHECK(!handovers[0]);
  M32(0xA9FF64)=2;tick();tick();tick();
- CHECK(handovers[0]==1&&handovers[1]==0);CHECK(samples==1&&census_samples==1);
+ CHECK(handovers[0]==1&&handovers[1]==1);CHECK(samples==1&&census_samples==1);
+ unsigned guest_calls=force_calls[1];M32(0xA9FF64)=1;tick();
+ CHECK(force_calls[1]==guest_calls);M32(0xA9FF64)=2;
  diag_on=0;MF32(0xF010)=10;tick();CHECK(carbon_autodrive_distance==0&&samples==1&&census_samples==1);
  diag_on=1;MF32(0xF010)=0;
  for(unsigned i=0;i<100;++i){now+=20000000;MF32(0xF010)+=1;tick();}
- CHECK(handovers[0]==1&&handovers[1]==0);CHECK(samples==3&&census_samples==3);
+ CHECK(handovers[0]==1&&handovers[1]==1);CHECK(samples==3&&census_samples==3);
  CHECK(fabs(carbon_autodrive_distance-100)<.001);CHECK(fabs(carbon_autodrive_top-50)<.001);
  CHECK(strstr(line,"lap=3 racers=8"));
  M32(0xA97A78)=0x11000;M32(0x11000)=0x12000;M32(0x120E4)=0x13000;
@@ -288,7 +299,8 @@ int main(void) {
  frame();CHECK(returns==4);
  M32(0x13020)=0;frame();hold_results=1;M32(0x13020)=1;
  strcpy(gptr(0x14000),"FePostRaceResults.fng");frame();now+=2000000000;frame();CHECK(returns==4);
- hold_results=0;frame();CHECK(returns==5);
+ hold_results=0;setenv("BOOT_KEYS","seq:pkg:FePostRaceResults.fng,RETURN",1);
+ frame();CHECK(returns==4);unsetenv("BOOT_KEYS");frame();CHECK(returns==5);
  printf("PRIVATE AUTODRIVE PASS handovers=%u/%u unset=0 paused=0 NIS=0 distance=%.0f samples=%u returns=%u\n",handovers[0],handovers[1],carbon_autodrive_distance,samples,returns);
  popup_retry();
  CHECK(carbon_c3drive_direction()==0);
@@ -442,6 +454,8 @@ def main():
             'no-poststages': source.replace(' || !strcmp(text, "FePostStages.fng")', ''),
             'no-soak-hold': source.replace('    if (!strcmp(text, "FePostRaceResults.fng") && carbon_soak_hold_results()) return;\n', ''),
             'omitted-call': source.replace('call_guest(&drive, 0x0065C2C0u, 1, args);', '(void)drive; (void)args;'),
+            'original-p1-only': source.replace('if (M32(0x00A9FF64u) == 2)', 'if (0)'),
+            'no-script-results-hold': source.replace('    if (!strcmp(text, "FePostRaceResults.fng") && keys && strstr(keys, "pkg:FePostRaceResults.fng")) return;\n', ''),
         }
         assert all(text != source for name, text in variants.items() if name != 'good')
         for name, text in variants.items():

@@ -13,7 +13,7 @@
       "generated_data": null,
       "required_providers": [],
       "guest_layouts": {
-        "native": "0076FB20 local-player constructor installs the opt-in observer at AB0ABC -> device vtable +44 (Present); native Present runs first. ForceAIControl(0) 0065C2C0 uses A9FF5C/A9FF64 and IHumanAI 004087C0. B4D964 is INIS; B4CFE0+24 state 3; A99BBC flow 6. A97A78 wraps FEngine, +E4 packages, +08 next, +20 control, +0C name. Rigid-body 006C6FF0 position +10, 006C7000 velocity +20. A98284 race status +18 racer array, stride384, +4C completed laps; AA26B4/AA26BC keyed Simable array/count resolve the player."
+        "native": "0076FB20 local-player constructor installs the opt-in observer at AB0ABC -> device vtable +44 (Present); native Present runs first. ForceAIControl(0) 0065C2C0 uses A9FF5C/A9FF64 and IHumanAI 004087C0. B4D964 is INIS; B4CFE0+24 state 3; A99BBC flow 6. A97A78 wraps FEngine, +E4 packages, +08 next, +20 control, +0C name. Rigid-body 006C6FF0 position +10, 006C7000 velocity +20. A98284 race status +18 racer array, stride384, +4C completed laps; AA26B4/AA26BC keyed Simable array/count resolve the player. ForceAIControl(1) selects the last local player; the observer calls it only for exactly two local players, after the same race/NIS guards."
       }
     },
     "carbon_census.h": {
@@ -51,7 +51,7 @@
   "bindings": {
     "carbon_autodrive.c": {
       "source": "carbon_autodrive.h",
-      "sha256": "4082170604a7bdd9e6a08c8428d8220dcb0f4c93b2f0a580ca93e64e98cfb5da",
+      "sha256": "d85c17e508cdcc58b21273c6805653d672da6bac65dcb4d20d9a7845f461e685",
       "functions": {}
     },
     "carbon_census.h": {

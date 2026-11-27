@@ -31,7 +31,7 @@
   "bindings": {
     "carbon_ao.h": {
       "source": "carbon_ao.h",
-      "sha256": "97e1b45863617d8e03d8e1d76034bd94a1613b17c0d865c578bc830d3e5c25b0",
+      "sha256": "86d18fa4267f9e1b5fedd96b87faa929cdfb3a5d9b94c426a888d9c1514661ce",
       "functions": {}
     },
     "carbon_ao_glow.h": {

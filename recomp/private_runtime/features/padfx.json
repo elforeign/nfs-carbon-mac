@@ -53,12 +53,12 @@
   "bindings": {
     "carbon_padfx.c": {
       "source": "carbon_padfx.c",
-      "sha256": "0165388400a902a835ef11edc25fd52525cd5f786f687691966f52c6b2da0ee7",
+      "sha256": "e15b6ed7a58f4a73fdf4bdb96c51b226d7b021cc4920aa1761d6f8ce6510d972",
       "functions": {}
     },
     "carbon_padfx.h": {
       "source": "carbon_padfx.h",
-      "sha256": "1d9f6f15b11aad12ce2dca0c8fdcc8bda2429ce3e7556d6e30dcbe61f4514b53",
+      "sha256": "dd728e01ba65b3b38d9795433d38d15cfa5dd3dce26f74cf14abd12b2152b2d8",
       "functions": {}
     },
     "carbon_padfx_backend.h": {
@@ -68,7 +68,7 @@
     },
     "carbon_padfx_output.h": {
       "source": "carbon_padfx_output.h",
-      "sha256": "f6317fb1c3b512f54c5483c151096b5f7b5ae09701bb48e25e07a0d44a961790",
+      "sha256": "15e20044d97c76eab62fc187480224818253e73a0d2a4aa6fedbbe23b514ebaa",
       "functions": {}
     }
   },

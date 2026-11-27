@@ -161,6 +161,7 @@ void f_00475F90(Cpu *c) {
 }
 #include "native.inc"
 int pad_count(void){return 1;}
+uint64_t host_ticks(void){return 1000000000ull;}
 int pad_read_n(int n,PadState *s){(void)n;memset(s,0,sizeof *s);return 0;}
 #include "carbon_padguest.c"
 #include "carbon_padbind.c"

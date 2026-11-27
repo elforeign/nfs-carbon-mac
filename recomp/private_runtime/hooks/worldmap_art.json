@@ -9,8 +9,8 @@
         "length": 16,
         "sha256": "1c8a5367b8f9e631d9052fee2bd8bd65295718c45ae1a59a79f982ee6dce5a3f"
       },
-      "provider": "carbon_worldmap_art_draw",
-      "job": "B3.C2.ART"
+      "provider": "carbon_splithud_draw",
+      "job": "B3.C2.ART + J8 (retains carbon_worldmap_art_draw)"
     },
     {
       "address": "0058F600",

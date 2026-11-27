@@ -84,7 +84,7 @@
   "bindings": {
     "carbon_daynight.c": {
       "source": "carbon_daynight.h",
-      "sha256": "51668c735e72b4d00a6ea503bced7cc0e6b7dae8b129708a977a26ab26981ad0",
+      "sha256": "c91988c1a3b8486652470be437ed6ce8f8454c6b08222c9a2ad28ecfb77b10ef",
       "functions": {
         "carbon_dn_world_record": {
           "read": [

@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "hooks": [
+    {
+      "address": "007D2470",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "007D2470",
+        "length": 16,
+        "sha256": "494bd97d861320894b33bcc140d2b81bbc952bbb77f6337d4d6876d3ced18f98"
+      },
+      "provider": "carbon_splitworld_update",
+      "job": "J7"
+    },
+    {
+      "address": "0073EA60",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "0073EA60",
+        "length": 16,
+        "sha256": "646d11bc77f4792377c7fc1085e1a7238558bb92d55f3552938aff7a378b57ea"
+      },
+      "provider": "carbon_splitworld_auxiliary",
+      "job": "J7"
+    },
+    {
+      "address": "007D1F50",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "007D1F50",
+        "length": 16,
+        "sha256": "ca09a7fdaeac5738b21936e4f873d010d80b4403060c8eff94e32c79cac2e74c"
+      },
+      "provider": "carbon_splitworld_update",
+      "job": "J7"
+    },
+    {
+      "address": "007D77B0",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "007D77B0",
+        "length": 16,
+        "sha256": "f96c2b05b9549717697f9853dbfc8276a489fa23ccd967fd708752feeb13cd2f"
+      },
+      "provider": "carbon_splitworld_weather",
+      "job": "J7"
+    }
+  ]
+}

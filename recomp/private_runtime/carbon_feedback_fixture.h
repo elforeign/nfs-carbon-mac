@@ -10,6 +10,7 @@ int diag_on;
 int carbon_fixture_image_match = 1;
 static char summary[1024];
 static unsigned activity_forwards, sampler_calls;
+static uint32_t sampled_player = 0x2000;
 void prompts_input(int pad) { (void)pad;++activity_forwards; }
 void prompts_mouse_moved(float points) { (void)points;++activity_forwards; }
 int osk_pad(int port, uint32_t buttons, int up, int down, int left, int right,
@@ -23,6 +24,7 @@ static uint64_t clock_ns = 1000000000;
 static HostFn callbacks[128];
 static unsigned ncallbacks, checks, failures, wheel_calls, real_opens, real_writes;
 static int active_pad = 1, shift_state, nos_state;
+static unsigned identity_slots;
 static unsigned native_counts[18], provider_counts[18];
 static float speed = 20;
 #define CHECK(x) do { ++checks; if (!(x)) { ++failures; fprintf(stderr,"FAIL %d: %s\n",__LINE__,#x); } } while(0)
@@ -45,9 +47,10 @@ void padfx_suppress(unsigned reason, int on) { (void)reason; (void)on; }
 int padfx_wanted(void) { return 1; }
 int padfx_road_wanted(void) { return 1; }
 void padfx_game_tick(Cpu *c, uint32_t player) {
-    (void)c;++sampler_calls;CHECK(player==0x2000);CHECK(M32(player+0x54)==0x9000);
+    (void)c;++sampler_calls;CHECK(player==sampled_player);CHECK(M32(player+0x54)==0x9000);
 }
 int pad_identity(char *name, size_t n) { (void)name; (void)n; return active_pad ? PAD_KIND_DUALSENSE : PAD_KIND_NONE; }
+int pad_identity_n(int slot, char *name, size_t n) { identity_slots |= 1u << slot; return pad_identity(name,n); }
 /* Any output implementation accidentally selected by this fixture fails. */
 int IOHIDDeviceOpen(void *device, unsigned options) { (void)device;(void)options;++real_opens;abort(); }
 int IOHIDDeviceSetReport(void *device, int type, int id, const void *data, long n) {
@@ -144,10 +147,71 @@ static void reset(void) {
 }
 static unsigned unbound_calls;
 static void unbound_original(Cpu *c) { CHECK(M32(c->ecx+0x54)==0x9000);++unbound_calls;c->esp+=4; }
-static void collide(void) {
-    Cpu c=initial();c.ecx=0x2000+0x4C;M32(c.esp+4)=0xB000;
+static void collide_player(uint32_t player) {
+    Cpu c=initial();c.ecx=player+0x4C;M32(c.esp+4)=0xB000;
     M32(0xB000+0x1C)=2;M32(0xB000+0x3C)=42;MF32(0xB000+0x50)=30;
     f_00765240(&c);CHECK(c.esp==0x80008);
+}
+static void collide(void) { collide_player(0x2000); }
+static void split_feedback(void) {
+    memset(feedback_states,0,sizeof feedback_states);
+    /* Native LocalPlayer IPlayer is complete+44; GetFFB +0C, port +18.
+     * Deliberately reverse vector order to reject index-based ownership. */
+    memcpy(G+0x2400,G+0x2000,0x100);
+    M32(0x2450)=0x2500; M32(0x2500)=FEEDBACK_VTABLE;
+    M32(0xA9FF5C)=0x2600; M32(0xA9FF64)=2;
+    M32(0x2600)=0x2444; M32(0x2604)=0x2044;
+    M32(0x205C)=0; M32(0x245C)=1;
+    shift_state=nos_state=0; speed=0;
+    /* P1's last activity was keyboard; P2 still bypasses its own wheel and
+     * samples its own pad. This runs the real translated DoFFB wrapper. */
+    sampled_player=0x2400; identity_slots=0; carbon_feedback_input(0);
+    Cpu p2=initial(); p2.ecx=sampled_player; f_00762000(&p2);
+    CHECK(identity_slots==2 && M32(0x2454)==0x9000);
+    CHECK(feedback_states[1].owner==0x2500 && !feedback_states[0].owner);
+    sampled_player=0x2000; carbon_feedback_input(1);
+    Cpu c=initial(); c.ecx=0x2500; fb_resume(&c);
+    collide_player(0x2400);
+    float h[2],l[2]; clock_ns+=16000000;
+    for(unsigned p=0;p<2;++p) feedback_levels_slot(p,&h[p],&l[p]);
+    clock_ns+=16000000;
+    for(unsigned p=0;p<2;++p) feedback_levels_slot(p,&h[p],&l[p]);
+    CHECK(h[0]==0 && l[0]==0); CHECK(h[1]>0);
+    printf("SPLIT collision P1=%.3f/%.3f P2=%.3f/%.3f\n",h[0],l[0],h[1],l[1]);
+    /* Unowned and null feedback objects cannot seed a local player's model. */
+    Model saved[2]={feedback_states[0].model,feedback_states[1].model};
+    for(unsigned object=0;object<2;++object) {
+        c=initial(); c.ecx=object?0xDE00:0; fb_resume(&c);
+        c=initial(); c.ecx=object?0xDE00:0; M32(c.esp+4)=0xB000; M32(c.esp+8)=1; fb_collision(&c);
+        CHECK(!memcmp(&saved[0],&feedback_states[0].model,sizeof(Model)));
+        CHECK(!memcmp(&saved[1],&feedback_states[1].model,sizeof(Model)));
+    }
+    /* Published wheel/road state is read by padfx for the owning port. */
+    for(unsigned p=0;p<2;++p) {
+        c=initial(); c.ecx=p?0x2500:0x2300;
+        Feedback *f=feedback_for(&c);
+        f->slip_now[0]=.2f+.3f*p; f->hz_now[0]=10+10*p;
+        f->road_speed_now=20+30*p; f->road_surface_now=.1f+.2f*p; fb_end(&c);
+    }
+    for(unsigned p=0;p<2;++p) {
+        float slip[2],hz[2],speed,surface; int nos;
+        carbon_feedback_trigger_state(p,slip,hz,&nos); carbon_feedback_road_state(p,&speed,&surface);
+        CHECK(slip[0]==.2f+.3f*p && hz[0]==10+10*p);
+        CHECK(speed==20+30*p && surface==.1f+.2f*p);
+    }
+    feedback_suppress(FEEDBACK_PAUSE,1);
+    for(unsigned p=0;p<2;++p) { feedback_levels_slot(p,&h[p],&l[p]); CHECK(h[p]==0 && l[p]==0); }
+    feedback_suppress(FEEDBACK_PAUSE,0);
+    c=initial(); c.ecx=0x2500; fb_resume(&c); collide_player(0x2400);
+    /* Reassignment and departure retire envelopes without another pad poll. */
+    M32(0x245C)=0; M32(0x205C)=1;
+    feedback_poll_pause(); feedback_levels_slot(1,&h[1],&l[1]); CHECK(h[1]==0 && l[1]==0);
+    c=initial(); c.ecx=0x2500; fb_resume(&c);
+    c=initial(); c.ecx=0x2500; fb_begin_frame(&c); collide_player(0x2400);
+    clock_ns+=16000000; feedback_levels_slot(0,&h[0],&l[0]);
+    clock_ns+=16000000; feedback_levels_slot(0,&h[0],&l[0]); CHECK(h[0]>0);
+    M32(0xA9FF64)=0; feedback_poll_pause();
+    for(unsigned p=0;p<2;++p) { feedback_levels_slot(p,&h[p],&l[p]); CHECK(h[p]==0 && l[p]==0); }
 }
 static float level(void) { float l,r;clock_ns+=16000000;feedback_levels(&l,&r);return fmaxf(l,r); }
 int main(int argc,char **argv) {
@@ -161,6 +225,7 @@ int main(int argc,char **argv) {
     M32(0x2000+0x24)=0x2100;bind(0x2100,0x0C,simable_get);
     M32(0x2000+0x44)=0x2200;bind(0x2200,0x14,value1);
     M32(0x2000+0x50)=0x2300;M32(0x2300)=FEEDBACK_VTABLE;
+    M32(0xA9FF5C)=0x2600;M32(0xA9FF64)=1;M32(0x2600)=0x2044;M32(0x205C)=0;
     M32(0x2054)=0x9000;M32(0x9000)=0x9100;bind(0x9100,0x0C,value1);bind(0x9100,4,wheel_tick);
     M32(0x3000)=0x3100;M32(0x3004)=0x3000;bind(0x3100,0x68,velocity_get);
     M32(0x4000)=0x4100;bind(0x4100,4,float_rpm);bind(0x4100,8,float_high);bind(0x4100,0xC,float_rpm);
@@ -176,7 +241,7 @@ int main(int argc,char **argv) {
     /* Baseline: the unmodified translated tick short-circuits to the wheel;
      * forcing the pad route still calls fifteen inert methods, with no output. */
     for(unsigned i=1;i<18;++i) if(i!=1 && i!=3) {
-        Cpu c=initial();for(unsigned a=0;a<3;++a)M32(c.esp+4+4*a)=0;
+        Cpu c=initial();c.ecx=0x2300;for(unsigned a=0;a<3;++a)M32(c.esp+4+4*a)=0;
         dispatch(&c,native_slots[i]);CHECK(c.esp==0x80004+4*expected_arguments[i]);CHECK(level()==0);
     }
     memset(native_counts,0,sizeof native_counts);shift_state=3;nos_state=1;
@@ -219,7 +284,7 @@ int main(int argc,char **argv) {
     printf("TICK Begin/End=%u/%u speed/skid/slip=%u/%u/%u model=%.3f\n",provider_counts[4],provider_counts[5],provider_counts[6],provider_counts[7],provider_counts[8],level());
     unsigned char model[sizeof feedback_states[0].model];memcpy(model,&feedback_states[0].model,sizeof feedback_states[0].model);
     for (unsigned i=9;i<17;++i) if (i==9 || i>=14) {
-        Cpu c=initial();for(unsigned a=0;a<3;++a)M32(c.esp+4+4*a)=123;
+        Cpu c=initial();c.ecx=0x2300;for(unsigned a=0;a<3;++a)M32(c.esp+4+4*a)=123;
         dispatch(&c,M32(FEEDBACK_VTABLE+4*i));CHECK(!memcmp(model,&feedback_states[0].model,sizeof feedback_states[0].model));
     }
     reset();active_pad=0;tick(1);CHECK(wheel_calls==2);CHECK(provider_counts[4]==0);CHECK(sampler_calls==0);active_pad=1;
@@ -233,13 +298,14 @@ int main(int argc,char **argv) {
     reset();M32(0x8000)=0;shift_state=3;tick(1);float shift=level();CHECK(shift>0);
     reset();nos_state=1;tick(1);float nos=level();CHECK(nos>0);
     float slip[2],hz[2];int engaged;feedback_trigger_state(slip,hz,&engaged);CHECK(engaged==1);
-    reset();tick(1);Cpu damage=initial();M32(damage.esp+4)=1;dispatch(&damage,M32(FEEDBACK_VTABLE+0x30));CHECK(level()>0);
-    reset();tick(1);Cpu gear=initial();M32(gear.esp+4)=1;dispatch(&gear,M32(FEEDBACK_VTABLE+0x34));CHECK(level()>0);
+    reset();tick(1);Cpu damage=initial();damage.ecx=0x2300;M32(damage.esp+4)=1;dispatch(&damage,M32(FEEDBACK_VTABLE+0x30));CHECK(level()>0);
+    reset();tick(1);Cpu gear=initial();gear.ecx=0x2300;M32(gear.esp+4)=1;dispatch(&gear,M32(FEEDBACK_VTABLE+0x34));CHECK(level()>0);
     reset();tick(1);collide();float hit=level();CHECK(hit>0);CHECK(provider_counts[17]==1);
     unsigned begins=provider_counts[4];M32(0xA631A8)=0;shift_state=3;nos_state=1;tick(1);
     CHECK(!feedback_states[0].model.active && level()==0);CHECK(provider_counts[4]==begins && provider_counts[1]==1);
     CHECK(real_opens==0 && real_writes==0);
     printf("EDGES collision=%.3f shift=%.3f nos=%.3f real-opens=%u real-writes=%u\n",hit,shift,nos,real_opens,real_writes);
+    M32(0xA631A8)=1; split_feedback();
     printf("FEEDBACK %s checks=%u failures=%u\n",failures ? "FAIL" : "PASS",checks,failures);
     if(trace)fclose(trace);free(G);return failures ? 1 : 0;
 }

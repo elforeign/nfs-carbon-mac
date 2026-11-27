@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_qrsplit.c": {
+      "kind": "unit",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_accesses": {
+        "carbon_qrsplit_port": {
+          "read": [
+            11106940
+          ]
+        },
+        "carbon_qrsplit_single": {
+          "write": [
+            11106940
+          ]
+        },
+        "carbon_qrsplit_label": {
+          "read": [
+            12298836
+          ]
+        },
+        "carbon_qrsplit_choice": {
+          "read": [
+            12298836
+          ]
+        },
+        "carbon_qrsplit_transition": {
+          "read": [
+            11106940
+          ]
+        },
+        "carbon_qrsplit_destroy": {
+          "read": [
+            11115452
+          ]
+        },
+        "carbon_qrsplit_memory": {
+          "read": [
+            10890312,
+            10890316
+          ],
+          "write": [
+            10890316
+          ]
+        }
+      },
+      "guest_layouts": {
+        "quickrace": "0084B330 Game Mode row +74 property 13E4; saved profile +2B0D3+28*event type. 0084B370 lacks value 2 label; 00858480 advances only the PC values. 00862090 native car list context 1/2; 005A52B0 attaches P1 to retained return state 8; 008676C0 then creates 00848540 P2 join (state 10) and context 2 car list (state 11). 00854300 state 13 sets BC7 before 007BBED0; 006999C0 maps BC7 to mode 1; 007655D0 creates HUD 3/4. DB A97A7C +C4 active player/+CC signed-byte ports; all port mutations call 00572C90, exactly as 0083CAF0 native join. State 2 and cancelled destruction restore single-player; start states 13/14 retain properties during loading. 37CE1D36 is the authored localized Split Screen caption used at 00853AD9. 00858480 is shared by five row vtables (009F9678/96B4/96F0/972C/9768); only row property 13E4 gains the third value. 006BBDF0 chooses the split car budget at 00A62C4C (PE 1 KiB) for native mode 1; 00A62C48 is the PC single-player budget (65,000 KiB). In two-controller split mode, borrow that PC budget only while native loading initializes its car pool, preserving native reductions and restoring the original split-budget field afterward."
+      },
+      "class": "mixed"
+    }
+  },
+  "staged_sources": {
+    "carbon_qrsplit.c": "carbon_qrsplit.c"
+  },
+  "bindings": {
+    "carbon_qrsplit.c": {
+      "source": "carbon_qrsplit.c",
+      "sha256": "c84846b638c9d3132ef9daa7f81299ae11ebc7a85b3ebc01e9258cbf5c112431",
+      "functions": {
+        "carbon_qrsplit_memory": {
+          "read": [
+            10890312,
+            10890316
+          ],
+          "write": [
+            10890316
+          ]
+        }
+      }
+    }
+  },
+  "enabled_providers": []
+}

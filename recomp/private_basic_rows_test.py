@@ -1,5 +1,5 @@
-"""Basic F10 rows: baseline 53 rows / VRR=-1; good 55 rows / VRR=0,1.
-Removed registration: good exit=0 (55) / broken exit=1 (53 versus 55).
+"""Basic F10 rows: baseline 54 rows / VRR=-1; good 56 rows / VRR=0,1.
+Removed registration: good exit=0 (56) / broken exit=1 (54 versus 56).
 Removed include: compiler rejects the missing initializer. Shared restart body
 under BOOT_BACKGROUND=1: two refusals, zero saves/confirmation/termination/state
 changes. Selected callback closure has zero disabled dependencies. No game runs.
@@ -45,7 +45,7 @@ EXPECTED_IDS = (
     'diag.restart_game', 'graphics.variable_refresh',
     'diag.h_report', 'diag.report_category', 'diag.report_note', 'diag.report_save', 'diag.report_open', 'gameplay.unlock_all',
     'network.persona', 'network.host', 'network.browse', 'network.status', 'network.leave',
-    'gameplay.traffic_density', 'gameplay.cheat_nitrous', 'gameplay.cheat_speedbreaker',
+    'controls.pads', 'gameplay.traffic_density', 'gameplay.cheat_nitrous', 'gameplay.cheat_speedbreaker',
     'gameplay.cheat_crew', 'world.carbon_minimap', 'audio.carbon_surround',
     'graphics.look_preset', 'graphics.carbon_coat', 'graphics.carbon_materials', 'graphics.carbon_ao',
     'graphics.carbon_envcube', 'graphics.carbon_reflect_hdr', 'graphics.daynight', 'graphics.daynight_mode', 'graphics.daynight_hour',
@@ -163,10 +163,10 @@ int main(int argc, char **argv) {
     CHECK(argc==2); int expected_vrr=atoi(argv[1]);
     CHECK(settings_count()==0 && settings_get("graphics.variable_refresh")==-1);
     private_settings_init();
-    printf("rows=%d expected=55\n",settings_count());
-    CHECK(settings_count()==55);
+    printf("rows=%d expected=56\n",settings_count());
+    CHECK(settings_count()==56);
     const char *expected[]={ /* EXPECTED_IDS */ };
-    for(int i=0;i<54;++i) CHECK(!strcmp(settings_at(i)->id,expected[i]));
+    for(int i=0;i<55;++i) CHECK(!strcmp(settings_at(i)->id,expected[i]));
     settings_init();
     CHECK(settings_get("graphics.variable_refresh")==expected_vrr);
     Setting *vrr=settings_find("graphics.variable_refresh"), *restart=settings_find("diag.restart_game");
@@ -239,9 +239,9 @@ def compiled_rows(td):
     settings.write_text(original.replace('    private_basic_rows_init();', ''))
     result = build(); assert result.returncode == 0, result.stderr[-4000:]
     result = run(0)
-    assert result.returncode == 1 and 'rows=53 expected=55' in result.stdout, result.stdout + result.stderr
-    assert 'settings_count()==55' in result.stderr, result.stderr
-    print('negative registration: good exit=0 rows=55 / broken exit=1 rows=53 expected=55')
+    assert result.returncode == 1 and 'rows=54 expected=56' in result.stdout, result.stdout + result.stderr
+    assert 'settings_count()==56' in result.stderr, result.stderr
+    print('negative registration: good exit=0 rows=56 / broken exit=1 rows=54 expected=56')
     settings.write_text(original.replace('#include "game_basic_rows.h"', ''))
     result = build()
     assert result.returncode != 0 and 'private_basic_rows_init' in result.stderr, result.stderr[-4000:]
@@ -323,7 +323,7 @@ def main():
     with tempfile.TemporaryDirectory(prefix='private-basic-rows-') as temp:
         compiled_rows(Path(temp))
         crt_exit_check(Path(temp))
-    print('PRIVATE BASIC ROWS PASS: rows 53 -> 55; VRR -1 -> 0/1; unattended restart unchanged; restart after _exit(0) 0 -> 1 waiter')
+    print('PRIVATE BASIC ROWS PASS: rows 54 -> 56; VRR -1 -> 0/1; unattended restart unchanged; restart after _exit(0) 0 -> 1 waiter')
     return 0
 
 

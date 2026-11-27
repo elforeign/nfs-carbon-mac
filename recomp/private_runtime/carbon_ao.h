@@ -1,3 +1,4 @@
+#include "carbon_spliteffects.h"
 /* Native world contact shading, before the retained post dispatcher copies it.
  * 0071AAE0 gets auto-depth into AB0904; 0071AD20 assigns it to AB04F8.
  * 0071B780 builds the primary projection at *(B4AF90)+40, near/far at +D4/D8
@@ -148,18 +149,23 @@ void render_carbon_contact_prewarm(void) {
             if([mtl supportsTextureSampleCount:samples])
                 carbon_ao_multiply_pipeline(format.unsignedIntegerValue,samples);
 }
-static void carbon_ao_apply(void) {
+static void carbon_ao_view(uint32_t view, const uint32_t requested[4]) {
     if(!carbon_ao_on)return; // Off: no target lookup, resolve, allocation or encoder.
     if(M32(0x00A99BBCu)!=6)return;
     RenderTex *world=carbon_hdr_rt(M32(0x00AB04F4u));
     RenderTex *depth=carbon_hdr_rt(M32(0x00AB04F8u));
-    uint32_t platform=M32(0x00B4AF90u);
+    uint32_t platform=M32(view);
     if(!world || !depth || !platform)return;
     float px=MF32(platform+0x40),py=MF32(platform+0x54);
     float a=MF32(platform+0x68),b=MF32(platform+0x78);
     float zn=-b/a,zf=-b/(a-1);
     if(!isfinite(px)||!isfinite(py)||fabsf(px)<0.01f||fabsf(py)<0.01f||!(zn>0 && zf>zn && zf<1e7))return;
     float car[3],center[3];
+    #if defined(NFS_GAME) && NFS_GAME == NFS_GAME_PRIVATE
+    if(carbon_splitworld_rect(view,NULL)) {
+        if(!carbon_splitworld_position(view,car))return;
+    } else
+#endif
     if(!private_carbon_player_position(car))return; // no player car: nothing to ground
     for(unsigned j=0;j<3;j++){
         center[j]=car[0]*MF32(platform+4*j)+car[1]*MF32(platform+16+4*j)+car[2]*MF32(platform+32+4*j)+MF32(platform+48+4*j);
@@ -168,6 +174,8 @@ static void carbon_ao_apply(void) {
     end_pass();msaa_resolve(depth);ensure_cmd();
     id<MTLTexture> z=depth->tex,target=world->ms?:world->tex;
     if(!z || !target || z.width!=target.width || z.height!=target.height)return;
+    uint32_t viewport[4]; memcpy(viewport,requested,sizeof viewport);
+    if(!viewport[2]){viewport[2]=(uint32_t)target.width;viewport[3]=(uint32_t)target.height;}
     id<MTLTexture> receivers=carbon_ao_receiver(z);
     if(!receivers)return;
     carbon_ao_setup();
@@ -179,7 +187,7 @@ static void carbon_ao_apply(void) {
         d.usage=MTLTextureUsageShaderRead;d.storageMode=MTLStorageModeShared;mask=[mtl newTextureWithDescriptor:d];
         uint8_t white=255;[mask replaceRegion:MTLRegionMake2D(0,0,1,1) mipmapLevel:0 withBytes:&white bytesPerRow:1];
     }
-    NSUInteger w=target.width,h=target.height,hw=(w+1)/2,hh=(h+1)/2;
+    NSUInteger w=viewport[2],h=viewport[3],hw=(w+1)/2,hh=(h+1)/2;
     if(!geometry || geometry.width!=hw || geometry.height!=hh){
         geometry=carbon_ao_texture(MTLPixelFormatRGBA32Float,hw,hh);
         ao[0]=carbon_ao_texture(MTLPixelFormatRG16Float,hw,hh);ao[1]=carbon_ao_texture(MTLPixelFormatRG16Float,hw,hh);
@@ -188,6 +196,7 @@ static void carbon_ao_apply(void) {
     CarbonAOParams k={.proj={1/px,1/py,zn,zf},.size={1.0f/w,1.0f/h,CARBON_AO_STRENGTH,0},.rect={0,0,1,1},
         .bounds={0.5f/w,0.5f/h,1-0.5f/w,1-0.5f/h},.tune={1.5f,0.65f,0,0},.car={center[0],center[1],center[2],CARBON_AO_REACH},
         .up={MF32(platform+32),MF32(platform+36),MF32(platform+40),0}}; /* world +Z (render up) in view space */
+    carbon_effect_bounds(viewport,target.width,target.height,k.rect,k.bounds);
     for(unsigned pass=0;pass<5;pass++){
         id<MTLTexture> out=pass==0?geometry:pass==4?target:ao[pass==2];
         MTLRenderPassDescriptor *rp=[MTLRenderPassDescriptor renderPassDescriptor];
@@ -195,6 +204,7 @@ static void carbon_ao_apply(void) {
         k.tune[2]=pass==2?1.0f/hw:0;k.tune[3]=pass==3?1.0f/hh:0;
         if(gpt_on)gpt_render(rp,"contact %u",pass);
         id<MTLRenderCommandEncoder> e=[cmd renderCommandEncoderWithDescriptor:rp];if(gpt_on)gpt_name(e);
+        if(pass==4)carbon_effect_clip(e,viewport);
         [e setRenderPipelineState:pass==0?normal:pass==1?kernel:pass==4?multiply:blur];
         [e setFragmentTexture:z atIndex:1];[e setFragmentTexture:pass==4||pass==1?receivers:mask atIndex:3];
         if(pass==1)[e setFragmentTexture:geometry atIndex:4];
@@ -205,4 +215,14 @@ static void carbon_ao_apply(void) {
     world->stale=world->ms!=nil;
     static int reported;
     if(diag_on && !reported++){diag_event("contact: depth=%08X auto=%08X world=%08X %lux%lu samples=%lu near=%.6g far=%.6g proj=%.6g,%.6g strength=%g reach=%g car=%.3f,%.3f,%.3f",M32(0x00AB04F8u),dev.autodepth,M32(0x00AB04F4u),(unsigned long)w,(unsigned long)h,(unsigned long)target.sampleCount,zn,zf,px,py,k.size[2],k.car[3],center[0],center[1],center[2]);}
+}
+
+static void carbon_ao_apply(void) {
+    if(!carbon_ao_on || M32(0x00A99BBCu)!=6)return;
+    uint32_t r[4];
+    for(unsigned i=0;;++i) {
+        uint32_t view=carbon_effect_view(i,r,0,0);
+        if(!view)break;
+        carbon_ao_view(view,r);
+    }
 }

@@ -68,7 +68,9 @@ static void carbon_hdr_promote_all(void) {
         }
     }
 }
+#define CARBON_SPLITEFFECTS_IMPLEMENTATION
 #include "carbon_ao.h"
+#undef CARBON_SPLITEFFECTS_IMPLEMENTATION
 #include "carbon_lamplight.h"
 void hdrclip_init(void) {
     carbon_ao_init();
@@ -86,6 +88,9 @@ void hdrclip_init(void) {
 }
 /* Wrappers always retain the translated native body and its calling convention. */
 void carbon_hdr_allocate(Cpu *c,void (*original)(Cpu *)) {
+#if defined(NFS_GAME) && NFS_GAME == NFS_GAME_PRIVATE
+    carbon_spliteffects_reset();
+#endif
     original(c); carbon_hdr_promote_all();
 }
 static void carbon_hdr_world_body(Cpu *c,void (*original)(Cpu *)) {
@@ -101,6 +106,9 @@ void carbon_hdr_world(Cpu *c,void (*original)(Cpu *)) {
     carbon_hdr_world_body(c,original); carbon_hdr_world_phase=0;
 }
 void carbon_hdr_dispatch(Cpu *c,void (*original)(Cpu *)) {
+#if defined(NFS_GAME) && NFS_GAME == NFS_GAME_PRIVATE
+    if(carbon_splitworld_dispatch_done()){c->esp+=4;return;}
+#endif
     carbon_hdr_world_phase=0;
     if(float_scene_on)carbon_hdr_world_resolve();
     if(hdrclip_on)carbon_hdr_dispatch_begin();

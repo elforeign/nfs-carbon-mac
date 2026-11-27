@@ -13,7 +13,10 @@
       "generated_data": null,
       "required_providers": [],
       "guest_layouts": {
-        "views": "007103C0 iterates views at B4AF90/B4B010, stride 80, active +C, descriptor +50. 007107C0 initializes their separate platforms/cameras and shared AB04EC target. 007655D0 creates two players in B4D854 mode 1. 0071BCA0 runs before the camera loop, but has no split dimensions. 0072EBA0 prepares once, then calls 0072E5B0 with P1; 0070DD30 binds targets, clears, then sets a zero-origin viewport."
+        "views": "007103C0 iterates views at B4AF90/B4B010, stride 80, active +C, descriptor +50. 007107C0 initializes their separate platforms/cameras and shared AB04EC target. 007655D0 creates two players in B4D854 mode 1. 0071BCA0 runs before the camera loop, but has no split dimensions. 0072EBA0 prepares once, then calls 0072E5B0 with P1; 0070DD30 binds targets, clears, then sets a zero-origin viewport.",
+        "effects": "0071D6AF allocates D0 bytes for 00713330/007C8280 post state, including independent mutable attribute instances; AB0B80 is scoped for P2. 007218A0 builds six cube cameras from camera/car positions and primary camera orientation. A65340=3 refreshes all faces (A63B18 denominator 1, A63B28 schedule all six); A65358 gates road reflection. 0079FF30/007A4BA0 build a capture-only cull context. 0073EA60 is the auxiliary view pass after world, before 00729770; its 007D1F50 lighting query and world final 007D2470 literal P1 arguments are redirected to the scoped owner. 0076E6F0 returns local view ID at normal interface+14; reordered A9FF5C entries are searched by that ID.",
+        "weather": "007D77B0 reads FX+288 owner view, then view+44 first renderable node minus four. 007D7848 substitutes NULL for an empty sentinel, but 007D7850/52 still dereferences its vtable+10. Carless views skip only this unsafe update; the shifted-camera diagnostic borrows P1 first node read-only while retaining the P2 camera, restoring the P2 sentinel on return.",
+        "vehicle_camera": "00726430 restores AB08F4=AB04EC before the main car batch; 00729970 uses AB0594 for its car mask and restores AB04EC. 00727230 chooses shader platform via descriptor+4, independently of 007E1160/007DE460 view-based culling. Scope final/main/car-mask owner fields AB04D4/AB04F0/AB0598 through each world/post sequence, restoring before atlas composition. 00726430 passes literal view ID 1 to 007133C0; redirect it to the scoped view ID for independent velocity/blur."
       }
     },
     "carbon_splitworld.h": {
@@ -34,7 +37,7 @@
   "bindings": {
     "carbon_splitworld.c": {
       "source": "carbon_splitworld.c",
-      "sha256": "6e603c259eaeda539defe44f873a0dab77b10a5498e2cd14dd4fb2463939634e",
+      "sha256": "af6c18672b9394737042f1a8b44032a58ef1db5cb3a8b75a08c9dc7409e0771b",
       "functions": {
         "cs_world": {
           "read": [
@@ -43,12 +46,21 @@
           "write": [
             10899680
           ]
+        },
+        "cs_captures": {
+          "read": [
+            10900288,
+            10900312
+          ],
+          "write": [
+            10900288
+          ]
         }
       }
     },
     "carbon_splitworld.h": {
       "source": "carbon_splitworld.h",
-      "sha256": "87eb73e70ccef26d757ccfbc4d79f981e305b661d6a77e68edcce2fea1bf73d0",
+      "sha256": "acd70b617f44be3a62dd2f1c5dafe3420a9dc3276b699a56b75571845113d14a",
       "functions": {}
     }
   },

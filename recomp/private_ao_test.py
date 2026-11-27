@@ -94,7 +94,7 @@ int main(void){char path[80];setenv("BOOT_DIAG_SIMSHOTS","20,30",1);
     for label, implementation, expected in [('simshot', body, 0), ('simshot-stub', 'return 0;', 1)]:
         path = tmp / (label + '.c')
         path.write_text(fixture.replace('BODY', implementation))
-        build = subprocess.run(['clang', '-O1', str(path), '-o', str(tmp / label)], capture_output=True, text=True)
+        build = subprocess.run(['clang', '-I', str(PRIVATE), '-O1', str(path), '-o', str(tmp / label)], capture_output=True, text=True)
         assert build.returncode == 0, build.stderr[-1000:]
         assert subprocess.run([str(tmp / label)]).returncode == expected
 
@@ -190,7 +190,7 @@ int main(void){@autoreleasepool{
     for label, body, implementation, expected, classifier in [('receiver', wrapper, receiver, 0, helper), ('receiver-original', original, receiver, 1, helper), ('receiver-uncached', wrapper, original_receiver, 1, helper), ('receiver-particle-quads', wrapper, receiver, 1, quad_helper)]:
         path = tmp / (label + '.m')
         path.write_text(fixture.replace('HELPER', classifier).replace('RECEIVER', implementation).replace('WRAPPER', body))
-        build = subprocess.run(['clang', '-O1', '-w', '-fobjc-arc', str(path), '-framework', 'Foundation', '-o', str(tmp / label)], capture_output=True, text=True)
+        build = subprocess.run(['clang', '-I', str(PRIVATE), '-O1', '-w', '-fobjc-arc', str(path), '-framework', 'Foundation', '-o', str(tmp / label)], capture_output=True, text=True)
         assert build.returncode == 0, build.stderr[-2000:]
         run = subprocess.run([str(tmp / label)], capture_output=True, text=True)
         print(label, 'exit=' + str(run.returncode), run.stdout.strip(), run.stderr.strip())
@@ -400,7 +400,7 @@ void render_carbon_lamplight_prewarm(void){}
     path = tmp / 'contact-prewarm.m'
     path.write_text(source)
     exe = tmp / 'contact-prewarm'
-    build = subprocess.run(['clang', '-O1', '-w', '-fobjc-arc', str(path), '-framework', 'Foundation',
+    build = subprocess.run(['clang', '-I', str(PRIVATE), '-O1', '-w', '-fobjc-arc', str(path), '-framework', 'Foundation',
                             '-framework', 'Metal', '-o', str(exe)], capture_output=True, text=True)
     assert build.returncode == 0, build.stderr[-5000:]
     env = dict(os.environ, NFS_PSO_PREWARM='1')
@@ -420,7 +420,7 @@ void render_carbon_lamplight_prewarm(void){}
     hook = '    render_carbon_contact_prewarm();'
     assert source.count(hook) == 1
     path.write_text(source.replace(hook, '    /* omitted contact prewarm control */'))
-    broken_build = subprocess.run(['clang', '-O1', '-w', '-fobjc-arc', str(path), '-framework', 'Foundation',
+    broken_build = subprocess.run(['clang', '-I', str(PRIVATE), '-O1', '-w', '-fobjc-arc', str(path), '-framework', 'Foundation',
                                    '-framework', 'Metal', '-o', str(exe)], capture_output=True, text=True)
     assert broken_build.returncode == 0, broken_build.stderr[-5000:]
     broken = subprocess.run([str(exe)], env=env, capture_output=True, text=True, timeout=90)
@@ -470,7 +470,7 @@ def early_exit_fixture(tmp, shaders, production):
     frames = []
     for label, text in (('early-exits', production), ('before-early-exits', before)):
         (tmp / 'fixture.m').write_text(PRE.replace('SHADERS', shaders).replace('PRODUCTION', text))
-        build = subprocess.run(['clang', '-O1', '-w', '-fobjc-arc', str(tmp / 'fixture.m'), '-framework', 'Foundation', '-framework', 'Metal', '-o', str(tmp / label)], capture_output=True, text=True)
+        build = subprocess.run(['clang', '-I', str(PRIVATE), '-O1', '-w', '-fobjc-arc', str(tmp / 'fixture.m'), '-framework', 'Foundation', '-framework', 'Metal', '-o', str(tmp / label)], capture_output=True, text=True)
         assert build.returncode == 0, build.stderr[-5000:]
         dump = tmp / (label + '.raw')
         run = subprocess.run([str(tmp / label)], env=dict(os.environ, AO_TEST_DUMP=str(dump)), capture_output=True, text=True, timeout=90)
@@ -565,7 +565,7 @@ def main():
             ('original-composition', production.replace('pass==4||pass==1?receivers:mask', 'pass==1?receivers:mask'), [])]:
             source = PRE.replace('SHADERS', shaders).replace('PRODUCTION', text)
             (tmp / 'fixture.m').write_text(source)
-            build = subprocess.run(['clang', '-O1', '-w', '-fobjc-arc', *flags, str(tmp / 'fixture.m'), '-framework', 'Foundation', '-framework', 'Metal', '-o', str(tmp / label)], capture_output=True, text=True)
+            build = subprocess.run(['clang', '-I', str(PRIVATE), '-O1', '-w', '-fobjc-arc', *flags, str(tmp / 'fixture.m'), '-framework', 'Foundation', '-framework', 'Metal', '-o', str(tmp / label)], capture_output=True, text=True)
             assert build.returncode == 0, build.stderr[-5000:]
             run = subprocess.run([str(tmp / label)], capture_output=True, text=True, timeout=90)
             print(label, run.stdout, run.stderr[-1500:], end='')

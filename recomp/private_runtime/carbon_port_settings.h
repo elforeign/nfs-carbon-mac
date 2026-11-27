@@ -12,6 +12,8 @@ static const char *const carbon_port_layouts[] = {"Game", "ITU"};
 static const char *const carbon_port_layout_values[] = {"game", "itu"};
 static const char *const carbon_port_presets[] = {"Port (recommended)", "PC retail", "My picks"};
 static const char *const carbon_port_preset_values[] = {"port", "pc", "mine"};
+static const char *const carbon_port_controllers[] = {"1 (single player)", "2 (split-screen)"};
+static const char *const carbon_port_controller_values[] = {"1", "2"};
 static const int carbon_port_preset_map[] = {PRESET_PORT, PRESET_PC, PRESET_MINE};
 
 static int carbon_port_preset_get(void) {
@@ -60,6 +62,10 @@ static Setting carbon_lan_port_rows[] = {
 };
 
 static Setting carbon_port_rows[] = {
+    {.id="controls.pads", .category=SET_CONTROLS, .order=35, .label="Controllers",
+     .help="2 adds Split Screen to Quick Race's Game Mode choice. Restart to apply.",
+     .type=SET_CHOICE, .choices=carbon_port_controllers, .values=carbon_port_controller_values,
+     .nchoices=2, .env="NFS_PADS", .restart=1},
     {.id="gameplay.traffic_density", .category=SET_GAMEPLAY, .order=10, .label="Traffic density (-1: game)",
      .help="Ambient traffic 0-100%; -1 keeps the game's density. Scripted traffic is unchanged. A startup traffic switch keeps its original direct-start behavior.",
      .type=SET_SLIDER, .min=-1, .max=100, .step=1, .def=-1, .format="%d%%",
@@ -102,7 +108,7 @@ static Setting carbon_port_rows[] = {
      .type=SET_TOGGLE, .values=carbon_port_bool, .def=1, .env="NFS_CARBON_REFLECT_HDR", .live_env=1, .apply=carbon_envcube_apply},
     {.id="graphics.daynight", .category=SET_PICTURE, .order=70, .label="Day-night lighting",
      .help="Enable the daylight clock, sky, fog, car lighting and lamps. Restart to apply.",
-     .type=SET_TOGGLE, .values=carbon_port_switch, .env="NFS_DAYNIGHT", .restart=1},
+     .type=SET_TOGGLE, .values=carbon_port_switch, .def=1, .env="NFS_DAYNIGHT", .restart=1},
     {.id="graphics.daynight_mode", .category=SET_PICTURE, .order=80, .label="Day-night mode",
      .help="Game follows progress; Cycle advances in free roam; Fixed uses the hour below. Requires Day-night lighting; applies now.",
      .type=SET_CHOICE, .choices=carbon_port_modes, .values=carbon_port_mode_values, .nchoices=3,

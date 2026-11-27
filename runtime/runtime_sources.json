@@ -238,6 +238,14 @@
       "generated_data": null,
       "required_providers": []
     },
+    "car_audio_secondary.h": {
+      "class": "mw",
+      "kind": "include",
+      "targets": [],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": []
+    },
     "car_audio_tmx.c": {
       "class": "mw",
       "kind": "unit",

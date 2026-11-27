@@ -5,6 +5,9 @@ Begin/End=1/1, Speed/Skid/Slip=4/4/4; collision/shift/NOS >0; hardware opens/wri
 Failure controls (measured by this driver): wheel bypass 4->0 speed calls;
 collision at +38 17->15 balanced ABIs; collection +4 0.1->0 native speed output.
 Each broken binary must exit 1, versus good 0. Missing private outputs: exit 3.
+J9 original routing: 415 checks / 3 failures; P2-only collision sent P1=.651,
+P2=0. Fixed ownership requires P1=0, P2=.651, independent state and retirement.
+Fixed: 0 failures, 17/17 balanced ABIs; all 6 mutants fail.
 """
 import hashlib
 import json
@@ -59,6 +62,8 @@ def main():
         print('SKIP: private feedback requires Carbon image/attributes')
         return 3
     pe = recomp.PE(image['exe'], expected_sha256=image['sha256'])
+    assert pe.read(0x0075DDC0,4)==bytes.fromhex('8b 41 0c c3')  # IPlayer::GetFFB
+    assert pe.read(0x0076E730,4)==bytes.fromhex('8b 41 18 c3')  # GetControllerPort
     native_slots = struct.unpack('<18I',pe.read(0x009E2188,72))
     stubs = [address for address in native_slots[1:] if pe.read(address,1) in (b'\xc3',b'\xc2')]
     assert len(stubs)==15
@@ -78,6 +83,8 @@ def main():
     for address,digest in BASELINE_SHA.items():
         original=body(address).replace(private_hooks.original_name(address),f'f_{address:08X}',1)
         assert hashlib.sha256(original.encode()).hexdigest()==digest, f'baseline fragment changed: {address:08X}'
+    constructor=body(0x0076FB20)
+    assert '0xA9FF5Cu' in constructor and 'c->esi + 0x44u' in constructor
     assert hashlib.sha256('\n'.join(body(a) for a in stubs).encode()).hexdigest()==STUBS_SHA
     addresses=(*stubs,0x00762000,0x00761F60,0x00765240,0x00463A80)
     native='\n'.join(body(a) for a in addresses)
@@ -116,6 +123,7 @@ def main():
         run([*flags,'-c',tmp/'native.c','-o',tmp/'native.o'])
         run([*flags,'-c',PRIVATE/'carbon_feedback_transport.c','-o',tmp/'transport.o'])
         def execute(label, mutate=None, native_source=None):
+            (tmp/'feedback.c').write_bytes((ROOT/'runtime/feedback.c').read_bytes())
             for p in PRIVATE.glob('carbon_feedback*.h'):
                 if p.name!='carbon_feedback_fixture.h':(tmp/p.name).write_bytes(p.read_bytes())
             if mutate:mutate(tmp)
@@ -139,7 +147,19 @@ def main():
         broken_accessor=accessor.replace('M32((uint32_t)(c->ecx))','M32((uint32_t)(c->ecx + 4u))',1)
         assert broken_accessor!=accessor
         execute('broken-surface-collection',native_source=native.replace(accessor,broken_accessor))
-    print('PRIVATE FEEDBACK PASS slots=17 stubs=15 mutants=3 hardware=0/0')
+        def singleton(tmp):
+            p=tmp/'feedback.c';s=p.read_text();assert s.count('        return f;')==1
+            p.write_text(s.replace('        return f;', '        return &feedback_states[0];'))
+        execute('broken-feedback-owner',singleton)
+        def retired(tmp):
+            p=tmp/'carbon_feedback_pause.h';s=p.read_text();assert 'feedback_poll_owners();' in s
+            p.write_text(s.replace('feedback_poll_owners();','/* missing retirement */'))
+        execute('broken-owner-retirement',retired)
+        def input_owner(tmp):
+            p=tmp/'carbon_feedback_provider.h';s=p.read_text();assert 'int slot = carbon_feedback_player_slot(self);' in s
+            p.write_text(s.replace('int slot = carbon_feedback_player_slot(self);','int slot = 0;'))
+        execute('broken-native-pad-owner',input_owner)
+    print('PRIVATE FEEDBACK PASS slots=17 stubs=15 mutants=6 hardware=0/0')
     return 0
 
 

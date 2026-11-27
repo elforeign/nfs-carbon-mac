@@ -7,19 +7,23 @@
 #include "setting_bool.h"
 #include "carbon_pad_state.h"
 #include "carbon_padfx.h"
+#include "carbon_feedback_bindings.h"
 
 static pthread_mutex_t fx_mu = PTHREAD_MUTEX_INITIALIZER;
-static uint64_t fx_generation, fx_tick;
+static uint64_t fx_generation, fx_tick[2];
+static uint32_t fx_player[2];
+static void *fx_controller[2];
 static unsigned fx_holds;
 static int fx_closed;
 static _Atomic int fx_triggers = -1, fx_road = -1;
-static CarbonPadfxFrame fx_sample;
-static int fx_fresh(uint64_t now) {
-    return !fx_holds && !fx_closed && fx_tick && now >= fx_tick && now - fx_tick < 300000000ull;
+static CarbonPadfxFrame fx_sample[2];
+static int fx_fresh(unsigned slot, uint64_t now) {
+    return slot < 2 && !fx_holds && !fx_closed && fx_tick[slot] &&
+        now >= fx_tick[slot] && now - fx_tick[slot] < 300000000ull;
 }
-int carbon_padfx_lock(uint64_t token, int active) {
+int carbon_padfx_lock(unsigned slot, uint64_t token, int active) {
     pthread_mutex_lock(&fx_mu);
-    if (token != fx_generation || (active && !fx_fresh(host_ticks()))) {
+    if (token != fx_generation || (active && !fx_fresh(slot, host_ticks()))) {
         pthread_mutex_unlock(&fx_mu); return 0;
     }
     return 1;
@@ -41,17 +45,17 @@ int padfx_road_wanted(void) {
 }
 
 /* Carbon's action directory holds pointers, each to 12-byte source records.
- * Slots 2/3 are the first controller's effective bindings after native resolve.
+ * Slots 2+2*port / 3+2*port are that controller's effective bindings.
  * Gas/brake precede shift, then other/unbound, as in the shared recipe model. */
-static int carbon_padfx_role(int right) {
-    if (!M32(0x00A98948u)) return PADBIND_ROLE_NONE;
+static int carbon_padfx_role(unsigned port, int right) {
+    if (M32(0x00A98948u) <= port) return PADBIND_ROLE_NONE;
     int best = PADBIND_ROLE_NONE;
     for (unsigned action = 0; action <= 28; ++action) {
         uint32_t row = M32(0x00A98704u + 8u * action);
         if (!row) continue;
-        for (unsigned slot = 2; slot < 4; ++slot) {
+        for (unsigned slot = 2 + 2 * port; slot < 4 + 2 * port; ++slot) {
             uint32_t r = row + 12u * slot, type = M32(r), device = M32(r + 4), object = M32(r + 8);
-            if (device || !((type == (right ? 7u : 5u) && object == 2) ||
+            if (device != port || !((type == (right ? 7u : 5u) && object == 2) ||
                             (type == 2 && object == (right ? 11u : 10u)))) continue;
             int role = action == 0 ? PADBIND_ROLE_GAS : action == 1 ? PADBIND_ROLE_BRAKE :
                 action == 7 || action == 8 ? PADBIND_ROLE_SHIFT : PADBIND_ROLE_OTHER;
@@ -96,32 +100,35 @@ static Trig trigger_for(int role, int racing, float self, float other_pedal, con
 
 void padfx_game_tick(Cpu *c, uint32_t player) {
     (void)c;
+    int slot = carbon_feedback_player_slot(player);
+    if (slot < 0) return;
     pthread_mutex_lock(&fx_mu);
     uint64_t token = fx_generation;
     int held = fx_holds || fx_closed;
     pthread_mutex_unlock(&fx_mu);
     if (held || !player || carbon_pad_context() != CARBON_PAD_DRIVING) return;
     CarbonPadfxFrame frame = {.breaker = M8(player + 0x78) != 0, .charge = MF32(player + 0x7C)};
-    frame.role[0] = carbon_padfx_role(0); frame.role[1] = carbon_padfx_role(1);
+    frame.role[0] = carbon_padfx_role((unsigned)slot, 0); frame.role[1] = carbon_padfx_role((unsigned)slot, 1);
     uint64_t now = host_ticks();
     pthread_mutex_lock(&fx_mu);
     if (token == fx_generation && !fx_holds && !fx_closed) {
-        if (frame.breaker != fx_sample.breaker && carbon_padfx_fake()) carbon_padfx_count(FX_BREAKER);
-        fx_sample = frame; fx_tick = now;
+        if (frame.breaker != fx_sample[slot].breaker && carbon_padfx_fake()) carbon_padfx_count(FX_BREAKER);
+        fx_sample[slot] = frame; fx_tick[slot] = now; fx_player[slot] = player;
     }
     pthread_mutex_unlock(&fx_mu);
 }
-void padfx_update(void *gc, int dualsense, float lt, float rt) {
+void carbon_padfx_update(unsigned slot, void *gc, int dualsense, float lt, float rt) {
+    if (slot >= 2) return;
     pthread_mutex_lock(&fx_mu);
     uint64_t token = fx_generation;
-    int racing = fx_fresh(host_ticks());
-    CarbonPadfxFrame frame = fx_sample;
+    int racing = fx_fresh(slot, host_ticks()) && gc == fx_controller[slot];
+    CarbonPadfxFrame frame = fx_sample[slot];
     int enabled = fx_triggers_on();
     pthread_mutex_unlock(&fx_mu);
     if (!racing) { padfx_poll(); return; }
     float slip[2], hz[2], speed, surface, p[2] = {lt, rt}, pedal[2] = {0,0}; int nos;
-    feedback_trigger_state(slip, hz, &nos);
-    feedback_road_state(&speed, &surface);
+    carbon_feedback_trigger_state(slot, slip, hz, &nos);
+    carbon_feedback_road_state(slot, &speed, &surface);
     for (int i = 0; i < 2; ++i) {
         if (frame.role[i] == PADBIND_ROLE_GAS) pedal[0] = fmaxf(pedal[0], p[i]);
         if (frame.role[i] == PADBIND_ROLE_BRAKE) pedal[1] = fmaxf(pedal[1], p[i]);
@@ -131,13 +138,23 @@ void padfx_update(void *gc, int dualsense, float lt, float rt) {
     for (int i = 0; i < 2; ++i)
         frame.trigger[i] = trigger_for(frame.role[i], enabled && dualsense, p[i],
             frame.role[i] == PADBIND_ROLE_GAS ? pedal[1] : pedal[0], slip, load);
-    carbon_padfx_output(gc, frame, token);
+    carbon_padfx_output(slot, gc, frame, token);
+}
+void padfx_update(void *gc, int dualsense, float lt, float rt) {
+    pthread_mutex_lock(&fx_mu);
+    unsigned slot = gc && gc == fx_controller[1] ? 1 : 0;
+    pthread_mutex_unlock(&fx_mu);
+    carbon_padfx_update(slot, gc, dualsense, lt, rt);
 }
 void padfx_stop(void) {
     pthread_mutex_lock(&fx_mu);
-    uint64_t token = ++fx_generation; fx_tick = 0;
+    uint64_t token = ++fx_generation;
+    memset(fx_tick, 0, sizeof fx_tick);
+    memset(fx_player, 0, sizeof fx_player);
     pthread_mutex_unlock(&fx_mu);
-    feedback_invalidate_effects();
+    for (unsigned slot = 0; slot < 2; ++slot) {
+        feedback_invalidate_slot(slot); rumble_stop_slot(slot);
+    }
     carbon_padfx_release(token);
 }
 void padfx_suppress(unsigned reason, int on) {
@@ -150,7 +167,11 @@ void padfx_suppress(unsigned reason, int on) {
 }
 void padfx_poll(void) {
     pthread_mutex_lock(&fx_mu);
-    int stale = fx_tick && !fx_fresh(host_ticks());
+    uint64_t now = host_ticks();
+    int stale = 0;
+    for (unsigned slot = 0; slot < 2; ++slot)
+        if (fx_tick[slot] && (!fx_fresh(slot, now) ||
+            carbon_feedback_player_slot(fx_player[slot]) != (int)slot)) stale = 1;
     pthread_mutex_unlock(&fx_mu);
     if (stale) padfx_stop();
     carbon_padfx_log(0);
@@ -159,7 +180,9 @@ void padfx_close(void) {
     pthread_mutex_lock(&fx_mu); fx_closed = 1; pthread_mutex_unlock(&fx_mu);
     padfx_stop(); carbon_padfx_log(1);
 }
-void padfx_disconnect(void *gc) { carbon_padfx_attach(gc, 0); padfx_stop(); }
+/* A polling fallback has no device identity: stop both, but do not mark the
+ * still-connected peer detached. player_update retires the known lost slot. */
+void padfx_disconnect(void *gc) { if (gc) carbon_padfx_attach(gc, 0); padfx_stop(); }
 void padfx_connect(void *gc) { carbon_padfx_attach(gc, 1); }
 void padfx_set_triggers(int on) {
     pthread_mutex_lock(&fx_mu); fx_triggers = on != 0; pthread_mutex_unlock(&fx_mu);
@@ -169,4 +192,16 @@ void padfx_set_road(int on) { fx_road = on != 0; padfx_stop(); }
 /* These outputs require separate image-specific look bindings. */
 void padfx_set_light(int on) { (void)on; }
 void padfx_set_players(int on) { (void)on; }
-void padfx_player_update(int slot, void *gc) { (void)slot; (void)gc; }
+void padfx_player_update(int slot, void *gc) {
+    if (slot < 0 || slot > 1) return;
+    pthread_mutex_lock(&fx_mu);
+    void *previous = fx_controller[slot];
+    int changed = fx_controller[slot] != gc;
+    if (changed) {
+        fx_controller[slot] = gc;
+        if (gc && fx_controller[1 - slot] == gc) fx_controller[1 - slot] = NULL;
+    }
+    pthread_mutex_unlock(&fx_mu);
+    if (changed && previous && !gc) carbon_padfx_attach(previous, 0);
+    if (changed) padfx_stop();
+}

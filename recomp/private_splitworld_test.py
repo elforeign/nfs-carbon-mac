@@ -1,5 +1,10 @@
 """Two-view submission, odd rectangles/projections and shared-target preservation.
 
+Native split regression: pinned 0071BCA0 leaves both main views inactive with
+the PC render selector at zero. Current-branch control: 0 split descriptors,
+exit 1; fixed: 2 active views, 2 worlds, 1105+1170 pixels, 3+3 car callbacks,
+diag/probe off. Reinstating the inactive-P1 guard fails the same check (exit 1).
+
 The native 0070DD30 fragment is SHA-pinned and executed, with COM calls recorded.
 Red on the predecessor: one world/camera, full-height rectangles/projections,
 and the second native clear erases P1 (three independent rejected controls).
@@ -7,6 +12,8 @@ The frame spy keeps preparation and final dispatch at one invocation; all view
 state and ABI results are checked on return to single-player and after resize.
 Good: two worlds/cameras, 1105 P1 + 1170 P2 pixels, one full clear; shader owner
 control fails on P2; omitted batch drain fails before the next stage.
+This fixture explicitly forces the raw-world allocation fallback; native
+view-owned captures/post are exercised by private_spliteffects_test.
 Raw sky/scenery/model/route/animated stages run in both views; late effects
 are refused by the call spy. Full-target shared composition and its final
 update run once. Odd-height projection error 5.96046448e-8; predecessor
@@ -16,11 +23,16 @@ GPU: 48/48 direct/replay, 1x/4x configurations pass; ignored-boundary control
 rejects 4 configurations with 4096 bad pixels (exit 1).
 Vehicles: pinned 007CCA20/007BF7C0 execute both native lists: 3 callbacks per
 view (2 ordinary + 1 extra), 0 per view without the vehicle call (exit 1).
-Live world probe: 1440x1081, 540+541 rows, independent camera translations,
-49 simulation seconds, no crash/stall/failed draw; single-player reached 66 s.
-run_shots/carbon_splitworld_world_probe.jpg is the world-only capture before
-adding 007CCA20. The final vehicle addition needs a lead game run: the three
-job game slots were used by SP, the rejected full-body loop, and raw world.
+Live native menu split: 197.82 simulation seconds, separate cameras/post states,
+both worlds drawn without the shifted-camera probe; no hang/stall/failed draw.
+Single-player Viper free-roam control reached 73.53 s with no split dispatch
+or failed draws; stored-image references cover unchanged single-player rendering.
+An actual SP event race remains pending (the five-run game cap was reached).
+P2's loaded car passed native culling and submission, but literal blur targets
+selected P1's shader camera. private_spliteffects_test pins those native paths
+and rejects the original shader-owner and blur-view failures. Live 35 s proof:
+run_shots/carbon_native_split_cars_visible.jpg. The original failure remains
+run_shots/carbon_native_split_worlds_p2_car_missing.jpg.
 """
 from pathlib import Path
 import hashlib
@@ -42,6 +54,7 @@ FRAME_SHA = 'd550100e592e7eca1eb0e989fb84731709ad9b5f22833785011305ad94b98abb'
 VEHICLE_SHA = {'007CCA20': 'da731d786b5c0d6a3433787ecb1ef622a550bbf77f1d1d211dd9dd01e16c3ea6', '007BF7C0': 'f3baaf51cd2705cbca542c56de1dad90489c83089e24a584e8cd9caa9e5aeb49'}
 WORLD_SHA = '3396db792c5c7e178b2722f8ee62acd5ce85cc9b1c055fe2d3aee8c3699f79c9'
 BIND_SHA = '58326850e7dd96f00c89c39c9656d75ed76b194d91bab9ab0bedaeb11b8dde97'
+LAYOUT_SHA = '4571d235a97f338e6a6a74f384833b869644d77de2ba8daed8e8614a3839710a'
 
 
 def fragment(address):
@@ -59,6 +72,9 @@ HARNESS = r'''
 #include <stdlib.h>
 #include "carbon_splitworld.h"
 uint8_t *G;
+int carbon_spliteffects_begin(uint32_t view){return 0;}
+void carbon_spliteffects_end(uint32_t view){}
+void carbon_spliteffects_reset(void){}
 int diag_on;
 void diag_event(const char *fmt, ...) { (void)fmt; }
 static unsigned allocations, fail_alloc;
@@ -67,6 +83,7 @@ uint32_t galloc(uint32_t n) { if(fail_alloc)return 0; uint32_t p=0x500000+alloca
 static uint32_t viewport[6], scissor[4], scissor_on;
 static unsigned clear_count, submissions, preparations, finishes;
 static uint32_t layout_w=65, layout_h=35;
+static int native_split;
 static uint32_t views[2], cameras[2], rects[2][4];
 static unsigned pixels[65*35], pending_draw;
 static void flush_pending(void){
@@ -131,9 +148,14 @@ void dispatch(Cpu *c,uint32_t fn){
 void f_0072C9B0(Cpu *c){flush_pending();c->esp+=4;}
 BIND_ORIGINAL
 CAR_ORIGINALS
+LAYOUT_ORIGINAL
+void f_007AE270(Cpu *c){CHECK(0);}
+void f_005E3D60(Cpu *c){CHECK(0);}
 PROVIDER
 static void native_layout(Cpu *c){
-    uint32_t d=M32(0xB4AF90+0x50);M32(d+0x14)=layout_w;M32(d+0x18)=layout_h;M8(0xB4AF90+0xC)=1;c->esp+=4;
+    uint32_t d=M32(0xB4AF90+0x50);M32(d+0x14)=layout_w;M32(d+0x18)=layout_h;
+    if(native_split){native_0071BCA0(c);return;}
+    M8(0xB4AF90+0xC)=1;c->esp+=4;
 }
 static void bind(Cpu *c,uint32_t d){
     uint32_t sp=c->esp;c->esp-=16;M32(c->esp)=0xCAFE;M32(c->esp+4)=d;M32(c->esp+8)=1;M32(c->esp+12)=0;
@@ -167,11 +189,22 @@ int main(int argc,char **argv){
     M32(0xAB04EC)=1;M32(0xAB04EC+4)=1;M32(0xAB04EC+8)=111;M32(0xAB04EC+12)=222;
     for(unsigned i=0;i<2;i++){uint32_t v=0xB4AF90+0x80*i;M32(v+8)=i+1;M32(v+0x50)=0xAB04EC;M32(v)=0x300000+i*0x1000;M32(v+0x40)=0x400000+i*0x1000;}
     M32(0xB4D854)=1;M32(0xA99BBC)=6;
+    if(!strcmp(argv[1],"native-split")){
+        native_split=1;
+        M32(0xB4B160)=0x22000;M32(0xB4B0E0)=0x22020;
+        unsetenv("BOOT_DIAG_SPLITWORLD");
+    }
     if(!strcmp(argv[1],"alloc"))fail_alloc=1;
     if(!strcmp(argv[1],"no-camera"))M32(0xB4B010+0x40)=0;
     if(!strcmp(argv[1],"frontend"))M32(0xA99BBC)=3;
     if(!strcmp(argv[1],"probe")){diag_on=1;setenv("BOOT_DIAG_SPLITWORLD","1",1);M32(0xB4D854)=0;}
     Cpu c=initial();carbon_splitworld_layout(&c,native_layout);CHECK(c.esp==0x10004);
+    if(native_split){
+        CHECK(!diag_on&&M32(0xB4D854)==1);
+        CHECK(carbon_splitworld_rect(0xB4AF90,NULL)&&carbon_splitworld_rect(0xB4B010,NULL));
+        CHECK(M8(0xB4AF90+0xC)&&M8(0xB4B010+0xC));
+        CHECK(M32(0xB4AF90+0x40)==0x400000&&M32(0xB4B010+0x40)==0x401000);
+    }
     if(fail_alloc || !strcmp(argv[1],"no-camera") || !strcmp(argv[1],"frontend")){
         CHECK(!carbon_splitworld_rect(0xB4AF90,NULL));CHECK(M32(0xB4AF90+0x50)==0xAB04EC&&M8(0xB4B010+0xC)==0);
         puts("SPLIT PASS safe fallback");free(G);return 0;
@@ -199,12 +232,13 @@ int main(int argc,char **argv){
         CHECK(rects[0][3]==17&&rects[1][1]==17&&rects[1][3]==18);
         CHECK(stages[0]==15&&stages[1]==15&&shared_updates==1);
         CHECK(car_calls[0]==3&&car_calls[1]==3);
+        if(native_split)puts("NATIVE SPLIT PASS diag=0 probe=0 active=2 worlds=2 cars=3+3 pixels=1105+1170 clears=1");
         CHECK(!scissor_on);unsigned allocated=allocations;
         layout_h=37;c=initial();carbon_splitworld_layout(&c,native_layout);CHECK(allocations==allocated);
         uint32_t resized[4];CHECK(carbon_splitworld_rect(0xB4B010,resized)&&resized[1]==18&&resized[3]==19);
         layout_h=1;c=initial();carbon_splitworld_layout(&c,native_layout);CHECK(!carbon_splitworld_rect(0xB4AF90,NULL));
         layout_h=35;c=initial();carbon_splitworld_layout(&c,native_layout);CHECK(allocations==allocated);
-        M32(0xB4D854)=0;c=initial();carbon_splitworld_layout(&c,native_layout);
+        native_split=0;M32(0xB4D854)=0;c=initial();carbon_splitworld_layout(&c,native_layout);
         CHECK(M32(0xB4AF90+0x50)==0xAB04EC&&M32(0xB4B010+0x50)==0xAB04EC&&M8(0xB4B010+0xC)==0);
         CHECK(!carbon_splitworld_rect(0xB4AF90,NULL));submissions=preparations=finishes=0;clear_count=0;
         c=initial();carbon_splitworld_frame(&c,native_frame);CHECK(submissions==1&&preparations==1&&finishes==1&&clear_count==1);
@@ -297,7 +331,7 @@ def main():
     if '--red' not in sys.argv:
         feature = json.loads((PRIVATE/'features/splitworld.json').read_text())
         hooks = json.loads((PRIVATE/'hooks/splitworld.json').read_text())['hooks']
-        assert {h['address'] for h in hooks} == {'0071BCA0', '0072E5B0', '0070DD30'}
+        assert {h['address'] for h in hooks} == {'0071BCA0', '0072E5B0', '0070DD30', '007133C0'}
         for entry in feature['bindings'].values():
             assert hashlib.sha256((PRIVATE/entry['source']).read_bytes()).hexdigest() == entry['sha256']
         hdr = (PRIVATE/'game_hdrclip_init.h').read_text()
@@ -306,6 +340,9 @@ def main():
     assert hashlib.sha256(fragment('0072E5B0').encode()).hexdigest() == WORLD_SHA
     bind = fragment('0070DD30')
     assert hashlib.sha256(bind.encode()).hexdigest() == BIND_SHA
+    layout = fragment('0071BCA0')
+    assert hashlib.sha256(layout.encode()).hexdigest() == LAYOUT_SHA
+    layout = 'void f_007AE270(Cpu *);\nvoid f_005E3D60(Cpu *);\n' + layout
     with tempfile.TemporaryDirectory(prefix='private-splitworld-') as td:
         tmp = Path(td)
         (tmp / 'carbon_splitworld.h').write_text((PRIVATE / 'carbon_splitworld.h').read_text() if (PRIVATE / 'carbon_splitworld.h').exists() else '')
@@ -315,12 +352,16 @@ def main():
             f = fragment(address); assert hashlib.sha256(f.encode()).hexdigest() == digest
             cars += f + '\n'
         cars += 'void f_007BF7C0(Cpu *c){native_007BF7C0(c);}'
-        harness = HARNESS.replace('BIND_ORIGINAL', bind).replace('CAR_ORIGINALS', cars)
+        harness = HARNESS.replace('BIND_ORIGINAL', bind).replace('CAR_ORIGINALS', cars).replace('LAYOUT_ORIGINAL', layout)
         compile_run(tmp, harness.replace('PROVIDER', BASELINE), 'predecessor', ['world', 'rect', 'clear'], 1)
         projection_fixture(tmp, '--red' in sys.argv)
         if '--red' in sys.argv:
             return 0
-        compile_run(tmp, harness.replace('PROVIDER', good), 'good', ['world', 'rect', 'clear', 'alloc', 'no-camera', 'frontend', 'probe'], 0)
+        compile_run(tmp, harness.replace('PROVIDER', good), 'good', ['native-split', 'world', 'rect', 'clear', 'alloc', 'no-camera', 'frontend', 'probe'], 0)
+        inactive_guard = good.replace('if (!source || (probe && !M8(CS_P1 + 0xC))) return;',
+                                      'if (!source || !M8(CS_P1 + 0xC)) return;')
+        assert inactive_guard != good
+        compile_run(tmp, harness.replace('PROVIDER', inactive_guard), 'inactive-native-view', ['native-split'], 1)
         wrong_owner = good.replace('M32(d + 4) = M32(view + 8);', 'M32(d + 4) = 1;')
         assert wrong_owner != good
         compile_run(tmp, harness.replace('PROVIDER', wrong_owner), 'wrong-owner', ['world'], 1)

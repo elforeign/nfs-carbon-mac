@@ -33,6 +33,17 @@
       },
       "provider": "carbon_splitworld_bind",
       "job": "J6"
+    },
+    {
+      "address": "007133C0",
+      "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+      "witness": {
+        "start": "007133C0",
+        "length": 16,
+        "sha256": "96b588ea5f9d0f442b7a781280255f54cb166fe7399b3d8ee070916c07930e5e"
+      },
+      "provider": "carbon_splitworld_update",
+      "job": "J6"
     }
   ]
 }

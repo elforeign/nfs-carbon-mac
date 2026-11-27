@@ -7,6 +7,8 @@ Live: 30 consumer checks, both saved starting states, plus preset members and
 pending names: 0 failures. Old restart wiring: AO/mode/hour each 1 consumer
 failure; limiter/triggers each 2 (exit 1 vs good 0). These controls bypass the
 registration assertions so only frozen consumer state can fail them.
+Controllers: six save/load operations pass; duplicated saved encoding causes
+two failures on reload (exit 1 versus good 0).
 Every value, Reset and all six
 directed preset transitions are checked across fresh processes. MW's existing
 settings_look_test.c branch remains its independent preset regression.
@@ -39,6 +41,7 @@ SETTINGS_ROWS = {
     'network.browse': {'apply': 'carbon_lan_menu_browse'},
     'network.status': {'value_text': 'carbon_lan_menu_status'},
     'network.leave': {'apply': 'carbon_lan_menu_leave'},
+    'controls.pads': {},
     'gameplay.traffic_density': {},
     'gameplay.cheat_nitrous': {'apply': 'carbon_devrows_nitrous'},
     'gameplay.cheat_speedbreaker': {'apply': 'carbon_devrows_speedbreaker'},
@@ -269,6 +272,9 @@ def main():
 
         build()
         run('fresh', 'defaults')
+        for value in (1, 0, 1):
+            run('controllers', 'controllers_save', value)
+            run('controllers', 'controllers_load', value)
         for start in (0, 1):
             for index in (0,1,2,3,4,6,7,8,10):
                 value=(19 if index==7 else 2 if index==6 else 1) if start else (12 if index==7 else 0)
@@ -302,7 +308,7 @@ def main():
                 run(store, 'save', index, value)
                 run(store, 'verify', index, value)
                 run(store, 'reset', index, value)
-                run(store, 'verify', index, [1, 1, 0, 0, 1, 0, 0, 12, 1, 0, 1][index])
+                run(store, 'verify', index, [1, 1, 0, 0, 1, 1, 0, 12, 1, 0, 1][index])
         for source in range(3):
             for target in range(3):
                 if source == target:
@@ -373,6 +379,15 @@ def main():
             failures = result.stderr.count('FAIL line=')
             assert failures == (1 if row == 2 else 2), result.stderr
             print(f'{mutant}: restarted selector/encoding failures={failures} exit=1 (good=0)')
+        (td / 'carbon_port_settings.h').write_text(header)
+        before = 'carbon_port_controller_values[] = {"1", "2"}'
+        assert header.count(before) == 1
+        (td / 'carbon_port_settings.h').write_text(header.replace(before, 'carbon_port_controller_values[] = {"1", "1"}'))
+        build()
+        run('bad-controllers', 'controllers_save', 1)
+        result = run('bad-controllers', 'controllers_load', 1, fails=True)
+        assert result.stderr.count('FAIL line=') == 2, result.stderr
+        print('Controllers saved encoding: reload failures=2 exit=1 (good=0)')
         (td / 'carbon_port_settings.h').write_text(header)
         shared = (ROOT / 'runtime/settings.c').read_text()
         start = shared.index('    int look_value = v;')

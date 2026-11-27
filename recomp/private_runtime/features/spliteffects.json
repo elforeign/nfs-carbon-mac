@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "target": "private",
+  "image_sha256": "baaaaec33873d4ba7e4dbae6a5212049ffdcf9679a35d865d7625b4189952fd3",
+  "sources": {
+    "carbon_spliteffects.h": {
+      "kind": "include",
+      "class": "mixed",
+      "targets": [
+        "private"
+      ],
+      "constructors": "forbidden",
+      "generated_data": null,
+      "required_providers": [],
+      "guest_layouts": {
+        "ownership": "0071AD20 builds sixteen 1C-byte target descriptors at AB04D0; 0070DE00 owns cube AB0920, face surfaces AB0924..38 and depths AB093C..50. 0073C340 owns the native post pyramid B42F48..78. 00713020/30/60/80 select and advance ping-pong index AB0B4C. Full-target private backing preserves native post UVs; only completed views are reduced into their output rectangles."
+      }
+    }
+  },
+  "staged_sources": {
+    "carbon_spliteffects.h": "carbon_spliteffects.h"
+  },
+  "bindings": {
+    "carbon_spliteffects.h": {
+      "source": "carbon_spliteffects.h",
+      "sha256": "9a2f6b8888db458317ef576fbd4952ba2bb5fcae47df3746856b5d8d3e913f45",
+      "functions": {}
+    }
+  },
+  "enabled_providers": []
+}

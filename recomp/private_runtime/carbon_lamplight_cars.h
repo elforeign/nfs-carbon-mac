@@ -20,7 +20,7 @@ static int carbon_lamp_cars_on(void) {
     static int selected = -1;
     if (selected < 0) {
         const char *e = getenv("NFS_CARBON_LAMP_WARM");
-        selected = e && !strcmp(e,"on") && lighting_mode_d65();
+        selected = !(e && !strcmp(e,"off")) && lighting_mode_d65();
     }
     return selected;
 }

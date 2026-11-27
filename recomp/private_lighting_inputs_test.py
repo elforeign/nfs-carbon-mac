@@ -39,6 +39,8 @@ def main():
 #include <math.h>
 uint8_t *G;int boot_trace,diag_on;static uint32_t allocated=0x10000;static unsigned checks;
 int carbon_fe_scope;float carbon_fe_kx(void){return 1;}float carbon_fe_ky(void){return 1;}
+int carbon_splithud_transform(float *t){(void)t;return 0;}
+void carbon_splithud_clip(Cpu*c){(void)c;}
 uint64_t diag_current_frame(void){return 0;}int diag_frame_wanted(uint64_t f,const char*n){(void)f;(void)n;return 0;}
 void diag_event(const char*fmt,...){(void)fmt;}
 uint32_t galloc(uint32_t n){uint32_t p=allocated;allocated+=(n+15)&~15u;assert(allocated<(1<<26));return p;}

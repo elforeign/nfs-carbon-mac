@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.0
+
+- **Day and night on by default:** the in-game clock moves the sky and lighting from day to night. You can turn it off in F10 > Picture > Day-night lighting (applies at the next start).
+- **Warm street lamps:** with Neutral lighting, street lamps and the cars they light take a warm white.
+- **Going back to an older version:** run that version's Setup again.
+
 ## 1.4.0
 
 - **Pause when the controller drops:** if your controller disconnects during a race, or the Mac sleeps and wakes, the race pauses in the F10 menu.
